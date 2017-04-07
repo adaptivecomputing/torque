@@ -212,7 +212,7 @@ PbsErrClient(PBSE_NOJOBARRAYS, (char *)"Queue does not allow job arrays")
 /* 15090 */
 PbsErrClient(PBSE_RELAYED_TO_MOM, (char *)"request was relayed to a MOM") /* */
 PbsErrClient(PBSE_MEM_MALLOC, (char *)"Error allocating memory - out of memory")
-PbsErrClient(PBSE_MUTEX, (char *)"Error allocating controling mutex (lock/unlock)")
+PbsErrClient(PBSE_MUTEX, (char *)"Error allocating controlling mutex (lock/unlock)")
 PbsErrClient(PBSE_THREADATTR, (char *)"Error setting thread attributes")
 PbsErrClient(PBSE_THREAD, (char *)"Error creating thread")
 PbsErrClient(PBSE_SELECT, (char *)"Error in socket select")
