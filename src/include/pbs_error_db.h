@@ -315,8 +315,8 @@ PbsErrRm(PBSE_RMBADPARAM,            (char *)"parameter could not be used")
 PbsErrRm(PBSE_RMNOPARAM,             (char *)"a parameter needed did not exist")
 /* something specified didn't exist */
 PbsErrRm(PBSE_RMEXIST,               (char *)"something specified didn't exist")
-/* a system error occured */
-PbsErrRm(PBSE_RMSYSTEM,              (char *)"a system error occured")
+/* a system error occurred */
+PbsErrRm(PBSE_RMSYSTEM,              (char *)"a system error occurred")
 /* only part of reservation made */
 PbsErrRm(PBSE_RMPART,                (char *)"only part of reservation made")
 /* pbs rm errors ceiling (max_rm_err + 1) */
