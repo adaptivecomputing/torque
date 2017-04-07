@@ -386,6 +386,9 @@ test "x$RPM_BUILD_ROOT" != "x/" && rm -rf $RPM_BUILD_ROOT
 %doc INSTALL INSTALL.GNU CHANGELOG PBS_License.txt README.* Release_Notes src/pam/README.pam
 %doc doc/READ_ME doc/doc_fonts doc/soelim.c doc/ers
 %config(noreplace) %{torque_home}/pbs_environment
+%config(noreplace) /etc/ld.so.conf.d/torque.conf
+%config(noreplace) /etc/profile.d/torque.sh
+%config(noreplace) /etc/profile.d/torque.csh
 %config(noreplace) %{torque_home}/server_name
 %if %{?_unitdir:1}0
 %{_unitdir}/trqauthd.service
