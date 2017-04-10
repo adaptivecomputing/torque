@@ -1404,6 +1404,7 @@ void generate_server_gpustatus_nvml(
   nvmlUtilization_t   util_info;
   unsigned long long  ecc_counts;
   char                tmpbuf[1024+1];
+  char                log_buf[LOG_BUF_SIZE];
 
   if (!init_nvidia_nvml(global_gpu_count))
     return;
@@ -1441,7 +1442,9 @@ void generate_server_gpustatus_nvml(
     }
   else
     {
-    log_nvml_error (rc, NULL, __func__);
+    snprintf(log_buf, sizeof(log_buf),
+       "nvmlSystemGetDriverVersion() called from %s", __func__);
+    log_nvml_error(rc, NULL, log_buf);
     }
 
 #ifndef NUMA_SUPPORT
@@ -1450,7 +1453,9 @@ void generate_server_gpustatus_nvml(
   rc = nvmlDeviceGetCount(&device_count);
   if (rc != NVML_SUCCESS)
     {
-    log_nvml_error (rc, NULL, __func__);
+    snprintf(log_buf, sizeof(log_buf),
+       "nvmlDeviceGetCount() called from %s", __func__);
+    log_nvml_error(rc, NULL, log_buf);
     shut_nvidia_nvml();
     return;
     }
@@ -1468,7 +1473,9 @@ void generate_server_gpustatus_nvml(
 
     if (rc != NVML_SUCCESS)
       {
-      log_nvml_error (rc, NULL, __func__);
+      snprintf(log_buf, sizeof(log_buf),
+         "nvmlDeviceGetHandleByIndex() called from %s (idx=%d)", __func__, idx);
+      log_nvml_error(rc, NULL, log_buf);
       continue;
       }
 
@@ -1489,7 +1496,9 @@ void generate_server_gpustatus_nvml(
       }
     else
       {
-      log_nvml_error (rc, NULL, __func__);
+      snprintf(log_buf, sizeof(log_buf),
+         "nvmlDeviceGetDisplayMode() called from %s (idx=%d)", __func__, idx);
+      log_nvml_error(rc, NULL, log_buf);
        gpu_status.push_back("gpu_display=Unknown");
       }
 
@@ -1514,7 +1523,9 @@ void generate_server_gpustatus_nvml(
       }
     else
       {
-      log_nvml_error (rc, NULL, __func__);
+      snprintf(log_buf, sizeof(log_buf),
+         "nvmlDeviceGetPciInfo() called from %s (idx=%d)", __func__, idx);
+      log_nvml_error (rc, NULL, log_buf);
       }
 
     /* get the product name */
@@ -1528,7 +1539,9 @@ void generate_server_gpustatus_nvml(
       }
     else
       {
-      log_nvml_error (rc, NULL, __func__);
+      snprintf(log_buf, sizeof(log_buf),
+         "nvmlDeviceGetName() called from %s (idx=%d)", __func__, idx);
+      log_nvml_error (rc, NULL, log_buf);
       }
 
     /* get the fan speed */
@@ -1541,11 +1554,9 @@ void generate_server_gpustatus_nvml(
       }
     else if (rc != NVML_ERROR_NOT_SUPPORTED)
       {
-      log_nvml_error (rc, NULL, __func__);
-      }
-    else if (LOGLEVEL >= 6)
-      {
-      log_nvml_error (rc, NULL, __func__);
+      snprintf(log_buf, sizeof(log_buf),
+         "nvmlDeviceGetFanSpeed() called from %s (idx=%d)", __func__, idx);
+      log_nvml_error (rc, NULL, log_buf);
       }
 
     /* get the memory information */
@@ -1561,11 +1572,9 @@ void generate_server_gpustatus_nvml(
       }
     else if (rc != NVML_ERROR_NOT_SUPPORTED)
       {
-      log_nvml_error (rc, NULL, __func__);
-      }
-    else if (LOGLEVEL >= 6)
-      {
-      log_nvml_error (rc, NULL, __func__);
+      snprintf(log_buf, sizeof(log_buf),
+         "nvmlDeviceGetMemoryInfo() called from %s (idx=%d)", __func__, idx);
+      log_nvml_error (rc, NULL, log_buf);
       }
 
     /* get the compute mode */
@@ -1611,11 +1620,9 @@ void generate_server_gpustatus_nvml(
       }
     else if (rc != NVML_ERROR_NOT_SUPPORTED)
       {
-      log_nvml_error (rc, NULL, __func__);
-      }
-    else if (LOGLEVEL >= 6)
-      {
-      log_nvml_error (rc, NULL, __func__);
+      snprintf(log_buf, sizeof(log_buf),
+         "nvmlDeviceGetComputeMode() called from %s (idx=%d)", __func__, idx);
+      log_nvml_error (rc, NULL, log_buf);
       }
 
     /* get the utilization rates */
@@ -1632,11 +1639,9 @@ void generate_server_gpustatus_nvml(
       }
     else if (rc != NVML_ERROR_NOT_SUPPORTED)
       {
-      log_nvml_error (rc, NULL, __func__);
-      }
-    else if (LOGLEVEL >= 6)
-      {
-      log_nvml_error (rc, NULL, __func__);
+      snprintf(log_buf, sizeof(log_buf),
+         "nvmlDeviceGetComputeMode() called from %s (idx=%d)", __func__, idx);
+      log_nvml_error (rc, NULL, log_buf);
       }
 
     /* get the ECC mode */
@@ -1651,11 +1656,9 @@ void generate_server_gpustatus_nvml(
       }
     else if (rc != NVML_ERROR_NOT_SUPPORTED)
       {
-      log_nvml_error (rc, NULL, __func__);
-      }
-    else if (LOGLEVEL >= 6)
-      {
-      log_nvml_error (rc, NULL, __func__);
+      snprintf(log_buf, sizeof(log_buf),
+         "nvmlDeviceGetEccMode() called from %s (idx=%d)", __func__, idx);
+      log_nvml_error (rc, NULL, log_buf);
       }
 
     /* get the single bit ECC errors */
@@ -1670,11 +1673,9 @@ void generate_server_gpustatus_nvml(
       }
     else if (rc != NVML_ERROR_NOT_SUPPORTED)
       {
-      log_nvml_error (rc, NULL, __func__);
-      }
-    else if (LOGLEVEL >= 6)
-      {
-      log_nvml_error (rc, NULL, __func__);
+      snprintf(log_buf, sizeof(log_buf),
+         "nvmlDeviceGetTotalEccErrors() called from %s (idx=%d)", __func__, idx);
+      log_nvml_error (rc, NULL, log_buf);
       }
 
     /* get the double bit ECC errors */
@@ -1689,11 +1690,9 @@ void generate_server_gpustatus_nvml(
       }
     else if (rc != NVML_ERROR_NOT_SUPPORTED)
       {
-      log_nvml_error (rc, NULL, __func__);
-      }
-    else if (LOGLEVEL >= 6)
-      {
-      log_nvml_error (rc, NULL, __func__);
+      snprintf(log_buf, sizeof(log_buf),
+         "nvmlDeviceGetTotalEccErrors() called from %s (idx=%d)", __func__, idx);
+      log_nvml_error (rc, NULL, log_buf);
       }
 
     /* get the temperature */
@@ -1707,13 +1706,10 @@ void generate_server_gpustatus_nvml(
       }
     else if (rc != NVML_ERROR_NOT_SUPPORTED)
       {
-      log_nvml_error (rc, NULL, __func__);
+      snprintf(log_buf, sizeof(log_buf),
+         "nvmlDeviceGetTemperature() called from %s (idx=%d)", __func__, idx);
+      log_nvml_error (rc, NULL, log_buf);
       }
-    else if (LOGLEVEL >= 6)
-      {
-      log_nvml_error (rc, NULL, __func__);
-      }
-
     }
     
   shut_nvidia_nvml();
