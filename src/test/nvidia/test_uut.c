@@ -17,7 +17,10 @@ int global_gpu_count = 0;
 int time_now = 0;
 char mom_host[PBS_MAXHOSTNAME + 1];
 
+extern nvmlReturn_t global_nvmlDeviceGetFanSpeed_rc;
+
 int get_nvml_version();
+void generate_server_gpustatus_nvml(std::vector<std::string> &gpu_status);
 
 START_TEST(test_get_nvml_version)
   {
@@ -29,6 +32,23 @@ START_TEST(test_get_nvml_version)
   fail_unless(version == NVML_API_VERSION);
 
   nvmlShutdown();
+  }
+END_TEST
+
+START_TEST(test_generate_server_gpustatus_nvml)
+  {
+  std::vector<std::string> gpu_status;
+
+  // force nvmlDeviceGetFanSpeed() to return error
+  global_nvmlDeviceGetFanSpeed_rc = NVML_ERROR_UNKNOWN;
+  LOGLEVEL = 2;
+
+  generate_server_gpustatus_nvml(gpu_status);
+
+  // expect log_buffer to hold something like
+  //   "nvmlDeviceGetFanSpeed() called from generate_server_gpustatus_nvml (idx=0) Unknown error"
+  fail_unless((strcasestr(log_buffer, "nvmlDeviceGetFanSpeed() called from generate_server_gpustatus_nvml") != NULL) &&
+    (strcasestr(log_buffer, "unknown error") != NULL));
   }
 END_TEST
 
@@ -46,6 +66,10 @@ Suite *nvidia_suite(void)
   tcase_set_timeout(tc_core, 15);
 
   tcase_add_test(tc_core, test_get_nvml_version);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_generate_server_gpustatus_nvml");
+  tcase_add_test(tc_core, test_generate_server_gpustatus_nvml);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");
