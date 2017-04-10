@@ -7,6 +7,5 @@ endif
 
 libuut_la_SOURCES = ${PROG_ROOT}/qstat.c
 libuut_la_LDFLAGS += $(TCL_LIB_FLAG)
-libuut_CFLAGS += $(TCLQSTATCFLAGS)
-libuut_LDADD += $(TCLQSTATLIBS)
+libuut_CFLAGS = $(TCLQSTATCFLAGS)
 
