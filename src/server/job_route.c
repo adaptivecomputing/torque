@@ -500,6 +500,9 @@ int reroute_job(
 /*
  * handle_rerouting()
  *
+ * precond: pjob is locked
+ * postcond: pjob is unlocked
+ *
  */
 
 int handle_rerouting(
@@ -536,7 +539,6 @@ int handle_rerouting(
 
   return(rc);
   } // END handle_rerouting()
-
 
 
 
@@ -622,7 +624,10 @@ void *queue_route(
     while ((pjob = next_job(pque->qu_jobs_array_sum, iter)) != NULL)
       {
       if (pjob->ji_is_array_template == false)
+        {
+        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
         continue;
+        }
 
       if (handle_rerouting(pjob, pque, queue_name) != PBSE_NONE)
         {
