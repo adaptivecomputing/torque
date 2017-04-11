@@ -12,14 +12,16 @@
 #include "acl_special.hpp"
 #include "pbs_nodes.h"
 
-attribute_def job_attr_def[10];
-struct server server;
-char *server_host;
-char *msg_orighost = strdup("Couldn't find orighost");
-int LOGLEVEL;
-bool exists = true;
-
-acl_special limited_acls;
+attribute_def  job_attr_def[10];
+struct         server server;
+char          *server_host;
+char          *msg_orighost = strdup("Couldn't find orighost");
+int            LOGLEVEL;
+bool           exists = true;
+std::string    long_name("roshar.cosmere");
+std::string    short_name("threnody");
+char          *var = NULL;
+acl_special    limited_acls;
 
 
 char *site_map_user(char *uname,  char *host) 
@@ -30,7 +32,7 @@ char *site_map_user(char *uname,  char *host)
 
 char *get_variable(svr_job *pjob, const char *variable)
   {
-  return(NULL);
+  return(var);
   }
 
 struct passwd * getpwnam_ext(char **user_buf, const char * user_name)
@@ -188,6 +190,15 @@ int get_svr_attr_arst(
 
 bool node_exists(const char *node_name)
   {
+  if (exists == false)
+    {
+    if (long_name == node_name)
+      return(true);
+
+    if (short_name == node_name)
+      return(true);
+    }
+
   return(exists);
   }
 
@@ -263,4 +274,10 @@ pbs_attribute *job::get_attr(int index)
   {
   return(this->ji_wattr + index);
   }
+
+svr_job::svr_job() {}
+svr_job::~svr_job() {}
+
+job::job() {}
+job::~job() {}
 

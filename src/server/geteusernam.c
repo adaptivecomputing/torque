@@ -314,37 +314,6 @@ bool getegroup(
   }  /* END getegroup() */
 
 
-/*
- * get_user_host_from_user
- *
- * @param user_host  - receives the host name associated with the user.
- * @param user       - user name with or without the host name.
- *
- */
-
-void get_user_host_from_user(
-    
-  std::string      &user_host,
-  const std::string user)
-
-  {
-  char  *ptr;
-  char  *tmp_name = strdup(user.c_str());
-
-  user_host.clear();
-  ptr = strchr(tmp_name, '@');
-  if (ptr != NULL)
-    {
-    ptr++;
-    user_host = ptr;
-    }
-
-  free(tmp_name);
-
-  }
-
-
-
 
 /*
  * Verifies that the job's user is acceptable
@@ -361,14 +330,13 @@ bool is_user_allowed_to_submit_jobs(
 
   {
   char           *orighost;
-  std::string     user_host;  /* this is a back up to orighost in case we need FQDN */
   std::string     user(pjob->get_str_attr(JOB_ATR_job_owner));
   std::size_t     at_pos = user.find('@');
   int             rc = PBSE_NONE;
   bool            ProxyAllowed = false;
   bool            ProxyRequested = false;
   bool            HostAllowed = false;
-  char           *dptr;
+  std::string     short_host;
 
   char            log_buf[256];
 
@@ -384,8 +352,6 @@ bool is_user_allowed_to_submit_jobs(
     
   if (EMsg != NULL)
     EMsg[0] = '\0';
-
-  get_user_host_from_user(user_host, user);
 
   if (at_pos != std::string::npos)
     user.erase(at_pos);
@@ -403,6 +369,13 @@ bool is_user_allowed_to_submit_jobs(
 
     return(false);
     }
+
+  short_host = orighost;
+  size_t pos = short_host.find('.');
+  if (pos == std::string::npos)
+    short_host.clear();
+  else
+    short_host.erase(pos);
 
   /* check to see if we are allowing a proxy user to submit the job */
   if ((server.sv_attr[SRV_ATR_AllowProxyUser].at_flags & ATR_VFLAG_SET) && \
@@ -431,28 +404,26 @@ bool is_user_allowed_to_submit_jobs(
     HostAllowed = true;
     }
 
-  /* make short host name */
-  if ((dptr = strchr(orighost, '.')) != NULL)
+  if (HostAllowed == false)
     {
-    *dptr = '\0';
-    }
+    bool allowed = false;
 
-  if ((HostAllowed == false) &&
-      (is_permitted_by_node_submit(orighost, logging)))
-    {
-    /* job submitted from compute host, access allowed */
-    if (dptr != NULL)
-      *dptr = '.';
-
-    if ((ProxyRequested == false) ||
-        (ProxyAllowed == true))
+    if (is_permitted_by_node_submit(orighost, logging) == false)
       {
-      return(true);
+      if (short_host.size() > 0)
+        allowed = is_permitted_by_node_submit(short_host.c_str(), logging);
       }
+    else
+      allowed = true;
 
-    /* host is fine, must validate proxy via ruserok() */
-
-    HostAllowed = false;
+    if (allowed == true)
+      {
+      if ((ProxyRequested == false) ||
+          (ProxyAllowed == true))
+        {
+        return(true);
+        }
+      }
     }
 
   if ((HostAllowed == false) &&
@@ -471,20 +442,14 @@ bool is_user_allowed_to_submit_jobs(
       int cmpRet = strcasecmp(testhost, orighost);
 
       if ((cmpRet != 0) &&
-          (dptr != NULL))
+          (short_host.size() > 0))
         {
-        *dptr = '.';
-        cmpRet = strcasecmp(testhost, orighost);
-        *dptr = '\0';
+        cmpRet = strcasecmp(testhost, short_host.c_str());
         }
 
       if (cmpRet == 0)
         {
         /* job submitted from host found in trusted submit host list, access allowed */
-
-        if (dptr != NULL)
-          *dptr = '.';
-
         if ((ProxyRequested == false) ||
             (ProxyAllowed == true))
           {
@@ -503,11 +468,8 @@ bool is_user_allowed_to_submit_jobs(
   // Check limited acls
   if (limited_acls.is_authorized(orighost, user) == true)
     return(true);
-  else if (limited_acls.is_authorized(user_host.c_str(), user) == true)
+  else if (limited_acls.is_authorized(short_host.c_str(), user) == true)
     return(true);
-
-  if (dptr != NULL)
-    *dptr = '.';
 
 #ifdef MUNGE_AUTH
   sprintf(uh, "%s@%s", user.c_str(), orighost);
