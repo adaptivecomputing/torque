@@ -197,7 +197,7 @@ int site_check_user_map(
   int   ProxyRequested = 0;
   int   HostAllowed = 0;
 
-  char  *dptr;
+  std::string short_host;
 
   char   log_buf[256];
 
@@ -243,6 +243,13 @@ int site_check_user_map(
     return(-1);
     }
 
+  short_host = orighost;
+  size_t pos = short_host.find('.');
+  if (pos == std::string::npos)
+    short_host.clear();
+  else
+    short_host.erase(pos);
+
   /* check to see if we are allowing a proxy user to submit the job */
   if ((server.sv_attr[SRV_ATR_AllowProxyUser].at_flags & ATR_VFLAG_SET) && \
       (server.sv_attr[SRV_ATR_AllowProxyUser].at_val.at_long == 1))
@@ -270,29 +277,33 @@ int site_check_user_map(
     HostAllowed = 1;
     }
 
-  /* make short host name */
-
-  if ((dptr = strchr(orighost, '.')) != NULL)
+  if (HostAllowed == 0)
     {
-    *dptr = '\0';
-    }
-
-  if ((HostAllowed == 0) &&
-      (is_permitted_by_node_submit(orighost, logging) == true))
-    {
-    /* job submitted from compute host, access allowed */
-    if (dptr != NULL)
-      *dptr = '.';
-
-    if ((ProxyRequested == 0) || (ProxyAllowed == 1))
+    bool allowed = false;
+      
+    if (is_permitted_by_node_submit(orighost, logging) == false)
       {
-      return(0);
+      if (short_host.size() > 0)
+        {
+        allowed = is_permitted_by_node_submit(short_host.c_str(), logging);
+        }
       }
+    else
+      allowed = true;
 
-    /* host is fine, must validate proxy via ruserok() */
+    if (allowed == true)
+      {
+      if ((ProxyRequested == 0) || (ProxyAllowed == 1))
+        {
+        return(0);
+        }
 
-    HostAllowed = 1;
+      /* host is fine, must validate proxy via ruserok() */
+
+      HostAllowed = 1;
+      }
     }
+
 
   if ((HostAllowed == 0) &&
       (server.sv_attr[SRV_ATR_SubmitHosts].at_flags & ATR_VFLAG_SET))
@@ -310,20 +321,15 @@ int site_check_user_map(
 
       int cmpRet = strcasecmp(testhost, orighost);
 
-      if((cmpRet != 0)&&(dptr != NULL))
+      if ((cmpRet != 0) &&
+          (short_host.size() > 0))
         {
-        *dptr = '.';
-        cmpRet = strcasecmp(testhost, orighost);
-        *dptr = '\0';
+        cmpRet = strcasecmp(testhost, short_host.c_str());
         }
 
       if (cmpRet == 0)
         {
         /* job submitted from host found in trusted submit host list, access allowed */
-
-        if (dptr != NULL)
-          *dptr = '.';
-
         if ((ProxyRequested == 0) || (ProxyAllowed == 1))
           {
           return(0);
@@ -341,9 +347,11 @@ int site_check_user_map(
   // Check limited acls
   if (limited_acls.is_authorized(orighost, owner) == true)
     return(0);
-
-  if (dptr != NULL)
-    *dptr = '.';
+  else if (short_host.size() > 0)
+    {
+    if (limited_acls.is_authorized(short_host, owner))
+      return(0);
+    }
 
 #ifdef MUNGE_AUTH
   sprintf(uh, "%s@%s", owner, orighost);
