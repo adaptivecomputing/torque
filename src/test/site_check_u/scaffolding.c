@@ -10,14 +10,17 @@ char *server_host;
 struct server server;
 int    LOGLEVEL = 10;
 
-const char *pbs_o_host = "PBS_O_HOST";
-const char *msg_orighost = "Job missing PBS_O_HOST value";
-bool        exists = true;
+const char  *pbs_o_host = "PBS_O_HOST";
+const char  *msg_orighost = "Job missing PBS_O_HOST value";
+bool         exists = true;
+std::string  long_name("roshar.cosmere");
+std::string  short_name("threnody");
+char        *var = NULL;
+acl_special  limited_acls;
 
 char *get_variable(job *pjob, const char *variable)
   { 
-  fprintf(stderr, "The call to get_variable needs to be mocked!!\n");
-  exit(1);
+  return(var);
   }
 
 
@@ -29,8 +32,6 @@ struct pbsnode *find_nodebyname(const char *nodename)
 
 void log_event(int eventtype, int objclass, const char *objname, const char *text) 
   { 
-  fprintf(stderr, "The call to log_event needs to be mocked!!\n");
-  exit(1);
   }
 
 int unlock_node(struct pbsnode *the_node, const char *id, const char *msg, int logging)
@@ -80,6 +81,14 @@ int get_svr_attr_arst(
 
 bool node_exists(const char *node_name)
   {
+  if (exists == false)
+    {
+    if (long_name == node_name)
+      return(true);
+    else if (short_name == node_name)
+      return(true);
+    }
+
   return(exists);
   }
 
