@@ -2036,9 +2036,7 @@ int cleanup_recovered_arrays()
 
       if (job_template_exists == FALSE)
         {
-        int        i;
-
-        for (i = 0; i < pa->ai_qs.array_size; i++)
+        for (int i = 0; i < pa->ai_qs.array_size; i++)
           {
           if (pa->job_ids[i] != NULL)
             {
