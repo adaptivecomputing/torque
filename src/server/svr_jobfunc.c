@@ -481,8 +481,10 @@ int svr_enquejob(
       }
     }
 
-
-  if ((pque->qu_attr[QA_ATR_MaxUserJobs].at_flags & ATR_VFLAG_SET))
+  // Do not perform this check for array subjobs; they've already been counted.
+  if ((pque->qu_attr[QA_ATR_MaxUserJobs].at_flags & ATR_VFLAG_SET) &&
+      ((pjob->ji_arraystructid[0] == '\0') ||
+       (pjob->ji_is_array_template)))
     {
     std::string  uname(pjob->get_str_attr(JOB_ATR_job_owner));
 
