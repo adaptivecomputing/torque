@@ -896,7 +896,7 @@ int Machine::spread_place(
   else
     {
     // Make sure we are grabbing enough memory
-    unsigned long mem_needed = r.getMemory() / r.getTaskCount();
+    unsigned long mem_needed = r.get_memory_per_task();
     unsigned long mem_count = 0;
     int           mem_quantity = 0;
 

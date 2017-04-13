@@ -133,11 +133,11 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
-req::req() : mem(0), cores(0), threads(0), gpus(0), mics(0), task_count(1) {}
+req::req() : mem_per_task(0), cores(0), threads(0), gpus(0), mics(0), task_count(1) {}
 
-unsigned long req::getMemory() const
+unsigned long long req::get_memory_per_task() const
   {
-  return(this->mem);
+  return(this->mem_per_task);
   }
 
 int req::getTaskCount() const
@@ -176,7 +176,12 @@ int req::set_value(const char *name, const char *value, bool is_default)
   if (!strcmp(name, "lprocs"))
     this->execution_slots = atoi(value);
   else if (!strcmp(name, "memory"))
-    this->mem = strtol(value, NULL, 10);
+    this->mem_per_task = strtol(value, NULL, 10);
+  else if (!strcmp(name, "total_memory"))
+    {
+    this->total_mem = strtol(value, NULL, 10);
+    this->mem_per_task = this->total_mem / this->task_count;
+    }
   else if (!strcmp(name, "gpus"))
     this->gpus = atoi(value);
   else if (!strcmp(name, "mics"))

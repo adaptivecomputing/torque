@@ -152,8 +152,8 @@ int  decode_complete_req(
       unsigned long long swap;
       req &r = cr->get_req(i);
 
-      mem = r.getMemory();
-      swap = r.getSwap();
+      mem = r.get_total_memory();
+      swap = r.get_total_swap();
 
       if (swap != 0)
         {
@@ -220,8 +220,8 @@ int  decode_complete_req(
       unsigned long long swap;
       req &r = cr->get_req(i);
 
-      mem = r.getMemory();
-      swap = r.getSwap();
+      mem = r.get_total_memory();
+      swap = r.get_total_swap();
 
       if (swap != 0)
         {
