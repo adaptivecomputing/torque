@@ -228,7 +228,11 @@ int req_deletearray(
       }
 
     if ((num_skipped = delete_whole_array(pa)) == NO_JOBS_IN_ARRAY)
+      {
       array_delete(pa);
+
+      pa_mutex.set_unlock_on_exit(false);
+      }
     }
 
   if (num_skipped != NO_JOBS_IN_ARRAY)
