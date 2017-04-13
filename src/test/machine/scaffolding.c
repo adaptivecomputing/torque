@@ -254,7 +254,7 @@ int Socket::get_total_gpus() const
   return(0);
   }
 
-unsigned long req::getMemory() const
+unsigned long long req::get_memory_per_task() const
   {
   return(req_mem);
   }

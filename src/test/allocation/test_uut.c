@@ -75,13 +75,6 @@ START_TEST(test_allocation_constructors)
   fail_unless(a4.memory == 1024, "mem = %d", a.memory);
   fail_unless(a4.cpus == 2);
   fail_unless(a4.cores_only == true);
-
-  // Make sure that we show memory per task
-  tc = 2;
-  allocation a5(r);
-  fail_unless(a5.memory == 512, "mem = %d", a.memory);
-  fail_unless(a5.cpus == 2);
-  fail_unless(a5.cores_only == true);
   }
 END_TEST
 

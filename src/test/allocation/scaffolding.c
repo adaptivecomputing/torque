@@ -23,7 +23,7 @@ std::string req::getPlacementType() const
 
 req::req() {}
 
-unsigned long req::getMemory() const
+unsigned long long req::get_memory_per_task() const
 
   {
   return(1024);

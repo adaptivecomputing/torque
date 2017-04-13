@@ -172,10 +172,10 @@ START_TEST(test_get_set_values)
 
   fail_unless(names[0] == "task_count.0");
   fail_unless(names[1] == "lprocs.0");
-  fail_unless(names[2] == "memory.0");
-  fail_unless(names[3] == "memory_per_task.0");
-  fail_unless(names[4] == "swap.0");
-  fail_unless(names[5] == "swap_per_task.0");
+  fail_unless(names[2] == "total_memory.0");
+  fail_unless(names[3] == "memory.0");
+  fail_unless(names[4] == "total_swap.0");
+  fail_unless(names[5] == "swap.0");
   fail_unless(names[6] == "disk.0");
   fail_unless(names[7] == "socket.0");
   fail_unless(names[8] == "gpus.0");
@@ -192,10 +192,10 @@ START_TEST(test_get_set_values)
 
   fail_unless(values[0] == "5");
   fail_unless(values[1] == "all");
-  fail_unless(values[2] == "1048576kb", "value: %s", values[2].c_str());
-  fail_unless(values[3] == "209715kb", "value: %s", values[3].c_str());
-  fail_unless(values[4] == "1024kb");
-  fail_unless(values[5] == "204kb");
+  fail_unless(values[2] == "5242880kb", "value: %s", values[2].c_str());
+  fail_unless(values[3] == "1048576kb", "value: %s", values[3].c_str());
+  fail_unless(values[4] == "5120kb", "value: %s", values[4].c_str());
+  fail_unless(values[5] == "1024kb");
   fail_unless(values[6] == "10000000kb");
   fail_unless(values[7] == "1");
   fail_unless(values[8] == "2");
@@ -358,8 +358,8 @@ START_TEST(test_constructors)
   fail_unless(r.getOS().size() == 0);
   fail_unless(r.getGres().size() == 0);
   fail_unless(r.getDisk() == 0);
-  fail_unless(r.getSwap() == 0);
-  fail_unless(r.getMemory() == 0);
+  fail_unless(r.get_total_swap() == 0);
+  fail_unless(r.get_total_memory() == 0);
   fail_unless(r.getExecutionSlots() == 1, "slots: %d", r.getExecutionSlots());
 
   std::string req2("5:lprocs=4:memory=12gb:place=socket=2:usecores:pack:gpus=2:mics=1:gres=matlab=1:feature=fast");
@@ -370,8 +370,8 @@ START_TEST(test_constructors)
   fail_unless(r2.getOS().size() == 0);
   fail_unless(r2.getGres() == "matlab=1");
   fail_unless(r2.getDisk() == 0);
-  fail_unless(r2.getSwap() == 0);
-  fail_unless(r2.getMemory() == 12 * 1024 * 1024 * 5);
+  fail_unless(r2.get_total_swap() == 0);
+  fail_unless(r2.get_total_memory() == 12 * 1024 * 1024 * 5);
   fail_unless(r2.get_memory_per_task() == 12 * 1024 * 1024);
   fail_unless(r2.getExecutionSlots() == 4);
   fail_unless(r2.getFeatures() == "fast", "features '%s'", r2.getFeatures().c_str());
@@ -383,8 +383,8 @@ START_TEST(test_constructors)
   fail_unless(copy_r2.getOS().size() == 0);
   fail_unless(copy_r2.getGres() == "matlab=1");
   fail_unless(copy_r2.getDisk() == 0);
-  fail_unless(copy_r2.getSwap() == 0);
-  fail_unless(copy_r2.getMemory() == 12 * 1024 * 1024 * 5);
+  fail_unless(copy_r2.get_total_swap() == 0);
+  fail_unless(copy_r2.get_total_memory() == 12 * 1024 * 1024 * 5);
   fail_unless(copy_r2.get_memory_per_task() == 12 * 1024 * 1024);
   fail_unless(copy_r2.getExecutionSlots() == 4);
   fail_unless(copy_r2.getFeatures() == "fast", "features '%s'", copy_r2.getFeatures().c_str());
@@ -469,7 +469,7 @@ START_TEST(test_equals_operator)
   r2 = r;
 
   fail_unless(r2.getExecutionSlots() == ALL_EXECUTION_SLOTS);
-  fail_unless(r2.getMemory() == 1024 * 1024 * 1024);
+  fail_unless(r2.get_total_memory() == 1024 * 1024 * 1024);
   fail_unless(r2.getMaxtpn() == 4);
   fail_unless(r2.get_gpu_mode() == "exclusive_thread");
   fail_unless(r2.getReqAttr() == "matlab>=7", "reqattr: '%s'", r2.getReqAttr().c_str());
@@ -525,9 +525,9 @@ START_TEST(test_set_from_string)
   fail_unless(r.getThreadUsageString() == "usecores", r.getThreadUsageString().c_str());
   fail_unless(r.getFeatures() == "fast");
   fail_unless(r.getExecutionSlots() == ALL_EXECUTION_SLOTS);
-  fail_unless(r.getMemory() == 10000);
-  fail_unless(r.get_memory_per_task() == 10000 / 10, "%d per task", r.get_memory_per_task());
-  fail_unless(r.getSwap() == 1024);
+  fail_unless(r.get_total_memory() == 100000);
+  fail_unless(r.get_memory_per_task() == 10000, "%d per task", r.get_memory_per_task());
+  fail_unless(r.get_total_swap() == 10240);
   fail_unless(r.getDisk() == 10000000);
   fail_unless(r.getTaskCount() == 10);
   std::vector<std::string> l;
@@ -605,10 +605,10 @@ START_TEST(test_get_memory_for_host)
   r2.set_value("hostlist", "napali:ppn=32", false);
 
   mem = r.get_memory_for_host(host);
-  fail_unless(mem == 204); // 1024kb / 5 tasks = 204kb for this node
+  fail_unless(mem == 1024); 
 
   mem = r2.get_memory_for_host(host);
-  fail_unless(mem == 1024); // 1024kb / 1 task = 1024kb for this node
+  fail_unless(mem == 1024);
 
   host = "right said fred";
   mem = r.get_memory_for_host(host);

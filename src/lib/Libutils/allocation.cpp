@@ -159,7 +159,7 @@ allocation::allocation(
 
   {
   this->cpus = r.getExecutionSlots();
-  this->memory = r.getMemory() / r.getTaskCount();
+  this->memory = r.get_memory_per_task();
   this->gpus = r.get_gpus();
   this->mics = r.getMics();
 
@@ -602,7 +602,7 @@ bool allocation::partially_placed(
 
   {
   return ((this->cpus != r.getExecutionSlots()) ||
-          (this->memory != r.getMemory()) ||
+          (this->memory != r.get_memory_per_task()) ||
           (this->gpus != r.get_gpus()) ||
           (this->mics != r.getMics()) ||
           ((r.getPlaceCores() > 0) &&
