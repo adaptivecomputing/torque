@@ -813,15 +813,21 @@ int svr_dequejob(
       }
 
     /* the only reason to care about the error is if the job is gone */
-    int rc2;
-    if ((rc2 = remove_job(pque->qu_jobs_array_sum, pjob)) == PBSE_JOBNOTFOUND)
-      return(rc2);
-
-    if (rc2 == THING_NOT_FOUND && (LOGLEVEL >= 8))
+    // Do not check array subjobs; they aren't in the summary
+    if ((pjob->ji_arraystructid[0] == '\0') ||
+        (pjob->ji_is_array_template))
       {
-      snprintf(log_buf,sizeof(log_buf),
-         "Could not remove job %s from qu_jobs_array_sum\n", jobid.c_str());
-      log_ext(-1, __func__, log_buf, LOG_WARNING);
+      int rc2;
+      if ((rc2 = remove_job(pque->qu_jobs_array_sum, pjob)) == PBSE_JOBNOTFOUND)
+        return(rc2);
+
+      if ((rc2 == THING_NOT_FOUND) &&
+          (LOGLEVEL >= 8))
+        {
+        snprintf(log_buf,sizeof(log_buf),
+           "Could not remove job %s from qu_jobs_array_sum\n", jobid.c_str());
+        log_ext(-1, __func__, log_buf, LOG_WARNING);
+        }
       }
 
     pjob->ji_qhdr = NULL;
@@ -851,9 +857,9 @@ int svr_dequejob(
     }
 
   /* the only error is if the job isn't present */
-  if ((rc = remove_job(&alljobs, pjob)) == PBSE_NONE)
+  if (!pjob->ji_is_array_template)
     {
-    if (!pjob->ji_is_array_template)
+    if ((rc = remove_job(&alljobs, pjob)) == PBSE_NONE)
       {
       lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
@@ -874,18 +880,18 @@ int svr_dequejob(
       
       pthread_mutex_unlock(server.sv_jobstates_mutex);
       }
-    }
-  else if (rc == PBSE_JOBNOTFOUND)
-    {
-    /* calling functions know this return code means the job is gone */
-    return(rc);
-    }
-
-  if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
-    {
-    snprintf(log_buf,sizeof(log_buf),
-      "Could not remove job %s from alljobs\n", pjob->ji_qs.ji_jobid); 
-    log_ext(-1, __func__, log_buf, LOG_WARNING);
+    else if (rc == PBSE_JOBNOTFOUND)
+      {
+      /* calling functions know this return code means the job is gone */
+      return(rc);
+      }
+    if ((rc == THING_NOT_FOUND) &&
+        (LOGLEVEL >= 8))
+      {
+      snprintf(log_buf,sizeof(log_buf),
+        "Could not remove job %s from alljobs\n", pjob->ji_qs.ji_jobid); 
+      log_ext(-1, __func__, log_buf, LOG_WARNING);
+      }
     }
 
 #ifndef NDEBUG
