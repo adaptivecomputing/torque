@@ -233,8 +233,7 @@ int req_deletearray(
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
-    if (((num_skipped = delete_whole_array(pa, purge)) == NO_JOBS_IN_ARRAY) &&
-        (purge == false))
+    if ((num_skipped = delete_whole_array(pa, purge)) == NO_JOBS_IN_ARRAY)
       {
       pa_mutex.unlock();
       array_delete(preq->rq_ind.rq_delete.rq_objname);
