@@ -256,7 +256,11 @@ class item_container
 
     item<T> *pItem = new item<T>(id,it);
     if (insert_thing(pItem) < 0)
+      {
+      delete pItem;
       return false;
+      }
+
     return true;
     }
 
@@ -280,7 +284,10 @@ class item_container
     item<T> *pItem = new item<T>(id,it);
 
     if (insert_thing_after(pItem,index) < 0)
+      {
+      delete pItem;
       return false;
+      }
 
     return true;
     }
@@ -310,7 +317,10 @@ class item_container
     item<T> *pItem = new item<T>(id,it);
 
     if (insert_thing_before(pItem,iter) < 0)
+      {
+      delete pItem;
       return false;
+      }
 
     return true;
     }
@@ -349,7 +359,10 @@ class item_container
 
     item<T> *pItem = new item<T>(id,it);
     if (insert_thing_before(pItem,index) != PBSE_NONE)
+      {
+      delete pItem;
       return false;
+      }
 
     return true;
     }
