@@ -142,6 +142,7 @@ class Chip
     Chip();
     Chip(int execution_slots, int &es_remainder, int &per_numa_remainder);
     Chip(const Json::Value &layout, std::vector<std::string> &valid_ids);
+    Chip(const std::string &legacy_layout, std::vector<std::string> &valid_ids);
     Chip(const Chip &other);
     Chip &operator=(const Chip &other);
     ~Chip();
@@ -166,6 +167,9 @@ class Chip
     int initializeMICDevices(hwloc_obj_t, hwloc_topology_t);
 #endif
     void parse_values_from_json_string(const Json::Value &layout, std::string &cores,
+                                       std::string &threads, std::string &gpus, std::string &mics,
+                                       std::vector<std::string> &valid_ids);
+    void legacy_parse_values_from_json_string(const std::string &legacy_layout, std::string &cores,
                                        std::string &threads, std::string &gpus, std::string &mics,
                                        std::vector<std::string> &valid_ids);
 
@@ -209,6 +213,8 @@ class Chip
     int  reserve_accelerator(int type);
     void free_accelerators(allocation &a);
     void free_accelerator(int index, int type);
+    void legacy_initialize_allocations(char *layout, std::vector<std::string> &valid_ids);
+    void legacy_initialize_allocation(char *layout, std::vector<std::string> &valid_ids);
     void initialize_allocations(const Json::Value &layout, std::vector<std::string> &valid_ids);
     void initialize_allocation(const Json::Value &layout, std::vector<std::string> &valid_ids);
     void aggregate_allocation(allocation &a);
@@ -249,6 +255,7 @@ class Socket
     Socket();
     Socket(int execution_slots, int numa_nodes, int &es_remainder);
     Socket(const Json::Value &layout, std::vector<std::string> &valid_ids);
+    Socket(const std::string &legacy_layout, std::vector<std::string> &valid_ids);
     ~Socket();
     Socket &operator=(const Socket &other);
     int initializeSocket(hwloc_obj_t obj);
@@ -318,6 +325,7 @@ class Machine
 #endif
     
   void initialize_from_json(const string &json_str, vector<string> &valid_ids);
+  int  legacy_initialize_from_json(const string &json_str, vector<string> &valid_ids);
 
   public:
     Machine& operator=(const Machine& newMachine);
@@ -370,6 +378,7 @@ class Machine
     bool is_initialized() const;
     void reinitialize_from_json(const std::string &json_layout, std::vector<std::string> &valid_ids);
     void compare_remaining_values(allocation &remaining, const char *caller) const;
+    void clear();
   };
 
 extern Machine this_node;

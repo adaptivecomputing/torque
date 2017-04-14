@@ -123,6 +123,70 @@ Chip::Chip(
 
 
 /*
+ * legacy_parse_values_from_json_string()
+ *
+ * Deprecated. This exists to help people upgrade.
+ */
+
+void Chip::legacy_parse_values_from_json_string(
+
+  const std::string        &json_layout,
+  std::string              &cores,
+  std::string              &threads,
+  std::string              &gpus,
+  std::string              &mics,
+  std::vector<std::string> &valid_ids)
+
+  {
+  char        *work_str = strdup(json_layout.c_str());
+  char        *ptr = strstr(work_str, "os_index\":");
+  char        *val = work_str;
+
+  if (ptr != NULL)
+    {
+    val = ptr + strlen("os_index\":");
+    this->id = strtol(val, &val, 10);
+    }
+
+  if ((ptr = strstr(val, "cores\":")) != NULL)
+    {
+    val = ptr + strlen("cores\":") + 1; // add 1 for the open quote
+    capture_until_close_character(&val, cores, '"');
+    }
+
+  if ((ptr = strstr(val, "threads\":")) != NULL)
+    {
+    val = ptr + strlen("threads\":") + 1; // add 1 for the open quote
+    capture_until_close_character(&val, threads, '"');
+    }
+
+  if ((ptr = strstr(val, "mem\":")) != NULL)
+    {
+    val = ptr + strlen("mem\":");
+    this->memory = strtol(val, &val, 10);
+    this->available_memory = this->memory;
+    }
+
+  if ((ptr = strstr(val, "gpus\":")) != NULL)
+    {
+    val = ptr + strlen("gpus\":") + 1;
+    capture_until_close_character(&val, gpus, '"');
+    }
+
+  if ((ptr = strstr(val, "mics\":")) != NULL)
+    {
+    val = ptr + strlen("mics\":") + 1;
+    capture_until_close_character(&val, mics, '"');
+    }
+
+  initialize_allocations(val, valid_ids);
+
+  free(work_str);
+  } // END legacy_parse_values_from_json_string()
+
+
+
+/*
  * parse_values_from_json_string()
  */
 
@@ -193,6 +257,139 @@ void Chip::initialize_cores_from_strings(
   this->availableCores = this->totalCores;
   this->availableThreads = this->totalThreads;
   } // END initialize_cores_from_strings()
+
+
+
+/*
+ * legacy_initialize_allocation()
+ *
+ * This function is only to support people upgrading from 6.1.0. Deprecated. We should
+ * delete it as soon as it's reasonable to do so.
+ */
+
+void Chip::legacy_initialize_allocation(
+
+  char                     *allocation_str,
+  std::vector<std::string> &valid_ids)
+
+  {
+  allocation a;
+  char        *ptr = strstr(allocation_str, "jobid\":");
+  char        *val = allocation_str;
+  std::string  tmp_val;
+
+  if (ptr != NULL)
+    {
+    val = ptr + 8; // move past "jobid\":\""
+    capture_until_close_character(&val, tmp_val, '"');
+    a.jobid = tmp_val;
+    }
+
+  // check if the id is valid
+  bool id_valid = false;
+  for (size_t i = 0; i < valid_ids.size(); i++)
+    {
+    if (valid_ids[i] == a.jobid)
+      {
+      id_valid = true;
+      break;
+      }
+    }
+
+  if (id_valid == true)
+    {
+    ptr = strstr(val, "cpus\":");
+    if (ptr != NULL)
+      {
+      val = ptr + 7; // move past "cpus\":\""
+      capture_until_close_character(&val, tmp_val, '"');
+      translate_range_string_to_vector(tmp_val.c_str(), a.cpu_indices);
+      }
+
+    ptr = strstr(val, "mem\":");
+    if (ptr != NULL)
+      {
+      val = ptr + 5; // move past "mem\":"
+      a.memory = strtol(val, &val, 10);
+      }
+
+    ptr = strstr(val, "exclusive\":");
+    if (ptr != NULL)
+      {
+      val = ptr + 11; // move past "exclusive\":"
+      a.place_type = strtol(val, &val, 10);
+      }
+
+    ptr = strstr(val, "cores_only\":");
+    if (ptr != NULL)
+      {
+      val = ptr + 12; // move past "cores_only\":"
+      a.cores_only = (bool)strtol(val, &val, 10);
+      }
+
+    ptr = strstr(val, "gpus\":");
+    if (ptr != NULL)
+      {
+      val = ptr + 7; // move past "gpus\":\"
+      capture_until_close_character(&val, tmp_val, '"');
+      translate_range_string_to_vector(tmp_val.c_str(), a.gpu_indices);
+      }
+
+    ptr = strstr(val, "mics\":");
+    if (ptr != NULL)
+      {
+      val = ptr + 7; // move past "mics\":\"
+      capture_until_close_character(&val, tmp_val, '"');
+      translate_range_string_to_vector(tmp_val.c_str(), a.mic_indices);
+      }
+    
+    a.mem_indices.push_back(this->id);
+    this->allocations.push_back(a);
+    }
+
+  } // END legacy_initialize_allocation()
+
+
+
+/*
+ * legacy_initialize_allocations()
+ *
+ * This function is only to support people upgrading from 6.1.0. Deprecated. We should
+ * delete it as soon as it's reasonable to do so.
+ */
+
+void Chip::legacy_initialize_allocations(
+
+  char                     *allocations,
+  std::vector<std::string> &valid_ids)
+
+  {
+  static const char *allocation_start = "allocation\":{";
+  static const int   allocation_start_len = strlen(allocation_start);
+
+  if ((allocations == NULL) ||
+      (*allocations == '\0'))
+    return;
+
+  char *current = strstr(allocations, allocation_start);
+  char *next;
+
+  while (current != NULL)
+    {
+    current += allocation_start_len;
+    next = strstr(current, allocation_start);
+    if (next != NULL)
+      {
+      // Make sure there's a termination to the current string
+      *next = '\0';
+      }
+
+    initialize_allocation(current, valid_ids);
+
+    current = next;
+    }
+
+  } // END legacy_initialize_allocations()
 
 
 
@@ -288,7 +485,7 @@ void Chip::initialize_allocations(
 
 
 /*
- * reserce_allocation_resources()
+ * reserve_allocation_resources()
  *
  * @param a - the allocation that needs to be 
  */
@@ -420,6 +617,42 @@ void Chip::initialize_accelerators_from_strings(
 
 
 /*
+ * This is a legacy constructor for those transitioning from 6.1.0. Delete ASAP
+ */
+
+Chip::Chip(
+
+  const std::string        &json_layout,
+  std::vector<std::string> &valid_ids) : id(0), totalCores(0), totalThreads(0), availableCores(0),
+                                         availableThreads(0), total_gpus(0), available_gpus(0),
+                                         total_mics(0), available_mics(0), chip_exclusive(false),
+                                         memory(0), available_memory(0), cores(), devices(),
+                                         allocations()
+
+  {
+  memset(chip_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(chip_nodeset_string, 0, MAX_NODESET_SIZE);
+
+  if (json_layout.size() == 0)
+    return;
+
+  std::string cores;
+  std::string threads;
+  std::string gpus;
+  std::string mics;
+  
+  legacy_parse_values_from_json_string(json_layout, cores, threads, gpus, mics, valid_ids);
+
+  initialize_cores_from_strings(cores, threads);
+  
+  initialize_accelerators_from_strings(gpus, mics);
+
+  adjust_open_resources();
+  }
+
+
+
+/*
  * Creates a numa chip from this json 
  *
  * "numanode" : {
@@ -461,7 +694,6 @@ Chip::Chip(
   std::string threads;
   std::string gpus;
   std::string mics;
-  
   
   parse_values_from_json_string(layout, cores, threads, gpus, mics, valid_ids);
 
