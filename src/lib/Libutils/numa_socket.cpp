@@ -47,6 +47,49 @@ Socket::Socket(
 
 
 /*
+ * Legacy constructor for those upgrading from 6.1.0
+ */
+
+Socket::Socket(
+
+  const std::string        &json_layout,
+  std::vector<std::string> &valid_ids) : id(0), memory(0), totalCores(0), totalThreads(0),
+                                         availableCores(0), availableThreads(0), chips(),
+                                         socket_exclusive(false)
+
+  {
+  const char *chip_str = "\"numanode\":{";
+  const char *os_str = "\"os_index\":";
+  std::size_t chip_begin = json_layout.find(chip_str);
+  std::size_t os_begin = json_layout.find(os_str);
+
+  memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
+
+  if ((os_begin == std::string::npos) ||
+      (os_begin > chip_begin))
+    return;
+  else
+    {
+    std::string os = json_layout.substr(os_begin + strlen(os_str));
+    this->id = strtol(os.c_str(), NULL, 10);
+    }
+  
+  while (chip_begin != std::string::npos)
+    {
+    std::size_t next = json_layout.find(chip_str, chip_begin + 1);
+    std::string one_chip = json_layout.substr(chip_begin, next - chip_begin);
+
+    Chip c(one_chip, valid_ids);
+    this->chips.push_back(c);
+
+    chip_begin = next;
+    }
+  }
+
+
+
+/*
  * Builds a copy of the machine's layout in from json which has no whitespace but 
  * if it did it'd look like:
  *

@@ -156,6 +156,75 @@ void Machine::update_internal_counts()
 
 
 
+/*
+ * legacy_initialize_from_json()
+ *
+ * Exists to help people transition from 6.1.0. Deprecated.
+ */
+
+int Machine::legacy_initialize_from_json(
+
+  const std::string        &json_str,
+  std::vector<std::string> &valid_ids)
+
+  {
+  int rc = PBSE_NONE;
+
+  const char *socket_str = "\"socket\":{";
+  std::size_t socket_begin = json_str.find(socket_str);
+  
+  while (socket_begin != std::string::npos)
+    {
+    std::size_t next = json_str.find(socket_str, socket_begin + 1);
+    std::string one_socket = json_str.substr(socket_begin, next - socket_begin);
+
+    Socket s(one_socket, valid_ids);
+
+    this->sockets.push_back(s);
+    this->totalSockets++;
+
+    socket_begin = next;
+    }
+
+  if (this->totalSockets == 0)
+    rc = -1;
+  else
+    {
+    update_internal_counts();
+    this->initialized = true;
+    }
+
+  return(rc);
+  } // END legacy_initialize_from_json()
+
+
+
+/*
+ * Initialize everything in machine to 0
+ */
+
+void Machine::clear()
+
+  {
+  memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
+  this->hardwareStyle = 0;
+  this->totalMemory = 0;
+  this->totalSockets = 0;
+  this->totalChips = 0;
+  this->totalCores = 0;
+  this->totalThreads = 0;
+  this->availableSockets = 0;
+  this->availableChips = 0;
+  this->availableCores = 0;
+  this->availableThreads = 0;
+  this->sockets.clear();
+  this->NVIDIA_device.clear();
+  this->allocations.clear();
+  }
+
+
+
 void Machine::initialize_from_json(
 
   const std::string        &json_str,
@@ -177,16 +246,37 @@ void Machine::initialize_from_json(
       this->sockets.push_back(s);
       this->totalSockets++;
       }
-
+      
     update_internal_counts();
-    this->initialized = true;
+
+    if (this->totalCores == 0)
+      {
+      this->clear();
+
+      if (this->legacy_initialize_from_json(json_str, valid_ids) != PBSE_NONE)
+        {
+        char log_buf[LOCAL_LOG_BUF_SIZE];
+
+        snprintf(log_buf, sizeof(log_buf), "Couldn't initialize from json: '%s'", json_str.c_str());
+        log_err(-1, __func__, log_buf);
+        }
+      }
+    else
+      {
+      this->initialized = true;
+      }
     }
   catch (...)
     {
-    char log_buf[LOCAL_LOG_BUF_SIZE];
+    this->clear();
 
-    snprintf(log_buf, sizeof(log_buf), "Couldn't initialize from json: '%s'", json_str.c_str());
-    log_err(-1, __func__, log_buf);
+    if (this->legacy_initialize_from_json(json_str, valid_ids) != PBSE_NONE)
+      {
+      char log_buf[LOCAL_LOG_BUF_SIZE];
+
+      snprintf(log_buf, sizeof(log_buf), "Couldn't initialize from json: '%s'", json_str.c_str());
+      log_err(-1, __func__, log_buf);
+      }
     }
   } // END initialize_from_json()
 
@@ -198,21 +288,7 @@ void Machine::reinitialize_from_json(
   std::vector<std::string> &valid_ids)
 
   {
-  memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
-  memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
-  this->hardwareStyle = 0;
-  this->totalMemory = 0;
-  this->totalSockets = 0;
-  this->totalChips = 0;
-  this->totalCores = 0;
-  this->totalThreads = 0;
-  this->availableSockets = 0;
-  this->availableChips = 0;
-  this->availableCores = 0;
-  this->availableThreads = 0;
-  this->sockets.clear();
-  this->NVIDIA_device.clear();
-  this->allocations.clear();
+  this->clear();
 
   this->initialize_from_json(json_layout, valid_ids);
   } // END reinitialize_from_json()
