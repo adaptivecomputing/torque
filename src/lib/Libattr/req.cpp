@@ -2101,6 +2101,15 @@ int req::set_value(
         }
       }
     }
+  else if (!strncmp(name, "total_memory", 12))
+    {
+    if ((!is_default) ||
+        (this->mem_per_task == 0))
+      {
+      if ((rc = read_mem_value(value, this->total_mem)) != PBSE_NONE)
+        return(rc);
+      }
+    }
   else if (!strncmp(name, "memory", 6))
     {
     if ((!is_default) ||
@@ -2110,6 +2119,15 @@ int req::set_value(
         return(rc);
       else
         this->total_mem = this->mem_per_task * this->task_count;
+      }
+    }
+  else if (!strncmp(name, "total_swap", 10))
+    {
+    if ((!is_default) ||
+        (this->mem_per_task == 0))
+      {
+      if ((rc = read_mem_value(value, this->total_swap)) != PBSE_NONE)
+        return(rc);
       }
     }
   else if (!strncmp(name, "swap", 4))
