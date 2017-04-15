@@ -1075,8 +1075,8 @@ void stat_update(
       if (delta > JOB_REPORTED_ABORT_DELTA)
         {
         snprintf(log_buf, sizeof(log_buf),
-          "mother superior no longer recognizes %s as a valid job, aborting",
-          preq->rq_ind.rq_status.rq_id);
+          "mother superior no longer recognizes %s as a valid job, aborting. Last reported time was %ld`",
+          preq->rq_ind.rq_status.rq_id, pjob->ji_last_reported_time);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         
         svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);

@@ -642,15 +642,24 @@ void *record_reported_time(
 
     if (colon != NULL)
       {
-      job *pjob = svr_find_job(jobid, TRUE);
-      
       *colon = '\0';
       node_id = colon + 1;
 
+      job *pjob = svr_find_job(jobid, TRUE);
+
       if (pjob != NULL)
         {
-        if (!strncmp(node_id, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, strlen(node_id)))
-          pjob->ji_last_reported_time = time(NULL);
+        if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+          {
+          if (!strncmp(node_id, pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str, strlen(node_id)))
+            {
+            char log_buf[LOCAL_LOG_BUF_SIZE];
+
+            pjob->ji_last_reported_time = time(NULL);
+            snprintf(log_buf, sizeof(log_buf), "Job '%s' reported by mother superior '%s'");
+            log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);  
+            }
+          }
 
         unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
         }
