@@ -901,6 +901,40 @@ int main(
 
         break;
 
+      case 'A':
+
+        /* preserve any previous option other than the default,
+         * to allow -A to be combined with -o, -c, etc
+         */
+
+        if (flag == ALLI)
+          flag = NOTE;
+
+        note = strdup(optarg);
+
+        if (note == NULL) {
+          perror("Error: strdup() returned NULL");
+
+          exit(1);
+        }
+
+        note_flag = append;
+
+        /* -A n is the same as -A ""  -- it clears the note */
+        if (!strcmp(note, "n"))
+            *note = '\0';
+
+        if (strlen(note) > MAX_NOTE)
+          {
+          fprintf(stderr, "Warning: note exceeds length limit (%d) - server may reject it...\n",
+                MAX_NOTE);
+          }
+
+        if (strchr(note, '\n') != NULL)
+          fprintf(stderr, "Warning: note contains a newline - server may reject it...\n");
+
+        break;
+
       case 'n':
 
         note_flag = list;
@@ -1030,6 +1064,52 @@ int main(
       {
       set_note(*pa, note);
       }
+     // Cleanup note related allocations
+     free(note);
+    }
+  else if ((note_flag == append) && (note != NULL))
+    {
+    /* append the note attrib string on specified nodes */
+
+    for (pa = argv + optind;*pa;pa++)
+      {
+      bstatus = statnode(con, *pa);
+
+      // Get current note
+      current_note = get_note(bstatus);
+
+      // current_note if not set, use null terminated string of length zero
+      if ( current_note == NULL )
+        {
+        current_note = "";
+        }
+
+      // Allocate memory for new note, +1 for the last character being \0
+      new_note_len = strlen(note) + strlen(current_note) + 1;
+      new_note = (char*)malloc(new_note_len);
+      memset(new_note, NULL, new_note_len);
+
+      // Concatinate the current note with the new note
+      note_to = new_note;
+      note_to = stpcpy (note_to, current_note);
+      note_to = stpcpy (note_to, note);
+
+      set_note(con, *pa, new_note);
+
+      if (strlen(new_note) > MAX_NOTE)
+        {
+        fprintf(stderr, "Warning: note for node %s exceeds length limit (%d) - server may reject it...\n",
+                *pa, MAX_NOTE);
+        }
+
+      pbs_statfree(bstatus);
+      }
+
+    // Cleanup note related allocations
+    free(note);
+    if (new_note)
+      free(new_note);
+    note_to = NULL;
     }
   else if ((note_flag == append) && (note != NULL))
     {

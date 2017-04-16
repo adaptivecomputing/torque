@@ -3,7 +3,11 @@
 set -e
 
 mkdir -p m4
-libtoolize -c -f
+if [ -x "$(which glibtoolize)" ]; then
+  glibtoolize -c -f
+else
+  libtoolize -c -f
+fi
 aclocal
 autoconf -f
 autoheader -f
