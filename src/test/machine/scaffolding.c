@@ -93,6 +93,11 @@ Socket::Socket(const Json::Value &json_layout, std::vector<std::string> &valid_i
   json_socket++;
   }
 
+Socket::Socket(const std::string &json_layout, std::vector<std::string> &valid_ids)
+  {
+  json_socket++;
+  }
+
 Socket::Socket()
   {
   }
