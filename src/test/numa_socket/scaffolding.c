@@ -109,6 +109,10 @@ Chip::Chip(const Json::Value &json_layout, std::vector<std::string> &valid_ids)
   json_chip++;
   }
 
+Chip::Chip(const std::string &json_layout, std::vector<std::string> &valid_ids)
+  {
+  }
+
 Chip::Chip(const Chip &other)
   {
   }
