@@ -15,7 +15,7 @@ int main(
   {
   try
     {
-    main_func(argc, argv, envp);
+    main_func(argc, argv, envp, NULL);
     }
   catch(std::exception& e)
     {

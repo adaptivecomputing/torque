@@ -270,7 +270,8 @@ extern "C"
 void main_func(
     int    argc,                  /* I */
     char **argv,                  /* I */
-    char **envp);                 /* I */
+    char **envp,                  /* I */
+    char **jobid);                /* O */
 #ifdef __cplusplus
 }
 #endif

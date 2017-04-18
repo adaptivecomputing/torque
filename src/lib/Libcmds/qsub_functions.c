@@ -4533,7 +4533,8 @@ void main_func(
 
   int    argc,  /* I */
   char **argv,  /* I */
-  char **envp)  /* I */
+  char **envp,  /* I */
+  char **jobid) /* O */
 
   {
 
@@ -4968,7 +4969,12 @@ void main_func(
     {
     if ((hash_find(ji.client_attr, "no_jobid_out", &tmp_job_info) == FALSE) &&
         (hash_find(ji.job_attr, ATTR_inter, &tmp_job_info) == FALSE))
-      printf("%s\n", new_jobname);
+      {
+      if (jobid != NULL)
+        *jobid = new_jobname;
+      else
+        printf("%s\n",new_jobname);
+      }
     }
 
   /* disconnet from the server. */
