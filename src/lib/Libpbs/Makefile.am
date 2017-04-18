@@ -100,7 +100,7 @@ libtorque_la_SOURCES = ../Libcsv/csv.c ../Libdis/dis.c \
         ../Libutils/u_hash_map_structs.c \
         ../Libutils/u_threadpool.c ../Libutils/u_users.c ../Libutils/u_wrapper.c \
         ../Libutils/u_groups.c ../Libattr/req.cpp ../Libattr/complete_req.cpp ../Libutils/u_mu.c \
-				../Libutils/u_misc.c ../Libutils/allocation.cpp
+				../Libutils/u_misc.c ../Libutils/allocation.cpp ../Libutils/mom_update_constants.cpp
 
 
 

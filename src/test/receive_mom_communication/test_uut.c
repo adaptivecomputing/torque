@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <check.h>
 #include "mom_update.h"
 #include "pbs_ifl.h"
+#include <check.h>
 
 char server_name[PBS_MAXSERVERNAME+1] = "pv-knielson-dt";
 

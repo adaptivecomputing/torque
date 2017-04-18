@@ -160,3 +160,48 @@ void log_event(
       global_trq_cg_signal_tasks_ok = true;
     }
   }
+
+const char *job::get_str_attr(int index) const
+  {
+  return(NULL);
+  }
+
+bool job::get_bool_attr(int index) const
+  {
+  return(true);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(NULL);
+  }
+
+complete_req *job::get_creq_attr(int index) const
+  {
+  return(NULL);
+  }
+
+bool job::is_attr_set(int index) const
+  {
+  return(false);
+  }
+
+pbs_attribute *job::get_attr(int index) 
+  {
+  return(NULL);
+  }
+
+long job::get_long_attr(int index) const
+  {
+  return(0);
+  }
+
+int translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  return(0);
+  }
+

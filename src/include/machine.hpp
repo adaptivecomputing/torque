@@ -318,10 +318,12 @@ class Machine
 #endif
     
   void initialize_from_json(const string &json_str, vector<string> &valid_ids);
+  void initialize_from_json_value(Json::Value &jv, vector<string> &valid_ids);
 
   public:
     Machine& operator=(const Machine& newMachine);
     Machine(const std::string &layout, std::vector<std::string> &valid_ids);
+    Machine(Json::Value &json_layout, std::vector<std::string> &valid_ids);
     Machine(int execution_slots, int numa_nodes, int sockets);
     Machine();
     ~Machine();
@@ -347,7 +349,7 @@ class Machine
     int getHardwareStyle() const;
     bool isNUMA;
     void displayAsString(stringstream &out) const;
-    void displayAsJson(stringstream &out, bool include_jobs) const;
+    void displayAsJson(Json::Value &jv, bool include_jobs) const;
     void insertNvidiaDevice(PCI_Device& device);
     void store_device_on_appropriate_chip(PCI_Device &device);
     void place_all_execution_slots(req &r, allocation &master, const char *hostname);

@@ -34,7 +34,7 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_version(0), nd_plugin_gene
                      nd_lastupdate(0), nd_lastHierarchySent(0), nd_hierarchy_level(0),
                      nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(),
                      nd_ngpus_free(0), nd_ngpus_needed(0), nd_ngpus_to_be_used(0),
-                     nd_gpustatus(NULL), nd_ngpustatus(0), nd_nmics(0),
+                     nd_gpustatus(), nd_ngpustatus(0), nd_nmics(0),
                      nd_micstatus(NULL), nd_micjobids(), nd_nmics_alloced(0),
                      nd_nmics_free(0), nd_nmics_to_be_used(0), parent(NULL),
                      num_node_boards(0), node_boards(NULL), numa_str(),
@@ -83,7 +83,7 @@ pbsnode::pbsnode(
                                      nd_lastupdate(0), nd_lastHierarchySent(0), nd_hierarchy_level(0),
                                      nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(),
                                      nd_ngpus_free(0), nd_ngpus_needed(0), nd_ngpus_to_be_used(0),
-                                     nd_gpustatus(NULL), nd_ngpustatus(0), nd_nmics(0),
+                                     nd_gpustatus(), nd_ngpustatus(0), nd_nmics(0),
                                      nd_micstatus(NULL), nd_micjobids(), nd_nmics_alloced(0),
                                      nd_nmics_free(0), nd_nmics_to_be_used(0), parent(NULL),
                                      num_node_boards(0), node_boards(NULL), numa_str(),
@@ -139,7 +139,6 @@ pbsnode::~pbsnode()
   {
   free_arst_value(this->nd_acl);
   free_arst_value(this->nd_prop);
-  free_arst_value(this->nd_gpustatus);
   free_arst_value(this->nd_micstatus);
   } // END destructor
 
@@ -211,8 +210,7 @@ pbsnode &pbsnode::operator =(
   this->nd_ngpus_needed = other.nd_ngpus_needed;
   this->nd_ngpus_to_be_used = other.nd_ngpus_to_be_used;
 
-  free_arst_value(this->nd_gpustatus);
-  this->nd_gpustatus = copy_arst(other.nd_gpustatus);
+  this->nd_gpustatus = other.nd_gpustatus;
 
   this->nd_ngpustatus = other.nd_ngpustatus;
   this->nd_nmics = other.nd_nmics;
@@ -284,6 +282,7 @@ pbsnode::pbsnode(
                           nd_ngpus_free(other.nd_ngpus_free),
                           nd_ngpus_needed(other.nd_ngpus_needed),
                           nd_ngpus_to_be_used(other.nd_ngpus_to_be_used),
+                          nd_gpustatus(other.nd_gpustatus),
                           nd_ngpustatus(other.nd_ngpustatus),
                           nd_nmics(other.nd_nmics),
                           nd_micjobids(other.nd_micjobids),
@@ -305,7 +304,6 @@ pbsnode::pbsnode(
 
   {
   this->nd_prop = copy_arst(other.nd_prop);
-  this->nd_gpustatus = copy_arst(other.nd_gpustatus);
   this->nd_micstatus = copy_arst(other.nd_micstatus);
 
   this->node_boards = other.node_boards;
@@ -825,66 +823,87 @@ void pbsnode::set_version(
 
     free(work);
     }
-  }
+  } // END set_version()
 
 
 
 /*
- * capture_plugin_resources
+ * capture_plugin_resources()
  *
- * json_str - A json string specifying what plugin resources have been added
+ * plugin_info - a json object that has the plugin information. All fields are optional, but may
+ * include:
+ * GRES : {
+ *   "name1" : val1,
+ *   ...
+ * }
+ * VARATTRS : {
+ *   "name1" : "val1",
+ *   ...
+ * }
+ * GMETRICS : {
+ *   "name1" : double,
+ *   ...
+ * }
+ * FEATURES : "feature_list"
  */
 
 void pbsnode::capture_plugin_resources(
-    
-  const char *json_str)
+
+  Json::Value &plugin_info)
+
+  {
+  std::vector<std::string> keys = plugin_info.getMemberNames();
+
+  for (size_t i = 0; i < keys.size(); i++)
+    {
+    if (keys[i] == GRES)
+      {
+      Json::Value              gres_info = plugin_info[keys[i]];
+      std::vector<std::string> resource_keys = gres_info.getMemberNames();
+
+      for (size_t j = 0; j < resource_keys.size(); j++)
+        {
+        this->nd_plugin_generic_resources[resource_keys[j]] = gres_info[resource_keys[j]].asInt();
+        }
+      }
+    else if (keys[i] == VARATTRS)
+      {
+      Json::Value              varattr_info = plugin_info[keys[i]];
+      std::vector<std::string> varattr_keys = varattr_info.getMemberNames();
+
+      for (size_t j = 0; j < varattr_keys.size(); j++)
+        {
+        this->nd_plugin_varattrs[varattr_keys[j]] = varattr_info[varattr_keys[j]].asString();
+        }
+      }
+    else if (keys[i] == GMETRICS)
+      {
+      Json::Value              gmetric_info = plugin_info[keys[i]];
+      std::vector<std::string> gmetric_keys = gmetric_info.getMemberNames();
+
+      for (size_t j = 0; j < gmetric_keys.size(); j++)
+        this->nd_plugin_generic_metrics[gmetric_keys[j]] = gmetric_info[gmetric_keys[j]].asDouble();
+      }
+    else if (keys[i] == FEATURES)
+      {
+      this->nd_plugin_features = plugin_info[FEATURES].asString();
+      }
+    }
+  } // END capture_plugin_resources() -- json
+
+
+
+void pbsnode::capture_plugin_resources(
+
+  const char *plugin_str)
 
   {
   Json::Value  plugin_info;
   Json::Reader reader;
 
-  if (reader.parse(json_str, plugin_info) == true)
-    {
-    std::vector<std::string> keys = plugin_info.getMemberNames();
-
-    for (size_t i = 0; i < keys.size(); i++)
-      {
-      if (keys[i] == GRES)
-        {
-        Json::Value              gres_info = plugin_info[keys[i]];
-        std::vector<std::string> resource_keys = gres_info.getMemberNames();
-
-        for (size_t j = 0; j < resource_keys.size(); j++)
-          {
-          this->nd_plugin_generic_resources[resource_keys[j]] = gres_info[resource_keys[j]].asInt();
-          }
-        }
-      else if (keys[i] == VARATTRS)
-        {
-        Json::Value              varattr_info = plugin_info[keys[i]];
-        std::vector<std::string> varattr_keys = varattr_info.getMemberNames();
-
-        for (size_t j = 0; j < varattr_keys.size(); j++)
-          {
-          this->nd_plugin_varattrs[varattr_keys[j]] = varattr_info[varattr_keys[j]].asString();
-          }
-        }
-      else if (keys[i] == GMETRICS)
-        {
-        Json::Value              gmetric_info = plugin_info[keys[i]];
-        std::vector<std::string> gmetric_keys = gmetric_info.getMemberNames();
-
-        for (size_t j = 0; j < gmetric_keys.size(); j++)
-          this->nd_plugin_generic_metrics[gmetric_keys[j]] = gmetric_info[gmetric_keys[j]].asDouble();
-        }
-      else if (keys[i] == FEATURES)
-        {
-        this->nd_plugin_features = plugin_info[FEATURES].asString();
-        }
-      }
-    }
-
-  } // END capture_plugin_resources()
+  if (reader.parse(plugin_str, plugin_info) == true)
+    this->capture_plugin_resources(plugin_info);
+  }
 
 
 

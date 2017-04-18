@@ -156,6 +156,28 @@ void Machine::update_internal_counts()
 
 
 
+void Machine::initialize_from_json_value(
+
+  Json::Value              &jv,
+  std::vector<std::string> &valid_ids)
+
+  {
+  const Json::Value &node = jv[NODE];
+
+  for (Json::ValueConstIterator it = node.begin(); it != node.end(); it++)
+    {
+    const Json::Value &sock = *it;
+    Socket s(sock, valid_ids);
+    this->sockets.push_back(s);
+    this->totalSockets++;
+    }
+
+  update_internal_counts();
+  this->initialized = true;
+  }
+
+
+
 void Machine::initialize_from_json(
 
   const std::string        &json_str,
@@ -168,18 +190,7 @@ void Machine::initialize_from_json(
     Json::Value root;
     read.parse(json_str.c_str(), root);
 
-    const Json::Value &node = root[NODE];
-
-    for (Json::ValueConstIterator it = node.begin(); it != node.end(); it++)
-      {
-      const Json::Value &sock = *it;
-      Socket s(sock, valid_ids);
-      this->sockets.push_back(s);
-      this->totalSockets++;
-      }
-
-    update_internal_counts();
-    this->initialized = true;
+    this->initialize_from_json_value(root, valid_ids);
     }
   catch (...)
     {
@@ -244,18 +255,30 @@ void Machine::reinitialize_from_json(
  *
  */
 
-Machine::Machine(const std::string &json_layout,
-                 std::vector<std::string> &valid_ids) : hardwareStyle(0), totalMemory(0),
-                                                        totalSockets(0), totalChips(0),
-                                                        totalCores(0), totalThreads(0), 
-                                                        availableSockets(0), availableChips(0),
-                                                        availableCores(0), availableThreads(0),
-                                                        initialized(true), sockets(),
-                                                        NVIDIA_device(), allocations()
+Machine::Machine(
+    
+  const std::string &json_layout,
+  std::vector<std::string> &valid_ids) : hardwareStyle(0), totalMemory(0), totalSockets(0),
+                                         totalChips(0), totalCores(0), totalThreads(0),
+                                         availableSockets(0), availableChips(0), availableCores(0),
+                                         availableThreads(0), initialized(true), sockets(),
+                                         NVIDIA_device(), allocations()
 
   {
   this->initialize_from_json(json_layout, valid_ids);
   } // END json constructor
+
+Machine::Machine(
+   
+  Json::Value              &json_layout,
+  std::vector<std::string> &valid_ids) : hardwareStyle(0), totalMemory(0), totalSockets(0),
+                                         totalChips(0), totalCores(0), totalThreads(0), 
+                                         availableSockets(0), availableChips(0), availableCores(0),
+                                         availableThreads(0), initialized(true), sockets(),
+                                         NVIDIA_device(), allocations()
+  {
+  this->initialize_from_json_value(json_layout, valid_ids);
+  }
 
 
 
@@ -514,17 +537,14 @@ int Machine::getDedicatedThreads() const
 
 void Machine::displayAsJson(
     
-  stringstream &out,
-  bool          include_jobs) const
+  Json::Value &node,
+  bool         include_jobs) const
 
   {
-  Json::Value node;
   for (unsigned int i = 0; i < this->sockets.size(); i++)
     {
     this->sockets[i].displayAsJson(node[NODE][i][SOCKET], include_jobs);
     }
-  
-  out << node;
   }
 
 int Machine::getHardwareStyle() const

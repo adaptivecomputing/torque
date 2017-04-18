@@ -10,11 +10,11 @@
 #endif
 #include <check.h>
 
-int set_note_error(struct pbsnode *np, const char *str);
+int set_note_error(struct pbsnode *np, const std::string &str);
 int restore_note(struct pbsnode *np);
 
 #ifdef PENABLE_LINUX_CGROUPS
-void update_layout_if_needed(pbsnode *pnode, const std::string &layout, bool force);
+void update_layout_if_needed(pbsnode *pnode, const std::string &layout, Json::Value *jv, bool force);
 
 extern int event_logged;
 
@@ -28,7 +28,7 @@ START_TEST(test_update_layout_if_needed)
 
   fail_unless(pnode.nd_layout.is_initialized() == false);
   event_logged = 0;
-  update_layout_if_needed(&pnode, sans_threads, false);
+  update_layout_if_needed(&pnode, sans_threads, NULL, false);
 
   fail_unless(event_logged == 0);
   fail_unless(pnode.nd_layout.is_initialized() != false);
@@ -37,10 +37,10 @@ START_TEST(test_update_layout_if_needed)
     pnode.nd_slots.add_execution_slot();
 
   // Calling again without changing the number of slots should do nothing
-  update_layout_if_needed(&pnode, sans_threads, false);
-  update_layout_if_needed(&pnode, sans_threads, false);
-  update_layout_if_needed(&pnode, sans_threads, false);
-  update_layout_if_needed(&pnode, sans_threads, false);
+  update_layout_if_needed(&pnode, sans_threads, NULL, false);
+  update_layout_if_needed(&pnode, sans_threads, NULL, false);
+  update_layout_if_needed(&pnode, sans_threads, NULL, false);
+  update_layout_if_needed(&pnode, sans_threads, NULL, false);
   fail_unless(event_logged == 0);
 
   // Simulate that threads were turned on in this machine, therefore increasing the number of
@@ -48,20 +48,20 @@ START_TEST(test_update_layout_if_needed)
   for (int i = 0; i < 16; i++)
     pnode.nd_slots.add_execution_slot();
 
-  update_layout_if_needed(&pnode, with_threads, false);
+  update_layout_if_needed(&pnode, with_threads, NULL, false);
   
   fail_unless(event_logged == 1);
 
   // Calling again without changing the number of slots should do nothing
-  update_layout_if_needed(&pnode, with_threads, false);
-  update_layout_if_needed(&pnode, with_threads, false);
-  update_layout_if_needed(&pnode, with_threads, false);
-  update_layout_if_needed(&pnode, with_threads, false);
+  update_layout_if_needed(&pnode, with_threads, NULL, false);
+  update_layout_if_needed(&pnode, with_threads, NULL, false);
+  update_layout_if_needed(&pnode, with_threads, NULL, false);
+  update_layout_if_needed(&pnode, with_threads, NULL, false);
   fail_unless(event_logged == 1, "event logged: %d", event_logged);
 
   // Make sure that changing the number of gpus on the node triggers an event
   pnode.nd_ngpus = 1;
-  update_layout_if_needed(&pnode, with_threads, false);
+  update_layout_if_needed(&pnode, with_threads, NULL, false);
   fail_unless(event_logged == 2, "event logged: %d", event_logged);
   }
 END_TEST
@@ -71,23 +71,19 @@ END_TEST
 START_TEST(test_set_note_error)
   {
   pbsnode pnode;
-  fail_unless(set_note_error(&pnode, "message=ERROR - bob") == PBSE_NONE, "Failed to append");
+  fail_unless(set_note_error(&pnode, "ERROR - bob") == PBSE_NONE, "Failed to append");
   fail_unless(pnode.nd_note == "ERROR - bob");
 
   // Make sure the same error isn't appended twice - the note shouldn't be changed
-  fail_unless(set_note_error(&pnode, "message=ERROR - bob") == PBSE_NONE);
+  fail_unless(set_note_error(&pnode, "ERROR - bob") == PBSE_NONE);
   fail_unless(pnode.nd_note == "ERROR - bob");
 
   pnode.nd_note.clear();
 
-  fail_unless(set_note_error(&pnode, "message=yay") == PBSE_NONE);
+  fail_unless(set_note_error(&pnode, "yay") == PBSE_NONE);
   fail_unless(pnode.nd_note == "yay");
   
-  fail_unless(set_note_error(&pnode, "message=ERROR - the system is down") == PBSE_NONE);
-  fail_unless(pnode.nd_note == "yay - ERROR - the system is down");
-
-  // make sure newline stripped 
-  fail_unless(set_note_error(&pnode, "message=ERROR - the system is down\n") == PBSE_NONE);
+  fail_unless(set_note_error(&pnode, "ERROR - the system is down") == PBSE_NONE);
   fail_unless(pnode.nd_note == "yay - ERROR - the system is down");
   }
 END_TEST
@@ -100,7 +96,7 @@ START_TEST(test_two)
   fail_unless(restore_note(pnode) == PBSE_NONE);
   fail_unless(pnode->nd_note == "");
 
-  fail_unless(set_note_error(pnode, "message=ERROR - bob") == PBSE_NONE);
+  fail_unless(set_note_error(pnode, "ERROR - bob") == PBSE_NONE);
   fail_unless(pnode->nd_note == "ERROR - bob");
 
   fail_unless(restore_note(pnode) == PBSE_NONE);
@@ -110,7 +106,7 @@ START_TEST(test_two)
 
   fail_unless(restore_note(pnode) == PBSE_NONE);
   fail_unless(pnode->nd_note == "Yo Dawg, I heard you wanted a note");
-  fail_unless(set_note_error(pnode, "message=ERROR Everything's broken") == PBSE_NONE);
+  fail_unless(set_note_error(pnode, "ERROR Everything's broken") == PBSE_NONE);
   fail_unless(pnode->nd_note == "Yo Dawg, I heard you wanted a note - ERROR Everything's broken");
   fail_unless(restore_note(pnode) == PBSE_NONE);
   fail_unless(pnode->nd_note == "Yo Dawg, I heard you wanted a note");

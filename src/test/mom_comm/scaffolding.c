@@ -66,6 +66,8 @@ bool exit_called = false;
 bool ms_val = true;
 job_pid_set_t    global_job_sid_set;
 char             mom_alias[PBS_MAXHOSTNAME + 1];
+const char      *NODE       = "node";
+const char      *NAME = "name";
 
 #undef disrus
 unsigned short disrus(tcp_chan *c, int *retval)

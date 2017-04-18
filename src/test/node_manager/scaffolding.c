@@ -704,7 +704,7 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(),
                      nd_lastupdate(0), nd_lastHierarchySent(0), nd_hierarchy_level(0),
                      nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(),
                      nd_ngpus_free(0), nd_ngpus_needed(0), nd_ngpus_to_be_used(0),
-                     nd_gpustatus(NULL), nd_ngpustatus(0), nd_nmics(0),
+                     nd_gpustatus(), nd_ngpustatus(0), nd_nmics(0),
                      nd_micstatus(NULL), nd_nmics_alloced(0),
                      nd_nmics_free(0), nd_nmics_to_be_used(0), parent(NULL),
                      num_node_boards(0), node_boards(NULL), numa_str(),
@@ -738,7 +738,7 @@ pbsnode::pbsnode(
                                      nd_lastupdate(0), nd_lastHierarchySent(0), nd_hierarchy_level(0),
                                      nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(),
                                      nd_ngpus_free(0), nd_ngpus_needed(0), nd_ngpus_to_be_used(0),
-                                     nd_gpustatus(NULL), nd_ngpustatus(0), nd_nmics(0),
+                                     nd_gpustatus(), nd_ngpustatus(0), nd_nmics(0),
                                      nd_micstatus(NULL), nd_nmics_alloced(0),
                                      nd_nmics_free(0), nd_nmics_to_be_used(0), parent(NULL),
                                      num_node_boards(0), node_boards(NULL), numa_str(),
@@ -981,7 +981,7 @@ void Machine::free_job_allocation(const char *jobid)
   {
   }
 
-void Machine::displayAsJson(stringstream &out, bool include_jobs) const {}
+void Machine::displayAsJson(Json::Value &jv, bool include_jobs) const {}
 
 int Machine::place_job(
 

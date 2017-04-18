@@ -118,14 +118,41 @@ int  unlock_ji_mutex(svr_job *, const char *, const char *, int);
 
 void get_status_info(
 
+  struct tcp_chan *chan,
+  Json::Value     &status_json)
+
+  {
+  int             rc;
+  char           *ret_info = disrst(chan, &rc);
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if ((rc == DIS_SUCCESS) &&
+      (ret_info != NULL))
+    {
+    Json::Reader reader;
+    if (reader.parse(ret_info, status_json) == false)
+      {
+      snprintf(log_buf, sizeof(log_buf), "Couldn't read valid json from '%s'", ret_info);
+      log_err(-1, __func__, log_buf);
+      }
+    }
+
+  if (ret_info != NULL)
+    free(ret_info);
+  } // END get_status_info() - json
+
+
+
+void get_status_info(
+
   struct tcp_chan          *chan,
   std::vector<std::string> &status)
 
   {
-  char           *ret_info;
-  int             rc;
+  char *ret_info;
+  int   rc;
 
-  while (((ret_info = disrst(chan, &rc)) != NULL) && 
+  while (((ret_info = disrst(chan, &rc)) != NULL) &&
          (rc == DIS_SUCCESS))
     {
     if (!strcmp(ret_info, IS_EOL_MESSAGE))
@@ -142,7 +169,7 @@ void get_status_info(
 
   if (ret_info != NULL)
     free(ret_info);
-  } /* END get_status_info() */
+  } // END get_status_info() - vector
 
 
 
@@ -173,16 +200,19 @@ bool is_reporter_node(
 
 /*
  * is_stat_get()
+ *
  */
 
 int is_stat_get(
 
   const char      *node_name,
-  struct tcp_chan *chan)
+  struct tcp_chan *chan,
+  bool             use_json)
 
   {
   int                      rc;
   char                     log_buf[LOCAL_LOG_BUF_SIZE];
+  Json::Value              json_status;
   std::vector<std::string> status_info;
 
   if (LOGLEVEL >= 3)
@@ -191,12 +221,21 @@ int is_stat_get(
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
-  get_status_info(chan, status_info);
- 
-  if (is_reporter_node(node_name))
-    rc = process_alps_status(node_name, status_info);
+  if (use_json == true)
+    {
+    get_status_info(chan, json_status);
+   
+    if (is_reporter_node(node_name))
+      rc = process_alps_status(node_name, json_status);
+    else
+      rc = process_status_info(node_name, json_status);
+    }
   else
+    {
+    get_status_info(chan, status_info);
+      
     rc = process_status_info(node_name, status_info);
+    }
 
   return(rc);
   }  /* END is_stat_get() */
@@ -292,6 +331,7 @@ void *svr_is_request(
   void *v)  
 
   {
+  static int          DIS_STRINGS_PROTOCOL_VERSION = 3;
   int                 command = 0;
   int                 ret = DIS_SUCCESS;
   int                 i;
@@ -355,7 +395,8 @@ void *svr_is_request(
   memcpy(&addr.sin_addr, (void *)&args[1], sizeof(struct in_addr));
   addr.sin_port = args[2];
 
-  if (version != IS_PROTOCOL_VER)
+  if ((version > IS_PROTOCOL_VER) ||
+      (version < DIS_STRINGS_PROTOCOL_VERSION))
     {
     netaddr_long(args[1], tmp);
     sprintf(msg_buf, "%s:%ld", tmp, args[2]);
@@ -498,6 +539,7 @@ void *svr_is_request(
 
       {
       std::string node_name = node->get_name();
+      bool        use_json = version != DIS_STRINGS_PROTOCOL_VERSION;
      
       if (LOGLEVEL >= 2)
         {
@@ -509,7 +551,7 @@ void *svr_is_request(
 
       node_mutex.unlock();
 
-      ret = is_stat_get(node_name.c_str(), chan);
+      ret = is_stat_get(node_name.c_str(), chan, use_json);
 
       node = find_nodebyname(node_name.c_str());
 

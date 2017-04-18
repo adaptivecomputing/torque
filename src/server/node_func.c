@@ -640,7 +640,7 @@ int status_nodeattrib(
     else if (i == ND_ATR_gpus_str)
       continue;
     else if (i == ND_ATR_gpustatus)
-      atemp[i].at_val.at_arst = pnode->nd_gpustatus;
+      atemp[i].at_val.at_str = NULL;
 #ifdef PENABLE_LINUX_CGROUPS
     else if (i == ND_ATR_total_sockets)
       {
@@ -760,6 +760,8 @@ int status_nodeattrib(
           {
           if (index == ND_ATR_status)
             atemp[index].at_val.at_str = strdup(pnode->nd_status.c_str());
+          else if (index == ND_ATR_gpustatus)
+            atemp[index].at_val.at_str = strdup(pnode->nd_gpustatus.c_str());
 
           rc = ((padef + index)->at_encode(
                 &atemp[index],

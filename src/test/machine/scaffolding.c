@@ -402,9 +402,8 @@ int  Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t 
 
 //takes a string stream and a test number
 //used in the unit test
-void CreateJsonString(std::string &testString, int testNum)
+void CreateJsonValue(Json::Value &test, int testNum)
   {
-  Json::Value test;
   //two sockets each with two numanodes
   if(testNum == 1)
     {
@@ -417,9 +416,6 @@ void CreateJsonString(std::string &testString, int testNum)
     {
     test[NODE][0][SOCKET];
     }
-  Json::StreamWriterBuilder builder;
-  builder["indentation"] = "\t";
-  testString = Json::writeString(builder, test);
   }
 
 struct timeval *job::get_tv_attr(int index)

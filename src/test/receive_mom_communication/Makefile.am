@@ -6,4 +6,6 @@ libuut_la_SOURCES =  ${PROG_ROOT}/process_mom_update.c ${PROG_ROOT}/receive_mom_
 										 ${PROG_ROOT}/../lib/Libutils/numa_pci_device.cpp \
 										 ${PROG_ROOT}/../lib/Libutils/numa_socket.cpp \
 										 ${PROG_ROOT}/../lib/Libutils/numa_chip.cpp \
-										 ${PROG_ROOT}/../lib/Libutils/jsoncpp.cpp
+										 ${PROG_ROOT}/../lib/Libutils/jsoncpp.cpp \
+										 ${PROG_ROOT}/../lib/Libutils/numa_constants.cpp \
+										 ${PROG_ROOT}/../lib/Libutils/mom_update_constants.cpp 

@@ -98,6 +98,8 @@
 #include "mutex_mgr.hpp"
 #include "id_map.hpp"
 #include "plugin_internal.h"
+#include "mom_update_constants.hpp"
+#include "numa_constants.h"
 
 
 extern attribute_def    node_attr_def[];   /* node attributes defs */
@@ -347,18 +349,24 @@ struct pbsnode *get_node_from_str(
 
 
 
+/*
+ * handle_auto_np()
+ *
+ * @param np - the node in question
+ * @param str - number of cpus written as a string
+ */
 
 int handle_auto_np(
 
-  struct pbsnode *np,  /* M */
-  const char     *str) /* I */
+  pbsnode    *np,  /* M */
+  const char *str) /* I */
 
   {
   pbs_attribute nattr;
   
   /* first we decode str into nattr... + 6 is because str has format
    * ncpus=X, and 6 = strlen(ncpus=) */  
-  if ((node_attr_def + ND_ATR_np)->at_decode(&nattr, ATTR_NODE_np, NULL, str + 6, 0) == 0)
+  if ((node_attr_def + ND_ATR_np)->at_decode(&nattr, ATTR_NODE_np, NULL, str, 0) == 0)
     {
     /* ... and if MOM's ncpus is different than our np... */
     if (nattr.at_val.at_long != np->nd_slots.get_total_execution_slots())
@@ -488,16 +496,13 @@ void update_job_data(
 
 int set_note_error(
 
-  struct pbsnode *np,
-  const char     *str)
+  pbsnode           *np,
+  const std::string &str)
 
   {
   std::string message;
-  std::string errmsg = std::string(str).substr(8, std::string::npos);
+  std::string errmsg(str);
   std::string oldnote = "";
-
-  // remove newlines from string
-  errmsg.erase(std::remove(errmsg.begin(), errmsg.end(), '\n'), errmsg.end());
 
   // If a note already exists, append the error; otherwise, create a new note
   if (np->nd_note.size() != 0)
@@ -637,11 +642,11 @@ int process_state_str(
     log_err(-1, __func__, log_buf);
     return(PBSE_HIERARCHY_NOT_SENT);
     }
-  if (!strncmp(str, "state=down", 10))
+  if (!strncmp(str, "down", 10))
     {
     update_node_state(np, INUSE_DOWN);
     }
-  else if (!strncmp(str, "state=busy", 10))
+  else if (!strncmp(str, "busy", 10))
     {
     if (np->nd_state == INUSE_DOWN)
       {
@@ -650,7 +655,7 @@ int process_state_str(
 
     update_node_state(np, INUSE_BUSY);
     }
-  else if (!strncmp(str, "state=free", 10))
+  else if (!strncmp(str, "free", 10))
     {
     if (np->nd_state == INUSE_DOWN)
       {
@@ -685,8 +690,10 @@ int process_state_str(
 
 
 int update_node_mac_addr(
-    struct pbsnode *np,
-    const char    *str)
+
+  pbsnode    *np,
+  const char *str)
+
   {
   unsigned char macaddr[6];
   for(int i = 0;i < 6;i++)
@@ -750,6 +757,7 @@ void update_layout_if_needed(
 
   pbsnode           *pnode,
   const std::string &layout,
+  Json::Value       *jv,
   bool               force)
 
   {
@@ -767,12 +775,24 @@ void update_layout_if_needed(
         valid_ids.push_back(id);
       }
 
-    Machine m(layout, valid_ids);
+    if (jv == NULL)
+      {
+      Machine m(layout, valid_ids);
 
-    if (pnode->nd_layout.is_initialized() == true)
-      m.save_allocations(pnode->nd_layout);
+      if (pnode->nd_layout.is_initialized() == true)
+        m.save_allocations(pnode->nd_layout);
 
-    pnode->nd_layout = m;
+      pnode->nd_layout = m;
+      }
+    else
+      {
+      Machine m(*jv, valid_ids);
+      
+      if (pnode->nd_layout.is_initialized() == true)
+        m.save_allocations(pnode->nd_layout);
+
+      pnode->nd_layout = m;
+      }
     }
   else if (((pnode->nd_layout.getTotalThreads() != pnode->nd_slots.get_total_execution_slots()) ||
             (pnode->nd_ngpus != pnode->nd_layout.get_total_gpus())) &&
@@ -791,8 +811,16 @@ void update_layout_if_needed(
         valid_ids.push_back(id);
       }
     
-    Machine m(layout, valid_ids);
-    pnode->nd_layout = m;
+    if (jv == NULL)
+      {
+      Machine m(layout, valid_ids);
+      pnode->nd_layout = m;
+      }
+    else
+      {
+      Machine m(*jv, valid_ids);
+      pnode->nd_layout = m;
+      }
 
     if (LOGLEVEL >= 3)
       {
@@ -805,6 +833,505 @@ void update_layout_if_needed(
     }
   } // END update_layout_if_needed()
 #endif
+
+
+
+/*
+ * process_gpu_mode_string()
+ *
+ * @param current - the node where the gpu resides
+ * @param mode_str - a string specifying the mode
+ * @param gpuidx - the id of the gpu
+ */
+
+void process_gpu_mode_string(
+    
+  pbsnode           *current,
+  const std::string &mode_str,
+  int                gpuidx)
+
+  {
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if ((mode_str == "Normal") ||
+      (mode_str == "Default"))
+    {
+    current->nd_gpusn[gpuidx].mode = gpu_normal;
+    if (gpu_has_job(current, gpuidx))
+      {
+      current->nd_gpusn[gpuidx].state = gpu_shared;
+      }
+    else
+      {
+      current->nd_gpusn[gpuidx].inuse = 0;
+      current->nd_gpusn[gpuidx].state = gpu_unallocated;
+      }
+    }
+  else if ((mode_str == "Exclusive") ||
+           (mode_str == "Exclusive_Thread"))
+    {
+    current->nd_gpusn[gpuidx].mode = gpu_exclusive_thread;
+    if (gpu_has_job(current, gpuidx))
+      {
+      current->nd_gpusn[gpuidx].state = gpu_exclusive;
+      }
+    else
+      {
+      current->nd_gpusn[gpuidx].inuse = 0;
+      current->nd_gpusn[gpuidx].state = gpu_unallocated;
+      }
+    }
+  else if (mode_str == "Exclusive_Process")
+    {
+    current->nd_gpusn[gpuidx].mode = gpu_exclusive_process;
+    if (gpu_has_job(current, gpuidx))
+      {
+      current->nd_gpusn[gpuidx].state = gpu_exclusive;
+      }
+    else
+      {
+      current->nd_gpusn[gpuidx].inuse = 0;
+      current->nd_gpusn[gpuidx].state = gpu_unallocated;
+      }
+    }
+  else if (mode_str == "Prohibited")
+    {
+    current->nd_gpusn[gpuidx].mode = gpu_prohibited;
+    current->nd_gpusn[gpuidx].state = gpu_unavailable;
+    }
+  else
+    {
+    /* unknown mode, default to prohibited */
+    current->nd_gpusn[gpuidx].mode = gpu_prohibited;
+    current->nd_gpusn[gpuidx].state = gpu_unavailable;
+    if (LOGLEVEL >= 3)
+      {
+      sprintf(log_buf,
+        "GPU %d has unknown mode on node %s",
+        gpuidx,
+        current->get_name());
+
+      log_ext(-1, __func__, log_buf, LOG_DEBUG);
+      }
+    }
+  } // END process_gpu_mode_string()
+
+
+
+/*
+ * process_gpu_information()
+ *
+ */
+
+int process_gpu_information(
+    
+  pbsnode           *current,
+  Json::Value       &gpu_info,
+  std::string       &status_line,
+  const std::string &driver_version)
+
+  {
+  std::stringstream gpu_status;
+  int               gpuidx = -1;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if (gpu_info[GPU_ID].empty() == false)
+    {
+    /*
+     * Get this gpus index, if it does not yet exist then find an empty entry.
+     * We need to allow for the gpu status results being returned in
+     * different orders since the nvidia order may change upon mom's reboot
+     */
+    const char *gpu_id_str = gpu_info[GPU_ID].asString().c_str();
+    gpuidx = gpu_entry_by_id(current, gpu_id_str, TRUE);
+      
+    if (gpuidx == -1)
+      {
+      // Error
+      if (LOGLEVEL >= 3)
+        {
+        sprintf(log_buf, "Failed to get/create entry for gpu %s on node %s\n",
+          gpu_id_str, current->get_name());
+        log_ext(-1, __func__, log_buf, LOG_DEBUG);
+        }
+
+      return(-1);
+      }
+
+    gpu_status << "gpu[" << gpuidx << "]=gpu_id=" << gpu_id_str << ";";
+    current->nd_gpusn[gpuidx].driver_ver = atoi(driver_version.c_str());
+    current->nd_gpus_real = TRUE;
+    if (current->nd_gpusn[gpuidx].gpuid.size() == 0)
+      current->nd_gpusn[gpuidx].gpuid = gpu_id_str;
+    }
+  else
+    {
+    return(-1);
+    }
+
+  if (gpu_info[GPU_MODE].empty() == false)
+    {
+    process_gpu_mode_string(current, gpu_info[GPU_MODE].asString(), gpuidx);
+
+    switch (current->nd_gpusn[gpuidx].state)
+      {
+      case gpu_unallocated:
+
+        gpu_status << ";gpu_state=Unallocated";
+        break;
+
+      case gpu_shared:
+
+        gpu_status << ";gpu_state=Shared";
+        break;
+
+      case gpu_exclusive:
+
+        gpu_status << "gpu_state=Exclusive";
+        break;
+
+      case gpu_unavailable:
+
+        gpu_status << "gpu_state=Unavailable";
+        break;
+      }
+    }
+
+  std::vector<std::string> keys = gpu_info.getMemberNames();
+
+  for (size_t i = 0; i < keys.size(); i++)
+    {
+    if (keys[i] == GPU_TEMPERATURE)
+      {
+      gpu_status << ";" << keys[i] << "=" << gpu_info[keys[i]].asInt();
+      }
+    else if ((keys[i] != GPU_MODE) &&
+             (keys[i] != GPU_ID))
+      gpu_status << ";" << keys[i] << "="  << gpu_info[keys[i]].asString();
+    }
+
+  if (status_line.size() != 0)
+    status_line += ";";
+  status_line += gpu_status.str();
+
+  current->nd_gpustatus = status_line;
+  
+  return(PBSE_NONE);
+  } // END process_gpu_information()
+
+
+
+int process_mic_information(
+
+  pbsnode     *current,
+  Json::Value &mic_status,
+  int          mic_index,
+  std::string &mic_status_line)
+
+  {
+  int         rc = PBSE_NONE;
+  std::string single_mic_status;
+  char        mic_id_buf[MAXLINE];
+
+  std::vector<std::string> keys = mic_status.getMemberNames();
+  
+  for (size_t i = 0; i < keys.size(); i++)
+    {
+    if (keys[i] == MIC_ID)
+      {
+      snprintf(mic_id_buf, sizeof(mic_id_buf),
+        "mic[%d]=%s=%s", mic_index, keys[i].c_str(), mic_status[keys[i]].asString().c_str());
+      single_mic_status += mic_id_buf;
+      }
+    else if ((keys[i] == NUM_CORES) ||
+             (keys[i] == NUM_THREADS))
+      {
+      snprintf(mic_id_buf, sizeof(mic_id_buf),
+        "%s=%d", keys[i].c_str(), mic_status[keys[i]].asInt());
+      single_mic_status += ";";
+      single_mic_status += mic_id_buf;
+      }
+    else
+      {
+      single_mic_status += ';';
+      single_mic_status += keys[i];
+      single_mic_status += '=';
+      single_mic_status += mic_status[keys[i]].asString();
+      }
+    }
+
+  mic_status_line += single_mic_status;
+
+  return(rc);
+  } // END process_mic_information()
+
+
+
+void remove_newlines(
+
+  const std::string &line,
+  std::string       &no_newlines,
+  bool              &changed)
+
+  {
+  no_newlines = line;
+
+  size_t pos = no_newlines.find('\n');
+  changed = false;
+
+  while (pos != std::string::npos)
+    {
+    no_newlines.replace(pos, 1, 1, ' ');
+    pos = no_newlines.find('\n');
+    changed = true;
+    }
+  } // END remove_newlines()
+
+
+
+/*
+ * process_node_json_status()
+ *
+ */
+
+int process_node_json_status(
+
+  Json::Value &node_status,
+  bool         mom_job_sync,
+  bool         auto_np,
+  bool         down_on_error,
+  bool         note_append_on_error)
+
+  {
+  std::vector<std::string> node_attrs = node_status.getMemberNames();
+  std::string              status_line;
+  bool                     force_layout_update = !node_status["force_layout_update"].empty();
+  bool                     dont_change_state = false;
+  bool                     send_hello = false;
+  pbsnode                 *current = NULL;
+  char                     log_buf[LOCAL_LOG_BUF_SIZE];
+  const char              *node_name = NULL;
+  int                      rc = PBSE_NONE;
+
+  if (node_status[NAME].empty() == false)
+    {
+    node_name = node_status[NAME].asString().c_str();
+    current = find_nodebyname(node_name);
+    }
+
+  if (current == NULL)
+    {
+    if (node_name == NULL)
+      snprintf(log_buf, sizeof(log_buf), "Status update came with no node name");
+    else
+      snprintf(log_buf, sizeof(log_buf), "Couldn't find a node named %s", node_name);
+
+    log_err(PBSE_UNKNODE, __func__, log_buf);
+    return(PBSE_UNKNODE);
+    }
+      
+  if (node_status[MESSAGE].empty() == false)
+    {
+    bool        changed = false;
+    std::string no_newlines;
+
+    remove_newlines(node_status[MESSAGE].asString(), no_newlines, changed);
+
+    if (changed)
+      node_status[MESSAGE] = no_newlines;
+
+    if (down_on_error == true)
+      {
+      update_node_state(current, INUSE_DOWN);
+      dont_change_state = true;
+
+      if (note_append_on_error == true)
+        {
+        set_note_error(current, no_newlines);
+        }
+      }
+    }
+
+  // Build the status string
+  for (size_t i = 0; i < node_attrs.size(); i++)
+    {
+    std::string &attr_name = node_attrs[i];
+    if ((attr_name != "force_layout_update") &&
+        (attr_name != GPUS) &&
+        (attr_name != MICS) &&
+        (attr_name != LAYOUT) &&
+        (attr_name != NAME) &&
+        (attr_name != PLUGIN_RESOURCES) &&
+        (attr_name != NUMA_INDEX) &&
+        (attr_name != "first_update"))
+      {
+      if (status_line.size() > 0)
+        status_line += ",";
+
+      status_line += attr_name + "=" + node_status[attr_name].asString();
+      }
+    }
+
+  if (node_status[LAYOUT].empty() == false)
+    {
+    update_layout_if_needed(current, "", &node_status[LAYOUT], force_layout_update);
+    }
+  
+  if (node_status["first_update"].empty() == false)
+    {
+    send_hello = true;
+    
+    /* reset gpu data in case mom reconnects with changed gpus */
+    clear_nvidia_gpus(current);
+    }
+
+  if ((node_status[STATE].empty() == false) &&
+      (dont_change_state == false))
+    process_state_str(current, node_status[STATE].asString().c_str());
+
+  if ((allow_any_mom == TRUE) &&
+      (node_status[UNAME].empty() == false) &&
+      (node_status[UNAME].asString().find("uname") == 0)) 
+    process_uname_str(current, node_status[UNAME].asString().c_str());
+
+  if (node_status[MACADDR].empty() == false)
+    update_node_mac_addr(current, node_status[MACADDR].asString().c_str());
+
+  if ((mom_job_sync == true) &&
+      (node_status[JOBDATA].empty() == false))
+    update_job_data(current, node_status[JOBDATA].asString().c_str());
+
+  if ((auto_np) &&
+      (node_status[NCPUS].empty() == false))
+    handle_auto_np(current, node_status[NCPUS].asString().c_str());
+
+  if (node_status[VERSION].empty() == false)
+    current->set_version(node_status[VERSION].asString().c_str());
+
+  if ((node_status[GPUS].empty() == false) &&
+      (node_status[GPUS][GPU_STR].isArray()))
+    {
+    int          size = node_status[GPUS][GPU_STR].size();
+    int          reported_gpu_count = 0;
+    int          original_gpu_count = current->nd_ngpus;
+    std::string  gpu_status_line;
+    std::string  driver_version;
+    
+    if (node_status[GPUS][DRIVER_VERSION].empty() == false)
+      driver_version = node_status[GPUS][DRIVER_VERSION].asString();
+
+    for (int i = 0; i < size; i++)
+      {
+      if (process_gpu_information(current, node_status[GPUS][GPU_STR][i], gpu_status_line,
+            driver_version) == PBSE_NONE)
+        reported_gpu_count++;
+
+      if (reported_gpu_count != original_gpu_count)
+        {
+        current->nd_ngpus = reported_gpu_count;
+
+        /* update the nodes file */
+        update_nodes_file(current);
+        }
+      }
+    
+    if (node_status[GPUS][TIMESTAMP].empty() == false)
+      {
+      gpu_status_line += TIMESTAMP;
+      gpu_status_line += "=";
+      gpu_status_line += node_status[GPUS][TIMESTAMP].asString();
+      }
+
+    gpu_status_line += DRIVER_VERSION;
+    gpu_status_line += "=";
+    gpu_status_line += driver_version;
+    } 
+
+  if ((node_status[MICS].empty() == false) &&
+      (node_status[MIC_STR].isArray()))
+    {
+    int         size = node_status[MICS][MIC_STR].size();
+    std::string mic_status_line;
+      
+    if (size > current->nd_nmics)
+      {
+      current->nd_nmics_free += size - current->nd_nmics;
+      current->nd_nmics = size;
+
+      if (size > current->nd_nmics_alloced)
+        {
+        for (int i = 0; i < size - current->nd_nmics_alloced; i++)
+          current->nd_micjobids.push_back(-1);
+
+        current->nd_nmics_alloced = size;
+        }
+      }
+
+    for (int i = 0; i < size; i++)
+      process_mic_information(current, node_status[MICS][MIC_STR][i], i, mic_status_line);
+    }
+
+  if (node_status[PLUGIN_RESOURCES].empty() == false)
+    current->capture_plugin_resources(node_status[PLUGIN_RESOURCES]);
+
+  if (node_status[JOBS].empty() == false)
+    {
+    sync_job_info *sji = new sync_job_info();
+    sji->node_name = current->get_name();
+    sji->sync_jobs = mom_job_sync;
+      
+    // sji is freed in sync_node_jobs()
+    enqueue_threadpool_request(sync_node_jobs, sji, task_pool);
+    }
+  /* sji->job_info = str + 5; */
+        
+  save_node_status(current, status_line);
+
+  current->unlock_node(__func__, NULL, LOGLEVEL);
+
+  if (send_hello == true)
+    rc = SEND_HELLO;
+  
+  return(rc);
+  } // END process_node_json_status()
+
+
+
+/*
+ * process_status_info()
+ *
+ * @param nd_name - the name of the node we're 
+ */
+
+int process_status_info(
+
+  const char  *nd_name,
+  Json::Value &status_update)
+
+  {
+  bool                     mom_job_sync = true;
+  bool                     auto_np = false;
+  bool                     down_on_error = false;
+  bool                     note_append_on_error = false;
+  int                      rc = PBSE_NONE;
+
+  get_svr_attr_b(SRV_ATR_MomJobSync, &mom_job_sync);
+  get_svr_attr_b(SRV_ATR_AutoNodeNP, &auto_np);
+  get_svr_attr_b(SRV_ATR_NoteAppendOnError, &note_append_on_error);
+  get_svr_attr_b(SRV_ATR_DownOnError, &down_on_error);
+
+  if ((status_update[NODE].empty() == false) &&
+      (status_update[NODE].isArray()))
+    {
+    int size = status_update[NODE].size();
+
+    for (int i = 0; i < size; i++)
+      rc = process_node_json_status(status_update[NODE][i], mom_job_sync, auto_np, down_on_error,
+                                    note_append_on_error);
+    }
+
+  return(rc);
+  } // END process_status_info()
 
 
 
@@ -828,7 +1355,7 @@ int process_status_info(
   bool            auto_np = false;
   bool            down_on_error = false;
   bool            note_append_on_error = false;
-  int             dont_change_state = FALSE;
+  bool            dont_change_state = false;
   int             rc = PBSE_NONE;
   bool            send_hello = false;
   std::string     temp;
@@ -850,7 +1377,7 @@ int process_status_info(
     {
     //Make sure we wait for a stray update that came after we changed the state to pass
     //by.
-    if((current->nd_power_state_change_time + NODE_POWER_CHANGE_TIMEOUT) < time(NULL))
+    if ((current->nd_power_state_change_time + NODE_POWER_CHANGE_TIMEOUT) < time(NULL))
       {
       current->nd_power_state = POWER_STATE_RUNNING;
       write_node_power_state();
@@ -865,15 +1392,14 @@ int process_status_info(
     /* these two options are for switching nodes */
     if (!strncmp(str, NUMA_KEYWORD, strlen(NUMA_KEYWORD)))
       {
-
-      /* if we've already processed some, save this before moving on */
+      // If we've already processed some, save this before moving on
       if (i != 0)
         {
         save_node_status(current, temp);
         temp.clear();
         }
-      
-      dont_change_state = FALSE;
+
+      dont_change_state = false;
 
       if ((current = get_numa_from_str(str, current)) == NULL)
         break;
@@ -889,7 +1415,7 @@ int process_status_info(
         temp.clear();
         }
 
-      dont_change_state = FALSE;
+      dont_change_state = false;
 
       if ((current = get_node_from_str(str, name, current)) == NULL)
         break;
@@ -903,7 +1429,7 @@ int process_status_info(
            * can incorrectly be set as free again. For that reason, only set
            * a mom back up if its reporting for itself. */
           if (strcmp(name, str + strlen("node=")) != 0)
-            dont_change_state = TRUE;
+            dont_change_state = true;
           else
             current->nd_mom_reported_down = FALSE;
           }
@@ -932,7 +1458,7 @@ int process_status_info(
     else if (!strncmp(str, "layout", 6))
       {
       // Add 7 to skip "layout="
-      update_layout_if_needed(current, str + 7, force_layout_update);
+      update_layout_if_needed(current, str + 7, NULL, force_layout_update);
 
       // reset this to false in case we have a mom hierarchy in place
       force_layout_update = false;
@@ -952,7 +1478,7 @@ int process_status_info(
       sji->node_name = current->get_name();
       sji->job_info = str + 5;
       sji->sync_jobs = mom_job_sync;
-        
+
       // sji is freed in sync_node_jobs()
       enqueue_threadpool_request(sync_node_jobs, sji, task_pool);
 
@@ -978,7 +1504,7 @@ int process_status_info(
       if (!strncmp(str, "message=", 8))
         {
         std::string no_newlines(str);
-        size_t pos = no_newlines.find('\n');
+        size_t      pos = no_newlines.find('\n');
         
         while (pos != std::string::npos)
           {
@@ -993,8 +1519,8 @@ int process_status_info(
     
       if (!strncmp(str, "state", 5))
         {
-        if (dont_change_state == FALSE)
-          process_state_str(current, str);
+        if (dont_change_state == false)
+          process_state_str(current, str + 6); // +6 moves past 'state='
         }
       else if ((allow_any_mom == TRUE) &&
                (!strncmp(str, "uname", 5))) 
@@ -1006,12 +1532,17 @@ int process_status_info(
         if ((!strncmp(str, "message=ERROR", 13)) &&
             (down_on_error == TRUE))
           {
+          std::string no_newlines;
+          bool        changed;
+
           update_node_state(current, INUSE_DOWN);
-          dont_change_state = TRUE;
+          dont_change_state = true;
+
+          remove_newlines(str + 8, no_newlines, changed);
 
           if (note_append_on_error == true)
             {
-            set_note_error(current, str);
+            set_note_error(current, no_newlines);
             }
           }
         }
@@ -1260,66 +1791,7 @@ int is_gpustat_get(
     
     if (!memcmp(str, "gpu_mode=", 9))
       {
-      if ((!memcmp(str + 9, "Normal", 6)) || (!memcmp(str + 9, "Default", 7)))
-        {
-        np->nd_gpusn[gpuidx].mode = gpu_normal;
-        if (gpu_has_job(np, gpuidx))
-          {
-          np->nd_gpusn[gpuidx].state = gpu_shared;
-          }
-        else
-          {
-          np->nd_gpusn[gpuidx].inuse = 0;
-          np->nd_gpusn[gpuidx].state = gpu_unallocated;
-          }
-        }
-      else if ((!memcmp(str + 9, "Exclusive", 9)) ||
-              (!memcmp(str + 9, "Exclusive_Thread", 16)))
-        {
-        np->nd_gpusn[gpuidx].mode = gpu_exclusive_thread;
-        if (gpu_has_job(np, gpuidx))
-          {
-          np->nd_gpusn[gpuidx].state = gpu_exclusive;
-          }
-        else
-          {
-          np->nd_gpusn[gpuidx].inuse = 0;
-          np->nd_gpusn[gpuidx].state = gpu_unallocated;
-          }
-        }
-      else if (!memcmp(str + 9, "Exclusive_Process", 17))
-        {
-        np->nd_gpusn[gpuidx].mode = gpu_exclusive_process;
-        if (gpu_has_job(np, gpuidx))
-          {
-          np->nd_gpusn[gpuidx].state = gpu_exclusive;
-          }
-        else
-          {
-          np->nd_gpusn[gpuidx].inuse = 0;
-          np->nd_gpusn[gpuidx].state = gpu_unallocated;
-          }
-        }
-      else if (!memcmp(str + 9, "Prohibited", 10))
-        {
-        np->nd_gpusn[gpuidx].mode = gpu_prohibited;
-        np->nd_gpusn[gpuidx].state = gpu_unavailable;
-        }
-      else
-        {
-        /* unknown mode, default to prohibited */
-        np->nd_gpusn[gpuidx].mode = gpu_prohibited;
-        np->nd_gpusn[gpuidx].state = gpu_unavailable;
-        if (LOGLEVEL >= 3)
-          {
-          sprintf(log_buf,
-            "GPU %s has unknown mode on node %s",
-            gpuid,
-            np->get_name());
-
-          log_ext(-1, __func__, log_buf, LOG_DEBUG);
-          }
-        }
+      process_gpu_mode_string(np, str + 9, gpuidx);
  
       /* add gpu_mode so it gets added to the pbs_attribute */
 

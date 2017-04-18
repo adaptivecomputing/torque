@@ -367,9 +367,9 @@ void DIS_tcp_cleanup(struct tcp_chan *chan) {}
 
 int generate_alps_status(
 
-  std::vector<std::string> &status,
-  const char               *apbasil_path,
-  const char               *apbasil_protocol)
+  Json::Value &status,
+  const char  *apbasil_path,
+  const char  *apbasil_protocol)
 
   {
   return(0);
@@ -400,7 +400,9 @@ Machine::~Machine()
   {
   }
 
-void Machine::displayAsJson(std::stringstream &out, bool jobs) const {}
+//void Machine::displayAsJson(std::stringstream &out, bool jobs) const {}
+
+void Machine::displayAsJson(Json::Value &out, bool jobs) const {}
 
 Socket::Socket()
   {
@@ -829,5 +831,33 @@ void job::set_svraddr(pbs_net_t addr)
 char job::get_char_attr(int index) const
   {
   return(this->ji_wattr[index].at_val.at_char);
+  }
+
+void encode_used(
+
+  mom_job               *pjob,   /* I */
+  int                perm,   /* I */
+  Json::Value       *list,   /* O */
+  tlist_head        *phead)  /* O */
+
+  {
+  }
+
+void encode_flagged_attrs(
+
+  mom_job               *pjob,   /* I */
+  int                perm,   /* I */
+  Json::Value       *list,   /* O */
+  tlist_head        *phead)  /* O */
+
+  {
+  }
+
+bool am_i_mother_superior(
+
+  const mom_job &pjob)
+
+  {
+  return(true);
   }
 

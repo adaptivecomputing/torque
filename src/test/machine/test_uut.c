@@ -15,7 +15,7 @@ extern int hardware_style;
 
 int get_hardware_style(hwloc_topology_t topology);
 
-extern void CreateJsonString(std::string &testString, int testNum);
+extern void CreateJsonValue(Json::Value &test, int testNum);
 extern int my_req_count;
 extern int my_core_count;
 extern int num_tasks_fit;
@@ -181,29 +181,28 @@ END_TEST
 START_TEST(test_json_constructor)
   {
 
-  std::string j1;
-  CreateJsonString(j1,1);
+  Json::Value j1;
+  CreateJsonValue(j1,1);
   //const char *j1 = (t1.str()).c_str();
-  std::string j2;
-  CreateJsonString(j2,2);
+  Json::Value j2;
+  CreateJsonValue(j2,2);
   //const char *j2 = (t2.str()).c_str();
  
-
-  std::stringstream out;
+  Json::Value out;
 
   std::vector<std::string> valid_ids;
 
   Machine m1(j1, valid_ids);
   fail_unless(json_socket == 2, "%d times", json_socket);
   m1.displayAsJson(out, false);
-  fail_unless(out.str() == j1, out.str().c_str());
+  fail_unless(out.toStyledString() == j1.toStyledString());
   fail_unless(m1.getTotalSockets() == 2);
 
-  out.str("");
+  out.clear();
   Machine m2(j2, valid_ids);
   fail_unless(json_socket == 3, "%d times", json_socket);
   m2.displayAsJson(out, false);
-  fail_unless(out.str() == j2, out.str().c_str());
+  fail_unless(out.toStyledString() == j2.toStyledString());
   fail_unless(m2.getTotalSockets() == 1);
   }
 END_TEST

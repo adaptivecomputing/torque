@@ -408,7 +408,7 @@ const char *validuser(struct rm_attribute *);
 const char *reqmsg(struct rm_attribute *);
 const char         *reqgres(struct rm_attribute *);
 const char *reqstate(struct rm_attribute *);
-const char *getjoblist(struct rm_attribute *);
+Json::Value getjoblist(struct rm_attribute *);
 const char *reqvarattr(struct rm_attribute *);
 
 
@@ -421,7 +421,6 @@ struct config common_config[] =
   { "message",   {reqmsg} },           /* message       ???              */
   { "gres",      {reqgres} },          /* generic resource (licenses...) */
   { "state",     {reqstate} },         /* state of pbs_mom               */
-  { "jobs",      {getjoblist} },       /* job list this pbs_mom          */
   { "varattr",   {reqvarattr} },       /* ???                            */
   { NULL,        {NULL} }
   };
@@ -2909,76 +2908,6 @@ const char *reqmsg(
 
   return(PBSNodeMsgBuf);
   }  /* END reqmsg() */
-  
-
-
-void add_job_status_information(
-
-  mom_job         &pjob,
-  Json::Value &job_info)
-
-  {
-  encode_used(&pjob, ATR_DFLAG_MGRD, &job_info, NULL); /* adds resources_used attr */
-
-  encode_flagged_attrs(&pjob, ATR_DFLAG_MGRD, &job_info, NULL); /* adds other flagged attrs */
-  } /* END add_job_status_information() */
-
-
-
-const char *getjoblist(
-
-  struct rm_attribute *attrib) /* I */
-
-  {
-  Json::Value        job_list;
-  mom_job               *pjob;
-
-#ifdef NUMA_SUPPORT
-  char  mom_check_name[PBS_MAXSERVERNAME];
-  char *dot;
-#endif 
-
-  if (alljobs_list.size() == 0)
-    {
-    /* no jobs - return space character */
-
-    return(" ");
-    }
-
-#ifdef NUMA_SUPPORT 
-  /* initialize the name to check for for this numa mom */
-  strcpy(mom_check_name,mom_host);
-
-  if ((dot = strchr(mom_check_name,'.')) != NULL)
-    *dot = '\0';
-
-  sprintf(mom_check_name + strlen(mom_check_name),"-%d/",numa_index);
-#endif
-
-  std::list<mom_job *>::iterator iter;
-
-  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
-    {
-    pjob = *iter;
-
-#ifdef NUMA_SUPPORT
-    /* skip over jobs that aren't on this node */
-    if (strstr(pjob->get_str_attr(JOB_ATR_exec_host), mom_check_name) == NULL)
-      continue;
-#endif
-
-    Json::Value job_info;
-
-    if (am_i_mother_superior(*pjob) == true)
-      {
-      add_job_status_information(*pjob, job_info);
-      }
-
-    job_list[pjob->get_jobid()] = job_info;
-    }  /* END for (pjob) */
-
-  return(strdup(job_list.toStyledString().c_str()));
-  }  /* END getjoblist() */
 
 
 

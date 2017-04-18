@@ -173,8 +173,8 @@ int unlock_node(
 
 int process_alps_status(
 
-  char                     *nd_name,
-  std::vector<std::string> &status_info)
+  const char  *nd_name,
+  Json::Value &status_info)
 
   {
   return(0);
@@ -926,7 +926,9 @@ void pbsnode::change_name(const char *hostname)
 
 void pbsnode::set_version(const char *) {}
 
-void pbsnode::capture_plugin_resources(const char *) {}
+void pbsnode::capture_plugin_resources(Json::Value &jv) {}
+
+void pbsnode::capture_plugin_resources(const char *resc_str) {}
 
 #include "../../src/server/id_map.cpp"
 #include "../../src/server/node_attr_def.c"

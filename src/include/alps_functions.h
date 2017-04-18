@@ -77,22 +77,25 @@
 * without reference to its choice of law rules.
 */
 
-#include "list_link.h"
-#include "pbs_nodes.h"
-#include "batch_request.h"
 #include <libxml/parser.h>
 #include <libxml/tree.h>
 #include <string>
 #include <vector>
 #include <map>
 
+#include "json/json.h"
+#include "list_link.h"
+#include "pbs_nodes.h"
+#include "batch_request.h"
+
 
 extern const char *alps_reporter_feature;
 
 std::string get_frequency_request(struct cpu_frequency_value *pfreq);
 
-int generate_alps_status(std::vector<std::string> &status, const char *apbasil_path, const char *apbasil_protocol);
+int generate_alps_status(Json::Value &status, const char *apbasil_path, const char *apbasil_protocol);
 
+int process_alps_status(const char *nd_name, Json::Value &status);
 int process_alps_status(const char *nd_name, std::vector<std::string> &status);
 
 int get_alps_statuses(struct pbsnode *parent, struct batch_request *preq, int *bad, tlist_head *pstathd);
@@ -143,4 +146,4 @@ class alps_node_info
   void add_to_status(std::vector<std::string> &status);
   };
 
-extern std::map<int, alps_node_info> alps_nodes;
+extern std::map<int, Json::Value> alps_nodes;

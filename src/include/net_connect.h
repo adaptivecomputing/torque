@@ -112,10 +112,10 @@ typedef unsigned long pbs_net_t;        /* for holding host addresses */
 #define TM_PROTOCOL_VER 2 /* task manager protocol version number */
 
 #define IM_PROTOCOL 3 /* inter-manager protocol number */
-#define IM_PROTOCOL_VER 2 /* inter-manager protocol version number */
+#define IM_PROTOCOL_VER 3 /* inter-manager protocol version number */
 
 #define IS_PROTOCOL 4 /* inter-server protocol number */
-#define IS_PROTOCOL_VER 3 /* inter-server protocol version number */
+#define IS_PROTOCOL_VER 4 /* inter-server protocol version number */
 
 
 /*

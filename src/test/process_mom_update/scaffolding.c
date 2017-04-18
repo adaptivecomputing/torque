@@ -482,7 +482,11 @@ const char *pbsnode::get_name() const
   return(this->nd_name.c_str());
   }
 
-void pbsnode::capture_plugin_resources(const char *str)
+void pbsnode::capture_plugin_resources(Json::Value &jv)
+  {
+  }
+
+void pbsnode::capture_plugin_resources(const char *resc_str)
   {
   }
 
@@ -502,7 +506,7 @@ pbsnode::pbsnode() : nd_error(0), nd_properties(), nd_version(0), nd_proximal_fa
                      nd_lastupdate(0), nd_lastHierarchySent(0), nd_hierarchy_level(0),
                      nd_in_hierarchy(0), nd_ngpus(0), nd_gpus_real(0), nd_gpusn(),
                      nd_ngpus_free(0), nd_ngpus_needed(0), nd_ngpus_to_be_used(0),
-                     nd_gpustatus(NULL), nd_ngpustatus(0), nd_nmics(0),
+                     nd_gpustatus(), nd_ngpustatus(0), nd_nmics(0),
                      nd_micstatus(NULL), nd_micjobids(), nd_nmics_alloced(0),
                      nd_nmics_free(0), nd_nmics_to_be_used(0), parent(NULL),
                      num_node_boards(0), node_boards(NULL), numa_str(),
@@ -680,6 +684,14 @@ Machine &Machine::operator =(const Machine &other)
   {
   this->initialized = other.initialized;
   return(*this);
+  }
+
+Machine::Machine(
+  
+  Json::Value              &json_layout,
+  std::vector<std::string> &valid_ids) : initialized(true)
+
+  {
   }
 
 Machine::Machine(

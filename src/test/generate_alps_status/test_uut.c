@@ -9,7 +9,7 @@ int log_event_called = 0;
 
 
 int parse_alps_output(std::string& alps_output);
-void update_status(std::vector<std::string> &status);
+void update_status(Json::Value &status);
 
 void log_event( int eventtype, int objclass, const char *objname, const char *text);
 extern int      LOGLEVEL;
@@ -52,7 +52,7 @@ const char *sample_unkrole_nores = "<BasilResponse protocol='1.0'> <ResponseData
 const char *sample_failure_downnode = "<?xml version='1.0'?><BasilResponse protocol='1.2'> <ResponseData status='FAILURE' method='QUERY' error_class='PERMANENT' error_source='BACKEND'> <Message severity='ERROR'>Node mapping mismatch: SDB = 15309, ALPS = 15410.</Message> </ResponseData> </BasilResponse>";
 
 int search_dynamic_string_status(std::vector<std::string> &status, char *str);
-int generate_alps_status(std::vector<std::string> &status, const char *path, const char *protocol);
+int generate_alps_status(Json::Value &status_json, const char *path, const char *protocol);
 int get_knl_information(const char *apbasil_path);
 
 START_TEST(get_knl_information_test)
@@ -63,8 +63,10 @@ START_TEST(get_knl_information_test)
   fail_unless(get_knl_information(path) == PBSE_NONE);
   fail_unless(alps_nodes.find(6142) != alps_nodes.end());
   fail_unless(alps_nodes.find(6143) != alps_nodes.end());
-  fail_unless(alps_nodes[6142].os == "opsys=CLE_a2a_flat", alps_nodes[6142].os.c_str());
-  fail_unless(alps_nodes[6142].hbm == "hbmem=4096000kb", alps_nodes[6142].hbm.c_str());
+  fail_unless(alps_nodes[6142]["opsys"].asString() == "CLE_a2a_flat",
+    alps_nodes[6142]["opsys"].asString().c_str());
+  fail_unless(alps_nodes[6142]["hbmem"].asString() == "4096000kb",
+    alps_nodes[6142]["hbmem"].asString().c_str());
   }
 END_TEST
 
@@ -72,7 +74,7 @@ END_TEST
 START_TEST(parse_alps_output_test)
   {
   std::string output(sample_start1);
-  std::vector<std::string> status;
+  Json::Value status;
   int             rc;
 
   output += sample_start2;
@@ -103,11 +105,11 @@ START_TEST(parse_alps_output_test)
   update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
-  fail_unless(search_dynamic_string_status(status, (char *)"6142") == 1, "Couldn't find node 6142 in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"6143") == 1, "Couldn't find node 6143 in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"6144") == 1, "Couldn't find node 6144 in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"CPROC") == 1, "Couldn't find CPROC in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"APROC") == 1, "Couldn't find APROC in the status");
+  fail_unless(status["6142"].empty() == false, "Couldn't find node 6142 in the status");
+  fail_unless(status["6143"].empty() == false, "Couldn't find node 6143 in the status");
+  fail_unless(status["6144"].empty() == false, "Couldn't find node 6144 in the status");
+  fail_unless(status["6144"]["CPROC"].empty() == false, "Couldn't find CPROC in the status");
+  fail_unless(status["6144"]["APROC"].empty() == false, "Couldn't find APROC in the status");
 
   // role is not specified, reservation id set
 
@@ -121,8 +123,8 @@ START_TEST(parse_alps_output_test)
   update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
-  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 1, "Couldn't find reservation in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"state=BUSY") == 1, "Couldn't find state in the status");
+  fail_unless(status["6142"]["reservation_id"].empty() == false, "Couldn't find reservation in the status");
+  fail_unless(status["6142"]["state"].asString() == "BUSY", "Couldn't find state in the status");
 
   // role is not specified, reservation id not set
 
@@ -136,8 +138,8 @@ START_TEST(parse_alps_output_test)
   update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
-  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"state=UP") == 1, "Couldn't find state in the status");
+  fail_unless(status["6142"]["reservation_id"].empty() == true, "Found reservation in the status");
+  fail_unless(status["6142"]["state"].asString() == "UP", "Couldn't find state in the status");
 
   // role is BATCH, reservation id set
 
@@ -151,8 +153,8 @@ START_TEST(parse_alps_output_test)
   update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
-  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 1, "Couldn't find reservation in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"state=BUSY") == 1, "Couldn't find state in the status");
+  fail_unless(status["6142"]["reservation_id"].empty() == false, "Couldn't find reservation in the status");
+  fail_unless(status["6142"]["state"] == "BUSY", "Couldn't find state in the status");
 
   // role is BATCH, reservation id not set
 
@@ -166,8 +168,8 @@ START_TEST(parse_alps_output_test)
   update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
-  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"state=UP") == 1, "Couldn't find state in the status");
+  fail_unless(status["6142"]["reservation_id"].empty() == true, "Found reservation in the status");
+  fail_unless(status["6142"]["state"] == "UP", "Couldn't find state in the status");
  
   // role is interactive, reservation id set
 
@@ -181,8 +183,8 @@ START_TEST(parse_alps_output_test)
   update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
-  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"state=BUSY") == 1, "Couldn't find state in the status");
+  fail_unless(status["6142"]["reservation_id"].empty(), "Found reservation in the status");
+  fail_unless(status["6142"]["state"].asString() == "BUSY", "Couldn't find state in the status");
 
   // role is interactive, reservation id not set
 
@@ -196,8 +198,8 @@ START_TEST(parse_alps_output_test)
   update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
-  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"state=DOWN") == 1, "Couldn't find state in the status");
+  fail_unless(status["6142"]["reservation_id"].empty(), "Found reservation in the status");
+  fail_unless(status["6142"]["state"] == "DOWN", "Couldn't find state in the status");
 
   // role is unknown, reservation id set
 
@@ -211,8 +213,8 @@ START_TEST(parse_alps_output_test)
   update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
-  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"state=BUSY") == 1, "Couldn't find state in the status");
+  fail_unless(status["6142"]["reservation_id"].empty(), "Unknown role shouldn't report the reservation");
+  fail_unless(status["6142"]["state"].asString() == "BUSY", "%s", status["6142"]["state"].asString().c_str());
 
   // role is unknown, reservation id not set
 
@@ -226,8 +228,8 @@ START_TEST(parse_alps_output_test)
   update_status(status);
   fail_unless(rc == 0, "Couldn't parse alps output");
 
-  fail_unless(search_dynamic_string_status(status, (char *)"reservation_id=") == 0, "Found reservation in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"state=DOWN") == 1, "Couldn't find state in the status");
+  fail_unless(status["6142"]["reservation_id"].empty(), "Found reservation in the status");
+  fail_unless(status["6142"]["state"] == "DOWN", "Couldn't find state in the status");
 
   output.clear();
   status.clear();
@@ -251,11 +253,11 @@ START_TEST(parse_alps13_output_test)
 
   #define ALPS_13_INPUT_FILE "basil_13_short.xml"
 
-  std::string output = "";
-  std::vector<std::string> status;
-  int             rc;
-  FILE           *fp;
-  char            linebuf[1024];
+  std::string  output;
+  Json::Value  status;
+  int          rc;
+  FILE        *fp;
+  char         linebuf[1024];
 
   if ((fp = fopen(ALPS_13_INPUT_FILE, "r")) == NULL)
     ck_abort_msg("Couldn't open ALPS 13 input file %s", ALPS_13_INPUT_FILE);
@@ -271,10 +273,10 @@ START_TEST(parse_alps13_output_test)
     update_status(status);
     fail_unless(rc == 0, "Couldn't parse ALPS 1.3 output contained in file %s", ALPS_13_INPUT_FILE);
 
-    fail_unless(search_dynamic_string_status(status, (char *)"6142") == 1, "Couldn't find node 6142 in the 1.3 status");
-    fail_unless(search_dynamic_string_status(status, (char *)"CPROC") == 1, "Couldn't find CPROC in the 1.3 status");
-    fail_unless(search_dynamic_string_status(status, (char *)"APROC") == 1, "Couldn't find APROC in the 1.3 status");
-    fail_unless(search_dynamic_string_status(status, (char *)"CCU") == 1, "Couldn't find CCU in the 1.3 status");
+    fail_unless(status["6142"].empty() == false, "Couldn't find node 6142 in the 1.3 status");
+    fail_unless(status["6142"]["CPROC"].empty() == false, "Couldn't find CPROC in the 1.3 status");
+    fail_unless(status["6142"]["APROC"].empty() == false, "Couldn't find APROC in the 1.3 status");
+    fail_unless(status["6142"]["CCU"].empty() == false, "Couldn't find CCU in the 1.3 status");
     }
 
   }
@@ -282,7 +284,7 @@ END_TEST
 
 START_TEST(full_generate_test)
   {
-  std::vector<std::string> status;
+  Json::Value     status;
   int             rc;
   char           *path = (char *)"../test_scripts/get_inventory.sh";
   char           *protocol = (char *)"1.0";
@@ -295,14 +297,14 @@ START_TEST(full_generate_test)
   if (rc == 0)
     fail_unless(log_event_called == 1, "log_event was not called within successful generate_alps_status()");
 
-  fail_unless(search_dynamic_string_status(status, (char *)"GPU") > 0, "Couldn't find the GPUs reported in the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"cheeseburger") > 0, "Couldn't find the feature cheeseburger in the status");
+  fail_unless(status["6142"]["accelerators"].empty() == false, "Couldn't find the GPUs reported in the status");
+  fail_unless(status["6142"]["feature_list"].asString().find("cheeseburger") != std::string::npos, "%s", status["6142"]["feature_list"].asString().c_str());
   }
 END_TEST 
 
 START_TEST(label_generate_test)
   {
-  std::vector<std::string> status;
+  Json::Value     status;
   int             rc;
   char           *path = (char *)"../test_scripts/label_inventory.sh";
   char           *protocol = (char *)"1.0";
@@ -310,43 +312,10 @@ START_TEST(label_generate_test)
   rc = generate_alps_status(status, path, protocol);
 
   fail_unless(rc == 0, "Couldn't generate the status");
-  fail_unless(search_dynamic_string_status(status, (char *)"regmem") == 1);
-  fail_unless(search_dynamic_string_status(status, (char *)"regmem,") != 1);
-  fail_unless(search_dynamic_string_status(status, (char *)"regmemregmem") != 1);
+  fail_unless(status["6141"]["feature_list"].asString() == "regmem");
   }
 END_TEST
 
-START_TEST(check_status_attribute_order)
-  {
-  std::vector<std::string> status;
-  int             rc;
-  char           *path = (char *)"../test_scripts/check_order_inventory.sh";
-  char           *protocol = (char *)"1.7";
-  int             index = 0;
-  int             ccu_index = -1;
-  int             cproc_index = -1;
-  
-  rc = generate_alps_status(status, path, protocol);
-
-  fail_unless(rc == 0, "Couldn't generate the status");
-
-  // make sure CCU comes before CPROC in status
-
-  for(std::vector<std::string>::const_iterator i = status.begin(); i != status.end(); ++i)
-    {
-    if (i->substr(0, 4) == "CCU=")
-      ccu_index = index;
-    else if (i->substr(0, 6) == "CPROC=")
-      cproc_index = index;
-
-    index++;
-    }
-
-  fail_unless(ccu_index != -1, "CCU not found in status");
-  fail_unless(cproc_index != -1, "CPROC not found in status");
-  fail_unless(ccu_index < cproc_index, "CCU was not ordered before CPROC in status");
-  }
-END_TEST
 
 Suite *node_func_suite(void)
   {
@@ -366,7 +335,6 @@ Suite *node_func_suite(void)
   tc_core = tcase_create("full_generate_test");
   tcase_add_test(tc_core, full_generate_test);
   tcase_add_test(tc_core, label_generate_test);
-  tcase_add_test(tc_core, check_status_attribute_order);
   suite_add_tcase(s, tc_core); 
 
   //tc_core = tcase_create("full_generate_test_13");

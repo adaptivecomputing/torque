@@ -1613,71 +1613,37 @@ int node_status_list(
 
 int node_gpustatus_list(
 
-  pbs_attribute *new_attr,      /* derive status into this pbs_attribute*/
-  void          *pnode,    /* pointer to a pbsnode struct     */
-  int            actmode)  /* action mode; "NEW" or "ALTER"   */
+  pbs_attribute *new_attr, // derive status into this pbs_attribute
+  void          *pnode,    // pointer to a pbsnode struct     
+  int            actmode)  // action mode; "NEW" or "ALTER"   
 
   {
   int              rc = 0;
 
   struct pbsnode *np;
-  pbs_attribute   temp;
 
-  np = (struct pbsnode *)pnode;    /* because of at_action arg type */
+  np = (struct pbsnode *)pnode;    // because of at_action arg type 
 
   switch (actmode)
     {
 
     case ATR_ACTION_NEW:
 
-      /* if node has a status list, then copy array_strings    */
-      /* into temp to use to setup a copy, otherwise setup empty */
+      // node has no properties, setup empty pbs_attribute 
 
-      if (np->nd_gpustatus != NULL)
-        {
-        /* setup temporary pbs_attribute with the array_strings */
-        /* from the node                                    */
-
-        temp.at_val.at_arst = np->nd_gpustatus;
-        temp.at_flags = ATR_VFLAG_SET;
-        temp.at_type  = ATR_TYPE_ARST;
-
-        rc = set_arst(new_attr, &temp, SET);
-        }
-      else
-        {
-        /* node has no properties, setup empty pbs_attribute */
-
-        new_attr->at_val.at_arst = NULL;
-        new_attr->at_flags       = 0;
-        new_attr->at_type        = ATR_TYPE_ARST;
-        }
+      new_attr->at_val.at_arst = NULL;
+      new_attr->at_flags       = 0;
+      new_attr->at_type        = ATR_TYPE_ARST;
 
       break;
 
     case ATR_ACTION_ALTER:
 
-      if (np->nd_gpustatus != NULL)
-        {
-        free(np->nd_gpustatus->as_buf);
-        free(np->nd_gpustatus);
+      np->nd_gpustatus.clear();
 
-        np->nd_gpustatus = NULL;
-        }
-
-      /* update node with new attr_strings */
-
-      np->nd_gpustatus = new_attr->at_val.at_arst;
-
-      new_attr->at_val.at_arst = NULL;
-
-      /* update number of status items listed in node */
-      /* does not include name and subnode property */
-
-      if (np->nd_gpustatus != NULL)
-        np->nd_ngpustatus = np->nd_gpustatus->as_usedptr;
-      else
-        np->nd_ngpustatus = 0;
+      // update node with new attr_strings
+      for (int i = 0; i < new_attr->at_val.at_arst->as_usedptr; i++)
+        np->nd_gpustatus += new_attr->at_val.at_arst->as_string[i];
 
       break;
 
@@ -1686,11 +1652,10 @@ int node_gpustatus_list(
       rc = PBSE_INTERNAL;
 
       break;
-    }  /* END switch(actmode) */
+    }  // END switch(actmode) 
 
   return(rc);
-  }  /* END node_gpupstatus_list() */
-
+  }  // END node_gpupstatus_list()
 
 
 

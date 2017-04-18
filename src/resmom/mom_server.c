@@ -210,9 +210,8 @@
 #include <netinet/in.h>
 #include <sys/time.h>
 #include <sstream>
-#if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
+#include <boost/tokenizer.hpp>
 #include <arpa/inet.h>
-#endif
 
 #include "pbs_ifl.h"
 #include "pbs_error.h"
@@ -245,8 +244,6 @@
 #include <string>
 #include <vector>
 #include "container.hpp"
-#include <arpa/inet.h>
-#include <boost/tokenizer.hpp>
 #ifdef PENABLE_LINUX_CGROUPS
 #include "machine.hpp"
 #endif
@@ -255,6 +252,7 @@
 #include "trq_plugin_api.h"
 #include "plugin_internal.h"
 #endif
+#include "numa_constants.h"
 
 #define MAX_RETRY_TIME_IN_SECS           (5 * 60)
 #define STARTING_RETRY_INTERVAL_IN_SECS   2
@@ -312,7 +310,7 @@ extern u_long              localaddr;
 extern bool                force_layout_update;
 extern container::item_container<received_node *> received_statuses;
 std::vector<std::string>   global_gpu_status;
-std::vector<std::string>   mom_status;
+Json::Value                mom_status;
 
 
 extern struct config *rm_search(struct config *where, const char *what);
@@ -320,6 +318,8 @@ extern struct config *rm_search(struct config *where, const char *what);
 extern struct rm_attribute *momgetattr(char *str);
 extern char *conf_res(char *resline, struct rm_attribute *attr);
 extern void send_update_soon();
+void        encode_used(mom_job *pjob, int perm, Json::Value *jv, tlist_head *ll);
+void        encode_flagged_attrs(mom_job *pjob, int perm, Json::Value *jv, tlist_head *ll);
 
 #ifdef NVIDIA_GPUS
 extern int  use_nvidia_gpu;
@@ -691,25 +691,95 @@ int is_compose(
 
   return(DIS_SUCCESS);
   }  /* END is_compose() */
+  
+
+
+void add_job_status_information(
+
+  mom_job     &pjob,
+  Json::Value &job_info)
+
+  {
+  encode_used(&pjob, ATR_DFLAG_MGRD, &job_info, NULL); /* adds resources_used attr */
+
+  encode_flagged_attrs(&pjob, ATR_DFLAG_MGRD, &job_info, NULL); /* adds other flagged attrs */
+  } /* END add_job_status_information() */
+
+
+
+/*
+ * getjoblist()
+ *
+ * @return - a json value containing an entry for each job on this node, its resources, and its
+ * flagged attributes.
+ */
+
+Json::Value getjoblist()
+
+  {
+  Json::Value  job_list;
+  mom_job     *pjob;
+
+#ifdef NUMA_SUPPORT
+  char  mom_check_name[PBS_MAXSERVERNAME];
+  char *dot;
+#endif 
+
+  if (alljobs_list.size() == 0)
+    {
+    /* no jobs - return space character */
+
+    return(job_list);
+    }
+
+#ifdef NUMA_SUPPORT 
+  /* initialize the name to check for for this numa mom */
+  strcpy(mom_check_name,mom_host);
+
+  if ((dot = strchr(mom_check_name,'.')) != NULL)
+    *dot = '\0';
+
+  sprintf(mom_check_name + strlen(mom_check_name),"-%d/",numa_index);
+#endif
+
+  std::list<mom_job *>::iterator iter;
+
+  for (iter = alljobs_list.begin(); iter != alljobs_list.end(); iter++)
+    {
+    pjob = *iter;
+
+#ifdef NUMA_SUPPORT
+    /* skip over jobs that aren't on this node */
+    if (strstr(pjob->get_str_attr(JOB_ATR_exec_host), mom_check_name) == NULL)
+      continue;
+#endif
+
+    Json::Value job_info;
+
+    if (am_i_mother_superior(*pjob) == true)
+      {
+      add_job_status_information(*pjob, job_info);
+      }
+
+    job_list[pjob->get_jobid()] = job_info;
+    }  /* END for (pjob) */
+
+  return(job_list);
+  }  /* END getjoblist() */
 
 
 
 #ifdef PENABLE_LINUX_CGROUPS
 void gen_layout(
 
-  const char               *name,
-  std::vector<std::string> &status)
+  const char  *name,
+  Json::Value &status)
 
   {
   if (force_layout_update == true)
-    {
-    status.push_back("force_layout_update");
-    }
+    status["force_layout_update"] = true;
 
-  std::stringstream layout;
-  layout << name << "=";
-  this_node.displayAsJson(layout, false);
-  status.push_back(layout.str());
+  this_node.displayAsJson(status[name], false);
   } // END gen_layout()
 #endif
 
@@ -730,8 +800,8 @@ void gen_layout(
 
 void gen_size(
 
-  const char               *name,
-  std::vector<std::string> &status)
+  const char  *name,
+  Json::Value &status)
 
   {
   struct config       *ap;
@@ -750,12 +820,7 @@ void gen_size(
       value = dependent(name, attr);
 
       if (value && *value)
-        {
-        std::string s(name);
-        s += "=";
-        s += value;
-        status.push_back(s);
-        }
+        status[name] = value;
       }
     }
 
@@ -766,8 +831,8 @@ void gen_size(
 
 void gen_arch(
 
-  const char               *name,
-  std::vector<std::string> &status)
+  const char  *name,
+  Json::Value &status)
 
   {
   struct config  *ap;
@@ -775,12 +840,7 @@ void gen_arch(
   ap = rm_search(config_array,name);
 
   if (ap != NULL)
-    {
-    std::string s(name);
-    s += "=";
-    s += ap->c_u.c_value;
-    status.push_back(s);
-    }
+    status[name] = ap->c_u.c_value;
 
   return;
   }
@@ -789,8 +849,8 @@ void gen_arch(
 
 void gen_opsys(
 
-  const char               *name,
-  std::vector<std::string> &status)
+  const char  *name,
+  Json::Value &status)
 
   {
   struct config  *ap;
@@ -798,12 +858,7 @@ void gen_opsys(
   ap = rm_search(config_array,name);
 
   if (ap != NULL)
-    {
-    std::string s(name);
-    s += "=";
-    s += ap->c_u.c_value;
-    status.push_back(s);
-    }
+    status[name] = ap->c_u.c_value;
 
   return;
   }
@@ -812,24 +867,19 @@ void gen_opsys(
 
 void gen_jdata(
 
-  const char               *name,
-  std::vector<std::string> &status)
+  const char  *name,
+  Json::Value &status)
 
   {
   if (TORQUE_JData[0] != '\0')
-    {
-    std::string s(name);
-    s += "=";
-    s += TORQUE_JData;
-    status.push_back(s);
-    }
+    status[name] = TORQUE_JData;
 
   }
 
 void gen_gres(
 
   const char  *name,
-  std::vector<std::string> &status)
+  Json::Value &status)
 
   {
   const char *value;
@@ -837,25 +887,23 @@ void gen_gres(
   value = reqgres(NULL);
 
   if (value != NULL)
-    {
-    std::string s(name);
-    s += "=";
-    s += value;
-    status.push_back(s);
-    }
+    status[name] = value;
 
   return;
   }    /* END gen_gres() */
 
+
+
 void gen_gen(
 
   const char  *name,
-  std::vector<std::string> &status)
+  Json::Value &status)
 
   {
   struct config *ap;
   const char    *value;
   char          *ptr;
+  char           buf[MAXLINE];
 
   ap = rm_search(config_array,name);
 
@@ -864,12 +912,7 @@ void gen_gen(
     ptr = conf_res(ap->c_u.c_value, NULL);
 
     if (ptr && *ptr)
-      {
-      std::string s(name);
-      s += "=";
-      s += ptr;
-      status.push_back(s);
-      }
+      status[name] = ptr;
     }
   else
     {
@@ -877,23 +920,12 @@ void gen_gen(
 
     if (value == NULL)
       {
-      /* value not set (attribute required) */
-      std::string s(name);
-      s += "=";
-      s += rm_errno;
-      status.push_back(s);
+      // value not set (attribute required)
+      sprintf(buf, "%d", rm_errno);
+      status[name] = buf;
       }
-    else if (value[0] == '\0')
-      {
-      /* value not set (attribute optional) */
-      }
-    else
-      {
-      std::string s(name);
-      s += "=";
-      s += value;
-      status.push_back(s);
-      }
+    else if (value[0] != '\0')
+      status[name] = value;
     } /* else if (ap) */
 
   return;
@@ -903,8 +935,8 @@ void gen_gen(
 
 void gen_macaddr(
 
-  const char               *name,
-  std::vector<std::string> &status)
+  const char  *name,
+  Json::Value &status)
 
   {
   static std::string mac_addr;
@@ -990,15 +1022,12 @@ void gen_macaddr(
     return;
     }
 
-  std::string s(name);
-  s += "=";
-  s += mac_addr;
-  status.push_back(s);
+  status[name] = mac_addr;
   } // END gen_macaddr()
 
 
 
-typedef void (*gen_func_ptr)(const char *, std::vector<std::string> &);
+typedef void (*gen_func_ptr)(const char *, Json::Value &);
 
 typedef struct stat_record
   {
@@ -1044,7 +1073,9 @@ stat_record stats[] = {
  * resource plugin for node resource piece
  */
 
-void add_custom_node_resources()
+void add_custom_node_resources(
+    
+  Json::Value &node)
 
   {
 #ifdef USE_RESOURCE_PLUGIN
@@ -1071,7 +1102,6 @@ void add_custom_node_resources()
       (features.size() > 0))
     {
     Json::Value plugin_info;
-    std::string status_entry(PLUGIN_EQUALS);
 
     if (greses.size() > 0)
       {
@@ -1124,8 +1154,7 @@ void add_custom_node_resources()
       plugin_info[FEATURES] = feature_list;
       }
 
-    status_entry += plugin_info.toStyledString();
-    mom_status.push_back(status_entry);
+    node[PLUGIN_RESC] = plugin_info;
     }
 
   if (LOGLEVEL >= 3)
@@ -1164,18 +1193,17 @@ void add_custom_node_resources()
 
 void generate_server_status(
     
-  std::vector<std::string> &status)
+  Json::Value &status)
 
   {
-  int   i;
-  std::stringstream ss;
+  int         i;
+  Json::Value node;
+
+  node["name"] = mom_alias;
 
 #ifdef NUMA_SUPPORT
   /* identify which vnode this is */
-  ss << NUMA_KEYWORD;
-  ss << numa_index;
-  status.push_back(ss.str());
-  ss.str("");
+  node[NUMA_KEYWORD] = numa_index;
 #endif /* NUMA_SUPPORT */
 
   for (i = 0;stats[i].name != NULL;i++)
@@ -1183,34 +1211,37 @@ void generate_server_status(
     alarm(alarm_time);
 
     if (stats[i].func)
-      {
-      (stats[i].func)(stats[i].name, status);
-      }
+      (stats[i].func)(stats[i].name, node);
 
     alarm(0);
     }  /* END for (i) */
 
-  ss << "version=" << PACKAGE_VERSION;
-  status.push_back(ss.str());
+  node["jobs"] = getjoblist();
+  node["version"] = PACKAGE_VERSION;
 
-  add_custom_node_resources();
+  add_custom_node_resources(node);
+  status[NODE][0] = node;
 
   TORQUE_JData[0] = '\0';
   }  /* END generate_server_status */
 
 
 
-int should_request_cluster_addrs()
+/*
+ * should_request_cluster_addrs()
+ */
+
+bool should_request_cluster_addrs()
 
   {
-  int should = FALSE;
+  bool should = false;
   time_now = time(NULL);
 
   if (received_cluster_addrs == false)
     {
     if (time_now - requested_cluster_addrs > DEFAULT_SERVER_STAT_UPDATES)
       {
-      should = TRUE;
+      should = true;
       }
     }
 
@@ -1237,7 +1268,6 @@ int write_update_header(
 
   {
   int  ret;
-  char buf[MAXLINE];
   
   if ((ret = is_compose(chan, name, IS_STATUS)) == DIS_SUCCESS)
     {
@@ -1247,17 +1277,10 @@ int write_update_header(
         {
         if (is_reporter_mom == FALSE)
           {
-          /* write this node's name first - alps handles this separately */
-          snprintf(buf,sizeof(buf),"node=%s",mom_alias);
-          
-          if ((ret = diswst(chan, buf)) != DIS_SUCCESS)
-            mom_server_stream_error(chan->sock, name, id, "writing status string");
-          else if (should_request_cluster_addrs() == TRUE)
+          if (should_request_cluster_addrs() == true)
             {
-            if ((ret = diswst(chan, "first_update=true")) != DIS_SUCCESS)
-              mom_server_stream_error(chan->sock, name, id, "writing status string");
-            else
-              requested_cluster_addrs = time_now;
+            mom_status[NODE][0]["first_update"] = true;
+            requested_cluster_addrs = time_now;
             }
           }
         }
@@ -1273,7 +1296,7 @@ int write_my_server_status(
  
   struct tcp_chan          *chan,
   const char               *id,
-  std::vector<std::string> &strings,
+  Json::Value              &json_status,
   void                     *dest,
   int                       mode)
  
@@ -1282,45 +1305,38 @@ int write_my_server_status(
 
   mom_server  *pms;
   node_comm_t *nc;
- 
-  /* put each string into the message. */
-  for (unsigned int i = 0; i < strings.size(); i++)
-    {
-    const char *str_to_write = strings[i].c_str();
-
-    if (LOGLEVEL >= 7)
-      {
-      sprintf(log_buffer,"%s: sending to server \"%s\", i = %u size = %d",
-        id,
-        str_to_write, i, (int)strings.size());
-      
-      log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
-      }
+  std::string  status_json_str(json_status.toStyledString());
     
-    if ((ret = diswst(chan, str_to_write)) != DIS_SUCCESS)
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer,"%s: sending to server \"%s\", size = %d",
+      id,
+      status_json_str.c_str(), (int)status_json_str.size());
+    
+    log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
+    }
+ 
+  if ((ret = diswst(chan, status_json_str.c_str())) != DIS_SUCCESS)
+    {
+    switch (mode)
       {
-      switch (mode)
-        {
-        case UPDATE_TO_SERVER:
-          
-          pms = (mom_server *)dest;
-          
-          mom_server_stream_error(chan->sock, pms->pbs_servername, id, "writing status string");
-          
-          break;
-          
-        case UPDATE_TO_MOM:
-          
-          nc = (node_comm_t *)dest;
-          nc->stream = chan->sock;
-          
-          node_comm_error(nc, "Error writing strings to");
-          
-          break;
-        } /* END switch (mode) */
-      
-      break;
-      }
+      case UPDATE_TO_SERVER:
+        
+        pms = (mom_server *)dest;
+        
+        mom_server_stream_error(chan->sock, pms->pbs_servername, id, "writing status string");
+        
+        break;
+        
+      case UPDATE_TO_MOM:
+        
+        nc = (node_comm_t *)dest;
+        nc->stream = chan->sock;
+        
+        node_comm_error(nc, "Error writing strings to");
+        
+        break;
+      } /* END switch (mode) */
     }
 
   return(ret);
@@ -1328,11 +1344,15 @@ int write_my_server_status(
 
 
 
+/*
+ * add_cached_statuses()
+ *
+ * Adds mom statuses sent to me intermediately
+ */
 
-
-int write_cached_statuses(
+int add_cached_statuses(
  
-  struct tcp_chan *chan,
+  Json::Value     &status,
   const char      *id,
   void            *dest,
   int              mode)
@@ -1341,68 +1361,24 @@ int write_cached_statuses(
   int            ret = DIS_SUCCESS;
   received_statuses.lock();
   container::item_container<received_node *>::item_iterator *iter = received_statuses.get_iterator();
-  const char   *cp;
   received_node *rn;
-  mom_server    *pms;
-  node_comm_t   *nc;
   bool           error = false;
+  int            node_index = 1; // This node is always 0, start the cached statuses at 1
   
   /* traverse the received_nodes array and send/clear the updates */
   while (((rn = iter->get_next_item()) != NULL) &&
          (error == false))
     {
-    for (unsigned int i = 0; i < rn->statuses.size(); i++)
-      {
-      cp = rn->statuses[i].c_str();
-      if (LOGLEVEL >= 7)
-        {
-        sprintf(log_buffer,"%s: sending to server \"%s\"",
-          id,
-          cp);
-        
-        log_record(PBSEVENT_SYSTEM,0,id,log_buffer);
-        }
-      
-      if ((ret = diswst(chan,cp)) != DIS_SUCCESS)
-        {
-        error = true;
-
-        /* FAILURE */
-        switch (mode)
-          {
-          case UPDATE_TO_SERVER:
-            
-            pms = (mom_server *)dest;
-            
-            mom_server_stream_error(chan->sock, pms->pbs_servername, id, "writing status string");
-            
-            break;
-            
-          case UPDATE_TO_MOM:
-            
-            nc = (node_comm_t *)dest;
-            nc->stream = chan->sock;
-            
-            node_comm_error(nc,"Error writing strings to");
-            
-            break;
-          } /* END switch (mode) */
-        
-        break;
-        }
-      
-      } /* END write each string */
+    status["node"][node_index++] = rn->json_status;
     
-    rn->statuses.clear();
+    rn->json_status.clear();
     } /* END iterate over received statuses */
 
   delete iter;
 
   received_statuses.unlock();
   return(ret);
-  } /* END write_cached_statuses() */
-
-
+  } /* END add_cached_statuses() */
 
 
 
@@ -1420,7 +1396,7 @@ int write_cached_statuses(
 int mom_server_update_stat(
  
   mom_server               *pms,
-  std::vector<std::string> &strings)
+  Json::Value              &mom_status)
  
   {
   int              stream;
@@ -1435,6 +1411,8 @@ int mom_server_update_stat(
     
     return(NO_SERVER_CONFIGURED);
     }
+    
+  add_cached_statuses(mom_status, __func__, pms, UPDATE_TO_SERVER);
 
   stream = tcp_connect_sockaddr((struct sockaddr *)&pms->sock_addr, sizeof(pms->sock_addr), false);
  
@@ -1446,10 +1424,7 @@ int mom_server_update_stat(
     else if ((ret = write_update_header(chan, __func__, pms->pbs_servername)) != DIS_SUCCESS)
       {
       }
-    else if ((ret = write_my_server_status(chan, __func__, strings, pms, UPDATE_TO_SERVER)) != DIS_SUCCESS)
-      {
-      }
-    else if ((ret = write_cached_statuses(chan, __func__, pms, UPDATE_TO_SERVER)) != DIS_SUCCESS)
+    else if ((ret = write_my_server_status(chan, __func__, mom_status, pms, UPDATE_TO_SERVER)) != DIS_SUCCESS)
       {
       }
     else if ((ret = diswst(chan, IS_EOL_MESSAGE)) != DIS_SUCCESS)
@@ -1555,8 +1530,8 @@ void node_comm_error(
 
 int write_status_strings(
  
-  std::vector<std::string> &strings,
-  node_comm_t              *nc)
+  Json::Value  &json_status,
+  node_comm_t  *nc)
  
   {
   int            fds = nc->stream;
@@ -1569,6 +1544,8 @@ int write_status_strings(
       "Attempting to send status update to mom %s", nc->name.c_str());
     log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
     }
+
+  add_cached_statuses(json_status, __func__, nc, UPDATE_TO_SERVER);
  
   if ((chan = DIS_tcp_setup(fds)) == NULL)
     {
@@ -1577,10 +1554,7 @@ int write_status_strings(
   else if ((rc = write_update_header(chan,__func__,nc->name.c_str())) != DIS_SUCCESS)
     {
     }
-  else if ((rc = write_my_server_status(chan,__func__, strings, nc, UPDATE_TO_SERVER)) != DIS_SUCCESS)
-    {
-    }
-  else if ((rc = write_cached_statuses(chan,__func__,nc,UPDATE_TO_SERVER)) != DIS_SUCCESS)
+  else if ((rc = write_my_server_status(chan, __func__, json_status, nc, UPDATE_TO_SERVER)) != DIS_SUCCESS)
     {
     }
   /* write message that we're done */
@@ -1713,13 +1687,14 @@ void update_mom_status()
 
   generate_server_status(mom_status);
 #ifdef NVIDIA_GPUS
-  append_gpu_status(global_gpu_status, mom_status);
+  append_gpu_status(global_gpu_status, mom_status[NODE][0]["gpus"]);
 #endif /* NVIDIA_GPU */
 
 #ifdef MIC
-  add_mic_status(mom_status);
+  add_mic_status(mom_status[NODE][0]["mics"]);
 #endif /* MIC */
   } /* update_mom_status() */
+
 
 
 int send_status_through_hierarchy()
@@ -1733,7 +1708,7 @@ int send_status_through_hierarchy()
     /* write to the socket */
     while (nc != NULL)
       {
-      if (write_status_strings(mom_status, nc) < 0)
+      if (write_status_strings(mom_status[NODE][0], nc) < 0)
         {
         nc->bad = TRUE;
         nc->mtime = time_now;

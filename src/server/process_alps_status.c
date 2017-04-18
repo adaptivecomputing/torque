@@ -608,7 +608,7 @@ int set_total_memory(
 
 int process_alps_status(
 
-  const char               *nd_name,
+  const char  *nd_name,
   std::vector<std::string> &status_info)
 
   {
@@ -811,5 +811,18 @@ int process_alps_status(
 
   return(PBSE_NONE);
   } /* END process_alps_status() */
+
+
+
+int process_alps_status(
+
+  const char  *nd_name,
+  Json::Value &alps_status)
+
+  {
+  int rc = PBSE_NONE;
+
+  return(rc);
+  } // END process_alps_status()
 
 

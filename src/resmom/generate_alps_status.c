@@ -94,7 +94,7 @@
 #include "lib_ifl.h"
 
 std::set<std::string> down_nodes;
-std::map<int, alps_node_info> alps_nodes;
+std::map<int, Json::Value> alps_nodes;
 
 
 /*
@@ -263,53 +263,49 @@ int process_label_array(
 
 int process_accelerator_array(
 
-  alps_node_info &ani,
-  xmlNode        *node)
+  Json::Value &node_json,
+  xmlNode     *node)
 
   {
   xmlNode       *child;
   char          *attr_value;
   char          *attr_value2;
   char           buf[MAXLINE];
+  int            accelerator_index = 0;
 
   for (child = node->children; child != NULL; child = child->next)
     {
     if (!strcmp((const char *)child->name, accelerator))
       {
-      alps_accelerator_info aai;
+      Json::Value accelerator_json;
 
       std::string str;
       /* write the gpu id */
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)type);
       attr_value2 = (char *)xmlGetProp(child, (const xmlChar *)ordinal);
       snprintf(buf, sizeof(buf), "%s-%d", attr_value, atoi(attr_value2));
-      aai.accel_id = "gpu_id=";
-      aai.accel_id += buf;
+      accelerator_json["gpu_id"] = buf;
       free(attr_value);
       free(attr_value2);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)state);
-      aai.accel_state = "state=";
-      aai.accel_state += attr_value;
+      accelerator_json["state"] = attr_value;
       free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)family);
-      aai.family = "family=";
-      aai.family += attr_value;
+      accelerator_json["family"] = attr_value;
       free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)memory_mb);
-      aai.memory = "memory=";
-      aai.memory += attr_value;
-      aai.memory += "mb";
+      accelerator_json["memory"] = attr_value;
       free(attr_value);
 
       attr_value = (char *)xmlGetProp(child, (const xmlChar *)clock_mhz);
-      aai.clock_mhz = "clock_mhz=";
-      aai.clock_mhz += attr_value;
+      accelerator_json["clock_mhz"] = attr_value;
       free(attr_value);
 
-      ani.accelerators.push_back(aai);
+      node_json["accelerators"][accelerator_index] = accelerator_json;
+      accelerator_index++;
       }
     }
 
@@ -320,7 +316,7 @@ int process_accelerator_array(
 
 int process_node(
 
-  xmlNode                  *node)
+  xmlNode *node)
 
   {
   char               *attr_value;
@@ -336,7 +332,7 @@ int process_node(
   std::string         node_state = "";
   std::string         node_name;
   std::string         node_id_string;
-  int                 nid;
+  int                 nid = -1;
   std::string         numa_cfg_val;
   std::string         mcdram_cfg_val;
   char                buf[MAXLINE];
@@ -347,36 +343,35 @@ int process_node(
   unsigned long       memory            = 0;
   unsigned long long  mem_kb;
   char               *rsv_id        = NULL;
-  alps_node_info      ani;
+  Json::Value         node_json;
   std::set<std::string>::iterator iter;
     
-  ani.node_header = "node=";
   attr_value = (char *)xmlGetProp(node, (const xmlChar *)node_id);
   if (attr_value != NULL)
     {
     node_id_string = attr_value;
-    ani.node_header += node_id_string;
+    node_json["node"] = node_id_string;
     nid = strtol(attr_value, NULL, 10);
     free(attr_value);
     }
+  else
+    return(-1);
 
   /* check to see if the role is interactive - report these as down */
   role_value = (char *)xmlGetProp(node, (const xmlChar *)role);
 
-  ani.arch = "ARCH=";
   attr_value = (char *)xmlGetProp(node, (const xmlChar *)architecture);
   if (attr_value != NULL)
     {
-    ani.arch += attr_value;
+    node_json["ARCH"] = attr_value;
     free(attr_value);
     }
 
-  ani.name = "name=";
   attr_value = (char *)xmlGetProp(node, (const xmlChar *)name);
   if (attr_value != NULL)
     {
     node_name = attr_value;
-    ani.name += node_name;
+    node_json["name"] = node_name;
     free(attr_value);
     }
 
@@ -462,7 +457,7 @@ int process_node(
     /* 1.0-1.3 */
     else if (!strcmp((const char *)child->name, accelerator_array))
       {
-      process_accelerator_array(ani, child);
+      process_accelerator_array(node_json, child);
       }
     } /* END the loop for processing the children */
 
@@ -472,28 +467,17 @@ int process_node(
   /* once done, add the procs, available procs, compute unit count, memory info, reservation, and features */
 
   /* note that CCU should come before CPROC */
-  snprintf(buf, sizeof(buf), "CCU=%d", num_compute_units);
-  ani.ccu = buf;
-
-  snprintf(buf, sizeof(buf), "CPROC=%d", num_procs);
-  ani.cproc = buf;
-
-  snprintf(buf, sizeof(buf), "APROC=%d", avail_procs);
-  ani.aproc = buf;
-
-  snprintf(buf, sizeof(buf), "CMEMORY=%lu", memory);
-  ani.cmem = buf;
-
-  snprintf(buf, sizeof(buf), "socket=%d", socket_count);
-  ani.socket = buf;
-
+  node_json["CCU"] = num_compute_units;
+  node_json["CPROC"] = num_procs;
+  node_json["APROC"] = avail_procs;
+  snprintf(buf, sizeof(buf), "%lumb", memory);
+  node_json["CMEMORY"] = buf;
+  node_json["socket"] = socket_count;
   mem_kb = memory * 1024;
+  snprintf(buf, sizeof(buf), "%llukb", mem_kb);
 
-  snprintf(buf, sizeof(buf), "totmem=%llukb", mem_kb);
-  ani.totmem = buf;
-
-  snprintf(buf, sizeof(buf), "physmem=%llukb", mem_kb);
-  ani.physmem = buf;
+  node_json["totmem"] = buf;
+  node_json["physmem"] = buf;
 
   if (rsv_id != NULL)
     {
@@ -501,21 +485,19 @@ int process_node(
     if ((role_value == NULL) ||
         (!strcmp(role_value, batch_caps)))
       {
-      ani.rsv = "reservation_id=";
-      ani.rsv += rsv_id;
+      node_json["reservation_id"] = rsv_id;
       }
 
     free(rsv_id);
 
     // if there's a reservation on this node, the state is busy and no memory is available
     node_state = "BUSY";
-    ani.state = "state=BUSY";
-    ani.availmem = "availmem=0kb";
+    node_json["state"] = node_state;
+    node_json["availmem"] = "0kb";
     }
   else
     {
     /* no reservation, evaluate the state normally */
-    ani.state = "state=";
     attr_value = (char *)xmlGetProp(node, (const xmlChar *)state);
 
     /* state is down if we're not in batch mode */
@@ -523,17 +505,14 @@ int process_node(
         (strcmp(role_value, batch_caps)))
       {
       node_state = "DOWN";
-      ani.state += "DOWN";
-    
-      ani.availmem = "availmem=0kb";
+      node_json["state"] = node_state;
+      node_json["availmem"] = "0kb";
       }
     else
       {
-      ani.state += attr_value;
       node_state = attr_value;
-     
-      snprintf(buf, sizeof(buf), "availmem=%llukb", mem_kb);
-      ani.availmem = buf;
+      node_json["state"] = node_state;
+      node_json["availmem"] = buf;
       }
 
     free(attr_value);
@@ -581,16 +560,11 @@ int process_node(
     free(role_value);
 
   if (features.length() > 0)
-    {
-    ani.features = "feature_list=";
-    ani.features += features.c_str();
-    }
+    node_json["feature_list"] = features;
 
-  char node_index_buf[MAXLINE];
-  snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%lu", alps_nodes.size());
-  ani.node_index = node_index_buf;
+  node_json["node_index"] = (int)alps_nodes.size();
 
-  alps_nodes[nid] = ani;
+  alps_nodes[nid] = node_json;
 
   return(PBSE_NONE);
   } /* END process_node() */
@@ -617,7 +591,7 @@ int process_nodes(
 
 void get_os_value(
 
-  std::string       &os_value,
+  Json::Value       &node_info,
   const std::string &numa_cfg_val,
   std::string       &mcdram_cfg_val)
 
@@ -626,7 +600,7 @@ void get_os_value(
   if ((numa_cfg_val.size() != 0) &&
       (mcdram_cfg_val.size() != 0))
     {
-    os_value = "opsys=CLE_";
+    std::string os_value("CLE_");
 
     if (mcdram_cfg_val == "0")
       mcdram_cfg_val = "flat";
@@ -639,9 +613,10 @@ void get_os_value(
 
     os_value += numa_cfg_val + "_";
     os_value += mcdram_cfg_val;
+    node_info["opsys"] = os_value;
     }
   else
-    os_value = "opsys=";
+    node_info["opsys"] = "";
 
   } // END get_os_value()
 
@@ -649,8 +624,8 @@ void get_os_value(
 
 int get_node_info(
 
-  xmlNode        *node,
-  alps_node_info &ani)
+  xmlNode     *node,
+  Json::Value &node_info)
 
   {
   char           *attr_value;
@@ -683,16 +658,13 @@ int get_node_info(
   attr_value = (char *)xmlGetProp(node, (const xmlChar *)numas);
   if (attr_value != NULL)
     {
-    ani.numa_nodes = numas;
-    ani.numa_nodes += "=";
-    ani.numa_nodes += attr_value;
+    node_info[numas] = attr_value;
     free(attr_value);
     }
 
-  get_os_value(ani.os, numa_cfg_val, mcdram_cfg_val);
-
-  snprintf(buf, sizeof(buf), "hbmem=%lukb", hbm_size_in_mb * 1024);
-  ani.hbm = buf;
+  get_os_value(node_info, numa_cfg_val, mcdram_cfg_val);
+  snprintf(buf, sizeof(buf), "%lukb", hbm_size_in_mb * 1024);
+  node_info["hbmem"] = buf;
 
   return(PBSE_NONE);
   } // END get_node_info()
@@ -706,14 +678,14 @@ int process_system(
   {
   std::string cpus_per_cu;
   xmlNode        *child;
-  alps_node_info  ani;
+  Json::Value     node_info;
 	  
   for (child = node->children; child != NULL; child = child->next)
     {
     if (!strcmp((const char *)child->name, nodes_element))
       {
       // Get information for this batch of nodes
-      get_node_info(child, ani);
+      get_node_info(child, node_info);
 
       // Get the range of nodes this information applies to
       char *content = (char *)xmlNodeGetContent(child);
@@ -726,12 +698,12 @@ int process_system(
           {
           if (alps_nodes.find(node_ids[i]) != alps_nodes.end())
             {
-            alps_nodes[node_ids[i]].os = ani.os;
-            alps_nodes[node_ids[i]].hbm = ani.hbm;
-            alps_nodes[node_ids[i]].numa_nodes = ani.numa_nodes;
+            alps_nodes[node_ids[i]]["opsys"] = node_info["opsys"];
+            alps_nodes[node_ids[i]]["hbmem"] = node_info["hbmem"];
+            alps_nodes[node_ids[i]][numas] = node_info[numas];
             }
           else
-            alps_nodes[node_ids[i]] = ani;
+            alps_nodes[node_ids[i]] = node_info;
           }
 
         free(content);
@@ -914,82 +886,19 @@ int get_command_output(
 
 
 
-void alps_accelerator_info::add_to_status(
-
-  std::vector<std::string> &status)
-
-  {
-  status.push_back(this->accel_id);
-  status.push_back(this->accel_state);
-  status.push_back(this->family);
-  status.push_back(this->memory);
-  status.push_back(this->clock_mhz);
-  } // END add_to_status()
-
-
-
-void alps_node_info::add_to_status(
-
-  std::vector<std::string> &status)
-
-  {
-  status.push_back(this->node_header);
-  status.push_back(this->node_index);
-  status.push_back(this->availmem);
-  status.push_back(this->state);
-  
-  if (this->os.size() != 0)
-    status.push_back(this->os);
-
-  status.push_back(this->physmem);
-  status.push_back(this->totmem);
-  status.push_back(this->socket);
-
-  if (this->numa_nodes.size() != 0)
-    status.push_back(this->numa_nodes);
-
-  status.push_back(this->cmem);
-  // ccu should be added before cproc
-  status.push_back(this->ccu);
-  status.push_back(this->aproc);
-  status.push_back(this->cproc);
-  status.push_back(this->name);
-  status.push_back(this->arch);
-
-  // The following attributes only exist conditionally
-  if (this->hbm.size() > 0)
-    status.push_back(this->hbm);
-
-  if (this->rsv.size() > 0)
-    status.push_back(this->rsv);
-
-  if (this->features.size() > 0)
-    status.push_back(this->features);
-
-  if (this->accelerators.size() > 0)
-    {
-    status.push_back(CRAY_GPU_STATUS_START);
-
-    for (unsigned int i = 0; i < this->accelerators.size(); i++)
-      this->accelerators[i].add_to_status(status);
-
-    status.push_back(CRAY_GPU_STATUS_END);
-    }
-
-  } // END add_to_status()
-
-
-
 void update_status(
 
-  std::vector<std::string> &status)
+  Json::Value &status_json)
 
   {
-  for (std::map<int, alps_node_info>::iterator it = alps_nodes.begin(); it != alps_nodes.end(); it++)
+  char buf[MAXLINE];
+
+  for (std::map<int, Json::Value>::iterator it = alps_nodes.begin(); it != alps_nodes.end(); it++)
     {
-    it->second.add_to_status(status);
+    sprintf(buf, "%d", it->first);
+    status_json[buf] = it->second;
     }
-  } // END update_status
+  } // END update_status()
 
 
 
@@ -1023,16 +932,16 @@ int get_knl_information(
 
 int generate_alps_status(
 
-  std::vector<std::string> &status,
-  const char               *apbasil_path,
-  const char               *apbasil_protocol)
+  Json::Value &status_json,
+  const char  *apbasil_path,
+  const char  *apbasil_protocol)
 
   {
   int             rc;
   char            inventory_command[MAXLINE * 2];
   std::string     alps_output;
 
-  status.clear();
+  status_json.clear();
   alps_nodes.clear();
 
   snprintf(inventory_command, sizeof(inventory_command), APBASIL_QUERY,
@@ -1059,7 +968,7 @@ int generate_alps_status(
         rc = get_knl_information(apbasil_path);
         
       if (rc == PBSE_NONE)
-        update_status(status);
+        update_status(status_json);
       }
     }
 

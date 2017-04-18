@@ -101,7 +101,7 @@ extern nodeboard node_boards[];
  * add_isa()
  *
  * Adds the architecture information for this MIC to the status
- * @param status - the status strings
+ * @param json_status - the status json
  * @param mic_stat - specifies the current state of this MIC
  * @return PBSE_NONE on success or PBSE_SYSTEM if the ISA index doesn't match one we know.
  *         The error case should never realistically happen.
@@ -109,8 +109,8 @@ extern nodeboard node_boards[];
 
 int add_isa(
 
-  std::vector<std::string> &status,
-  struct COI_ENGINE_INFO   *mic_stat)
+  Json::Value            &json_status,
+  struct COI_ENGINE_INFO *mic_stat)
 
   {
   char     status_buf[MAXLINE];
@@ -120,32 +120,29 @@ int add_isa(
     {
     case COI_ISA_x86_64:
 
-      snprintf(status_buf, sizeof(status_buf), "isa=COI_ISA_x86_64");
+      json_status["isa"] = "COI_ISA_x86_64";
       break;
 
     case COI_ISA_MIC:
 
-      snprintf(status_buf, sizeof(status_buf), "isa=COI_ISA_MIC");
+      json_status["isa"] = "COI_ISA_MIC";
       break;
 
     case COI_ISA_KNF:
 
-      snprintf(status_buf, sizeof(status_buf), "isa=COI_ISA_KNF");
+      json_status["isa"] = "COI_ISA_KNF";
       break;
 
     case COI_ISA_KNC:
 
-      snprintf(status_buf, sizeof(status_buf), "isa=COI_ISA_KNC");
+      json_status["isa"] = "COI_ISA_KNC";
       break;
 
     default:
 
       rc = PBSE_SYSTEM;
-
+      break;
     }
-
-  if (rc == PBSE_NONE)
-    status.push_back(status_buf);
 
   return(rc);
   } /* END add_isa() */
@@ -156,15 +153,15 @@ int add_isa(
  * calculate_and_add_load()
  *
  * Calculates the load and normalized load for this MIC and adds them to the status
- * @param status - the status strings to be sent to pbs_server
+ * @param json_status - the status json to be sent to pbs_server
  * @param mic_stat - the struct describing this MIC's state
  * @return PBSE_NONE on success
  */
 
 int calculate_and_add_load(
 
-  std::vector<std::string> &status,
-  struct COI_ENGINE_INFO   *mic_stat)
+  Json::Value            &json_status,
+  struct COI_ENGINE_INFO *mic_stat)
 
   {
   double   load_normalized = 0.0;
@@ -180,11 +177,11 @@ int calculate_and_add_load(
   load = load / 100.0;
   load_normalized = load / mic_stat->NumCores;
 
-  snprintf(status_buf, sizeof(status_buf), "load=%f", (float)load);
-  status.push_back(status_buf);
+  snprintf(status_buf, sizeof(status_buf), "%f", (float)load);
+  json_status["load"] = status_buf;
 
-  snprintf(status_buf, sizeof(status_buf), "normalized_load=%f", (float)load_normalized);
-  status.push_back(status_buf);
+  snprintf(status_buf, sizeof(status_buf), "%f", (float)load_normalized);
+  json_status["normalized_load"] = status_buf;
 
   return(PBSE_NONE);
   } /* END calculate_and_add_load() */
@@ -195,46 +192,41 @@ int calculate_and_add_load(
  * add_single_mic_info()
  *
  * Adds the information for a single MIC accelerator to the node status
- * @param status - we append this MIC's status information here
+ * @param json_status - we append this MIC's status information here
  * @param mic_stat - the struct that holds this accelerator's state information
  * @return PBSE_NONE on SUCCESS. This function can't really fail.
  */
 
 int add_single_mic_info(
 
-  std::vector<std::string> &status,
-  struct COI_ENGINE_INFO   *mic_stat)
+  Json::Value            &json_status,
+  struct COI_ENGINE_INFO *mic_stat)
 
   {
   char     status_buf[MAXLINE * 2];
 
-  snprintf(status_buf, sizeof(status_buf), "mic_id=%u", mic_stat->DeviceId);
-  status.push_back(status_buf);
+  json_status["mic_id"] = (int)mic_stat->DeviceId;
+  json_status["num_cores"] = (int)mic_stat->NumCores;
+  json_status["num_threads"] = (int)mic_stat->NumThreads;
 
-  snprintf(status_buf, sizeof(status_buf), "num_cores=%u", mic_stat->NumCores);
-  status.push_back(status_buf);
+  snprintf(status_buf, sizeof(status_buf), "%lu", mic_stat->PhysicalMemory);
+  json_status["physmem"] = status_buf;
 
-  snprintf(status_buf, sizeof(status_buf), "num_threads=%u", mic_stat->NumThreads);
-  status.push_back(status_buf);
+  snprintf(status_buf, sizeof(status_buf), "%lu", mic_stat->PhysicalMemoryFree);
+  json_status["free_physmem"] = status_buf;
 
-  snprintf(status_buf, sizeof(status_buf), "physmem=%lu", mic_stat->PhysicalMemory);
-  status.push_back(status_buf);
+  snprintf(status_buf, sizeof(status_buf), "%lu", mic_stat->SwapMemory);
+  json_status["swap"] = status_buf;
 
-  snprintf(status_buf, sizeof(status_buf), "free_physmem=%lu", mic_stat->PhysicalMemoryFree);
-  status.push_back(status_buf);
+  snprintf(status_buf, sizeof(status_buf), "%lu", mic_stat->SwapMemoryFree);
+  json_status["free_swap"] = status_buf;
 
-  snprintf(status_buf, sizeof(status_buf), "swap=%lu", mic_stat->SwapMemory);
-  status.push_back(status_buf);
+  snprintf(status_buf, sizeof(status_buf), "%u", mic_stat->CoreMaxFrequency);
+  json_status["max_frequency"] = status_buf;
 
-  snprintf(status_buf, sizeof(status_buf), "free_swap=%lu", mic_stat->SwapMemoryFree);
-  status.push_back(status_buf);
+  add_isa(json_status, mic_stat);
 
-  snprintf(status_buf, sizeof(status_buf), "max_frequency=%u", mic_stat->CoreMaxFrequency);
-  status.push_back(status_buf);
-
-  add_isa(status, mic_stat);
-
-  calculate_and_add_load(status, mic_stat);
+  calculate_and_add_load(json_status, mic_stat);
 
   return(PBSE_NONE);
   } /* END add_single_mic_info() */
@@ -331,7 +323,7 @@ int check_for_mics(
  * add_mic_status()
  *
  * Adds the mic information to the status that is sent to pbs_server
- * @param status - each string that will be sent to pbs_server. We will append the mic
+ * @param json_status - Everything that will be sent to pbs_server. We will append the mic
  * status information here.
  *
  * @return PBSE_NONE on success, or an appropriate PBSE_* error on failure
@@ -339,7 +331,7 @@ int check_for_mics(
 
 int add_mic_status(
 
-  std::vector<std::string> &status)
+  Json::Value &json_status)
 
   {
   uint32_t                 num_engines = 0;
@@ -356,8 +348,6 @@ int add_mic_status(
     log_err(-1, __func__, "Mics are present but apparently not configured correctly - can't get count");
     return(PBSE_SYSTEM);
     }
-
-  status.push_back(START_MIC_STATUS);
 
 #ifdef NUMA_SUPPORT
   if (num_engines < node_boards[numa_index].mic_end_index)
@@ -401,10 +391,8 @@ int add_mic_status(
       continue;
       }
 
-    add_single_mic_info(status, &mic_stat);
+    add_single_mic_info(json_status[MIC_STR][i], &mic_stat);
     }
-
-  status.push_back(END_MIC_STATUS);
 
   return(PBSE_NONE);
   } /* END add_mic_status() */

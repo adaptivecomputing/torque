@@ -140,6 +140,7 @@
 #ifdef PENABLE_LINUX_CGROUPS
 #include "complete_req.hpp"
 #endif
+#include "mom_update_constants.hpp"
 #include "pmix_tracker.hpp"
 #include "pmix_operation.hpp"
 
@@ -9204,16 +9205,13 @@ void empty_received_nodes()
 
 received_node *get_received_node_entry(
 
-  char *str)
+  const char *hostname)
 
   {
   received_node *rn;
-  char          *hostname;
 
-  if (str == NULL)
+  if (hostname == NULL)
     return(NULL);
-
-  hostname = str + strlen("node=");
 
   /* get the old node for this table if present. If not, create a new one */
   received_statuses.lock();
@@ -9263,7 +9261,7 @@ received_node *get_received_node_entry(
   else
     {
     /* make sure we aren't hold 2 statuses for the same node */
-    rn->statuses.clear();
+    rn->json_status.clear();
 
     if (LOGLEVEL >= 10)
       {
@@ -9317,27 +9315,37 @@ int read_status_strings(
     }
   
   /* read each string */
-  while (((str = disrst(chan,&rc)) != NULL) &&
-         (rc == DIS_SUCCESS))
+  str = disrst(chan,&rc);
+
+  if (rc == DIS_SUCCESS)
     {
-    /* terminate on end message */
-    if (!strcmp(str, IS_EOL_MESSAGE))
+    Json::Value  total_status;
+    Json::Reader r;
+
+    if (r.parse(str, total_status) == false)
       {
-      free(str);
-      str = NULL;
-      break;
       }
-
-    if (!strncmp(str, "node=", strlen("node=")))
-      rn = get_received_node_entry(str);
-
-    /* place each string into the buffer */
-    if (rn != NULL)
+    else
       {
-      rn->statuses.push_back(str);
-      }
+      // Get and store each node status
+      if ((total_status[NODE].empty() == false) &&
+          (total_status[NODE].isArray()))
+        {
+        Json::Value &node_array = total_status[NODE];
+        int          size = node_array.size();
 
-    free(str);
+        for (int i = 0; i < size; i++)
+          {
+          if (node_array[i][NAME].empty() == false)
+            {
+            rn = get_received_node_entry(node_array[i][NAME].asString().c_str());
+
+            if (rn != NULL)
+              rn->json_status = node_array[i];
+            }
+          }
+        }
+      }
     }
 
   if (str != NULL)

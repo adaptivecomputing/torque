@@ -15,7 +15,7 @@ extern mom_hierarchy_t *mh;
 
 extern void sort_paths();
 
-int mom_server_update_stat(mom_server *pms, std::vector<std::string> &strings);
+int mom_server_update_stat(mom_server *pms, Json::Value &strings);
 
 char PBSNodeMsgBuf[MAXLINE];
 char PBSNodeCheckPath[MAXLINE];
@@ -128,7 +128,7 @@ END_TEST
 START_TEST(test_mom_server_update_stat_clear_force)
   {
   ServerStatUpdateInterval = 45;
-  std::vector<std::string> status(4, "Think of a status line");
+  Json::Value status;
   mom_server pms;
   strncpy(pms.pbs_servername, "test", PBS_MAXSERVERNAME);
 

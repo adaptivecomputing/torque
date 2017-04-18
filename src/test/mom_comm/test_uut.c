@@ -38,7 +38,7 @@ extern bool ForceServerUpdate;
 int process_end_job_error_reply(mom_job *pjob, hnodent *np, struct sockaddr_in *pSockAddr, int errcode);
 void create_contact_list(mom_job &pjob, std::set<int> &sister_list, struct sockaddr_in *contacting_address);
 int handle_im_poll_job_response(struct tcp_chan *chan, mom_job &pjob, int nodeidx, hnodent *np);
-received_node *get_received_node_entry(char *str);
+received_node *get_received_node_entry(const char *str);
 bool is_nodeid_on_this_host(mom_job *pjob, tm_node_id nodeid);
 task *find_task_by_pid(mom_job *pjob, int pid);
 int im_join_job_as_sister(struct tcp_chan *chan, char *jobid, struct sockaddr_in *addr, const char *cookie, tm_event_t event, int fromtask, int command, int job_radix);
@@ -271,7 +271,7 @@ END_TEST
 
 START_TEST(test_get_received_node_entry)
   {
-  fail_unless(get_received_node_entry(strdup("pickle")) != NULL);
+  fail_unless(get_received_node_entry("pickle") != NULL);
   }
 END_TEST
 

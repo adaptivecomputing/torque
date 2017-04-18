@@ -80,5 +80,7 @@
 #include <string>
 #include <vector>
 
+#include "json/json.h"
 
+int process_status_info(const char *nd_name, Json::Value &status_info);
 int process_status_info(const char *nd_name, std::vector<std::string> &status_info);

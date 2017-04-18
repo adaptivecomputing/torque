@@ -105,6 +105,7 @@
 #endif
 #include "runjob_help.hpp"
 #include "attribute.h"
+#include "json/json.h"
 
 #ifdef NUMA_SUPPORT
 /* NOTE: cpuset support needs hwloc */
@@ -219,7 +220,7 @@ class received_node
   {
   public:
   std::string              hostname;
-  std::vector<std::string> statuses;
+  Json::Value              json_status;
   int                      hellos_sent;
   };
 
@@ -279,7 +280,7 @@ public:
   short                         nd_ngpus_free;       /* number of free gpus */
   short                         nd_ngpus_needed;     /* number of gpus needed */
   short                         nd_ngpus_to_be_used; /* number of gpus marked for a job but not yet assigned */
-  struct array_strings         *nd_gpustatus;        /* string array of GPU status */
+  std::string                   nd_gpustatus;        /* string array of GPU status */
   short                         nd_ngpustatus;       /* number of gpu status items */
 
   short                         nd_nmics;            /* number of mics */
@@ -351,6 +352,7 @@ public:
   void copy_gpu_subnodes(const pbsnode &src);
   void remove_node_state_flag(int flag);
   void capture_plugin_resources(const char *str);
+  void capture_plugin_resources(Json::Value &jv);
   void add_job_list_to_status(const std::string &job_list);
   };
 
@@ -595,10 +597,11 @@ class sync_job_info
   public:
   std::string job_info;
   std::string node_name;
-  time_t  timestamp;
-  bool    sync_jobs;
+  time_t      timestamp;
+  bool        sync_jobs;
+  Json::Value job_json_info;
 
-  sync_job_info() : job_info(), node_name(), sync_jobs(false)
+  sync_job_info() : job_info(), node_name(), sync_jobs(false), job_json_info()
     {
     this->timestamp = time(NULL);
     }

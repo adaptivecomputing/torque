@@ -1933,8 +1933,6 @@ int gpu_count(
 
 
 
-
-
 /*
 ** get gpu index for this gpuid
 */
@@ -4032,7 +4030,7 @@ void save_node_usage(
   pbsnode *pnode)
 
   {
-  std::stringstream  node_state;
+  Json::Value        node_state;
   std::string        path(path_node_usage);
   std::string        tmp_path;
   FILE              *f = NULL;
@@ -4046,7 +4044,7 @@ void save_node_usage(
 
   if ((f = fopen(tmp_path.c_str(), "w+")) != NULL)
     {
-    fprintf(f, "%s", node_state.str().c_str());
+    fprintf(f, "%s", node_state.toStyledString().c_str());
     fclose(f);
     
     unlink(path.c_str());
@@ -4074,6 +4072,17 @@ void save_node_usage(
   } // END save_node_usage()
 
 
+
+/*
+ * update_req_hostlist()
+ *
+ * Updates the appropriate req's hostlist to include host_name
+ *
+ * @param pjob - the job whose req we're updating
+ * @param host_name - the name of the host to be added
+ * @param req_index - the index of the req that is being updated
+ * @param ppn_needed - the required ppn from this host
+ */
 
 void update_req_hostlist(
     
