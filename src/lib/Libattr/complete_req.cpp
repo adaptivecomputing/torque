@@ -168,7 +168,8 @@ complete_req::complete_req(
     }
 
   unsigned long long vmem_per_task = mem_values[_VMEM_];
-  vmem_per_task /= task_count;
+  if (legacy_vmem == false)
+    vmem_per_task /= task_count;
 
   if (this->reqs.size() > 0)
     {
