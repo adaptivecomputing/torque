@@ -116,6 +116,15 @@ START_TEST(test_translate_range_string_to_vector)
 
   indices.clear();
   fail_unless(translate_range_string_to_vector("0--1", indices) != PBSE_NONE);
+
+  indices.clear();
+  fail_unless(translate_range_string_to_vector("3-1", indices) != PBSE_NONE);
+
+  indices.clear();
+  fail_unless(translate_range_string_to_vector("10,10", indices) != PBSE_NONE);
+
+  indices.clear();
+  fail_unless(translate_range_string_to_vector("5-5", indices) != PBSE_NONE);
   }
 END_TEST
 
