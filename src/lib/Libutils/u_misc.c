@@ -84,6 +84,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <vector>
+#include <set>
 
 #include "utils.h"
 #include "resource.h"
@@ -336,11 +337,14 @@ int translate_range_string_to_vector(
   std::vector<int> &indices)
 
   {
-  char *str = strdup(range_string);
-  char *ptr = str;
-  int   prev = 0;
-  int   curr;
-  int   rc = PBSE_NONE;
+  char          *str = strdup(range_string);
+  char          *ptr = str;
+  int            prev = 0;
+  int            curr;
+  int            rc = PBSE_NONE;
+  // use set to hold values added to vector
+  //   since less expensive to check for duplicate entries
+  std::set<int>  vector_values;
 
   while (is_whitespace(*ptr))
     ptr++;
@@ -370,12 +374,29 @@ int translate_range_string_to_vector(
 
       curr = strtol(ptr, &ptr, 10);
 
+      if (prev >= curr)
+        {
+        // invalid range
+        rc = -1;
+        break;
+        }
+
       while (prev <= curr)
         {
+        if (vector_values.insert(prev).second == false)
+          {
+          // duplicate entry
+          rc = -1;
+          break;
+          }
+
         indices.push_back(prev);
 
         prev++;
         }
+
+      if (rc != PBSE_NONE)
+        break;
 
       while ((*ptr == ',') ||
           (is_whitespace(*ptr)))
@@ -383,6 +404,13 @@ int translate_range_string_to_vector(
       }
     else
       {
+      if (vector_values.insert(prev).second == false)
+        {
+        // duplicate entry
+        rc = -1;
+        break;
+        }
+
       indices.push_back(prev);
 
       while ((*ptr == ',') ||

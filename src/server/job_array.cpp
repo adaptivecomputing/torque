@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <algorithm>
 
 #include "array.h"
 #include "list_link.h"
@@ -259,7 +260,8 @@ int job_array::parse_array_request(
   this->ai_qs.num_jobs = this->uncreated_ids.size();
 
   // size of array is the biggest index + 1
-  this->ai_qs.array_size = this->uncreated_ids[this->uncreated_ids.size() - 1] + 1;
+  this->ai_qs.array_size = *std::max_element(this->uncreated_ids.begin(),
+         this->uncreated_ids.end()) + 1;
 
   if (get_svr_attr_l(SRV_ATR_MaxArraySize, &max_array_size) == PBSE_NONE)
     {
