@@ -2019,6 +2019,7 @@ void on_job_exit(
   job                  *pjob;
   int                   type = WORK_Deferred_Reply;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  int                   old_state = PTHREAD_CANCEL_ENABLE;
 
   if (preq == NULL)
     type = WORK_Immed;
@@ -2047,7 +2048,7 @@ void on_job_exit(
     return;
     }
   
-  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
   job_mutex.set_unlock_on_exit(false);
@@ -2183,7 +2184,7 @@ void on_job_exit(
   if (job_id != NULL)
     free(job_id);
 
-  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+  pthread_setcancelstate(old_state, NULL);
 
   return;
   }  /* END on_job_exit() */

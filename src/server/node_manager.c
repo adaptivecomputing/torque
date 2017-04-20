@@ -1002,8 +1002,6 @@ int parse_job_information_from_legacy_format(
         {
         free(raw_job_data);
 
-        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
-
         throw (int)PBSE_NODE_DELETED;
         }
       }
@@ -1095,8 +1093,6 @@ void process_job_info_from_json(
     // re-lock the node
     if ((np = find_nodebyname(node_name.c_str())) == NULL)
       {
-      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
-
       throw (int)PBSE_NODE_DELETED;
       }
 
@@ -1163,6 +1159,7 @@ void *sync_node_jobs(
   bool                  sync = sji->sync_jobs;
   std::string           node_name(sji->node_name);
   std::string           raw_job_info(sji->job_info);
+  int                   old_state = PTHREAD_CANCEL_ENABLE;
 
   delete sji;
 
@@ -1171,7 +1168,7 @@ void *sync_node_jobs(
     return(NULL);
     }
 
-  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
   
   std::vector<std::string> job_id_list;
   std::string              job_list_str("jobs=");
@@ -1207,7 +1204,7 @@ void *sync_node_jobs(
         np->unlock_node(__func__, NULL, LOGLEVEL);
         }
 
-      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+      pthread_setcancelstate(old_state, NULL);
       return(NULL);
       }
     }
@@ -1220,7 +1217,7 @@ void *sync_node_jobs(
     log_err(-1, __func__, log_buf);
     
     np->unlock_node(__func__, NULL, LOGLEVEL);
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+    pthread_setcancelstate(old_state, NULL);
     return(NULL);
     }
 
@@ -1233,7 +1230,7 @@ void *sync_node_jobs(
 
   np->unlock_node(__func__, NULL, LOGLEVEL);
   
-  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+  pthread_setcancelstate(old_state, NULL);
 
   return(NULL);
   }  /* END sync_node_jobs() */

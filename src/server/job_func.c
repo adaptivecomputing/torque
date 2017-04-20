@@ -1145,7 +1145,10 @@ int create_and_queue_array_subjob(
   int          newstate;
   int          newsub;
   int          rc = PBSE_NONE;
+  int          old_state = PTHREAD_CANCEL_ENABLE;
   std::string  arrayid = pa->ai_qs.parent_id;
+  
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
 
   template_job_mgr.lock();
   pjobclone = job_clone(template_job, pa, index, place_hold);
@@ -1154,11 +1157,13 @@ int create_and_queue_array_subjob(
   if (pjobclone == NULL)
     {
     log_err(-1, __func__, "unable to clone job in job_clone_wt");
+    pthread_setcancelstate(old_state, NULL);
     return(NONFATAL_ERROR);
     }
   else if (pjobclone == (job *)1)
     {
     /* this happens if we attempted to clone an existing job */
+    pthread_setcancelstate(old_state, NULL);
     return(PBSE_NONE);
     }
 
@@ -1193,10 +1198,12 @@ int create_and_queue_array_subjob(
 
     if ((pa = get_array(arrayid.c_str())) == NULL)
       {
+      pthread_setcancelstate(old_state, NULL);
       return(FATAL_ERROR);
       }
 
     array_mgr.mark_as_locked();
+    pthread_setcancelstate(old_state, NULL);
 
     return(NONFATAL_ERROR);
     }
@@ -1208,6 +1215,7 @@ int create_and_queue_array_subjob(
       /* pjobclone has been released. No mutex left to unlock */
       clone_mgr.set_unlock_on_exit(false);
       }
+    pthread_setcancelstate(old_state, NULL);
 
     return(FATAL_ERROR);
     }
@@ -1378,10 +1386,11 @@ void *job_clone_wt(
   job         *template_job;
   char        *jobid;
   int          rc;
+  int          old_state = PTHREAD_CANCEL_ENABLE;
   char         namebuf[MAXPATHLEN];
   job_array   *pa;
 
-  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
 
   std::string  prev_job_id;
   std::string	 adjusted_path_jobs;
@@ -1391,7 +1400,7 @@ void *job_clone_wt(
   if (jobid == NULL)
     {
     log_err(ENOMEM, __func__, "Can't malloc");
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+    pthread_setcancelstate(old_state, NULL);
     return(NULL);
     }
 
@@ -1403,7 +1412,7 @@ void *job_clone_wt(
 
     if (template_job != NULL)
       unlock_ji_mutex(template_job, __func__, "1", LOGLEVEL);
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+    pthread_setcancelstate(old_state, NULL);
     return(NULL);
     }
 
@@ -1415,7 +1424,7 @@ void *job_clone_wt(
     // Do not create the array sub-jobs until the job has been routed
     set_task(WORK_Timed, time(NULL) + ARRAY_ROUTING_RETRY_SECONDS, job_clone_task_wrapper, strdup(jobid), FALSE);
     free(jobid);
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+    pthread_setcancelstate(old_state, NULL);
     return(NULL);
     }
 
@@ -1448,7 +1457,7 @@ void *job_clone_wt(
 
     if (rc == FATAL_ERROR)
       {
-      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+      pthread_setcancelstate(old_state, NULL);
       return(NULL);
       }
 
@@ -1462,7 +1471,7 @@ void *job_clone_wt(
 
   perform_array_postprocessing(pa);
 
-  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+  pthread_setcancelstate(old_state, NULL);
   return(NULL);
   }  /* END job_clone_wt */
 
