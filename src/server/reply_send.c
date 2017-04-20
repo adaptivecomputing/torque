@@ -95,8 +95,9 @@ static int dis_reply_write(
   int              rc = PBSE_NONE;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
   struct tcp_chan *chan = NULL;
+  int              old_state = PTHREAD_CANCEL_ENABLE;
   
-  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
 
   /* setup for DIS over tcp */
   if ((chan = DIS_tcp_setup(sfds)) != NULL)
@@ -116,7 +117,7 @@ static int dis_reply_write(
     DIS_tcp_cleanup(chan);
     }
   
-  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+  pthread_setcancelstate(old_state, NULL);
 
   return(rc);
   }  /* END dis_reply_write() */

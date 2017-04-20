@@ -496,6 +496,7 @@ int send_request_to_remote_server(
   int               sock = 0;
   char              log_buf[LOCAL_LOG_BUF_SIZE];
   struct tcp_chan  *chan = NULL;
+  int               old_state = PTHREAD_CANCEL_ENABLE;
     
   pthread_mutex_lock(connection[conn].ch_mutex);
   sock = connection[conn].ch_socket;
@@ -503,13 +504,14 @@ int send_request_to_remote_server(
   
   request->rq_conn = sock;
   
-  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
   
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
     log_err(PBSE_MEM_MALLOC, __func__,
       "Could not allocate memory for socket buffer");
     close_conn(sock, FALSE);
+    pthread_setcancelstate(old_state, NULL);
     return(PBSE_MEM_MALLOC);
     }
 
@@ -774,7 +776,7 @@ int send_request_to_remote_server(
   if (close_handle == true)
     svr_disconnect(conn);
   
-  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+  pthread_setcancelstate(old_state, NULL);
 
   return(rc);
   } /* END send_request_to_remote_server() */

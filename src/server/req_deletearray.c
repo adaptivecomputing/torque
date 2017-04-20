@@ -146,6 +146,8 @@ int req_deletearray(
   struct work_task  *ptask;
   char               log_buf[LOCAL_LOG_BUF_SIZE];
 
+  static const int   MAX_DELETE_WAIT = 3;
+  int                wait_tries = 0;
   int                num_skipped = 0;
   char               owner[PBS_MAXUSER + 1];
   time_t             time_now = time(NULL);
@@ -165,9 +167,15 @@ int req_deletearray(
           (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)) &&
          (pa->ai_qs.num_cloned > 0))
     {
-    unlock_ai_mutex(pa, __func__, NULL, 10);
-    sleep(1);
-    pa = get_array(preq->rq_ind.rq_delete.rq_objname);
+    if (wait_tries == MAX_DELETE_WAIT)
+      break;
+    else
+      {
+      unlock_ai_mutex(pa, __func__, NULL, 10);
+      sleep(1);
+      pa = get_array(preq->rq_ind.rq_delete.rq_objname);
+      wait_tries++;
+      }
     }
 
   if (pa == NULL)

@@ -1309,7 +1309,8 @@ int svr_job_save(
   svr_job *pjob)
 
   {
-  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+  int old_state = PTHREAD_CANCEL_ENABLE;
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
 
   char    namebuf1[MAXPATHLEN];
   char    namebuf2[MAXPATHLEN];
@@ -1357,11 +1358,11 @@ int svr_job_save(
     {
     log_event(PBSEVENT_ERROR | PBSEVENT_SECURITY, PBS_EVENTCLASS_JOB, pjob->get_jobid(),
       "call to saveJobToXML in job_save failed");
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+    pthread_setcancelstate(old_state, NULL);
     return(-1);
     }
 
-  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+  pthread_setcancelstate(old_state, NULL);
 
   return(PBSE_NONE);
   } // END svr_job_save()
@@ -1375,8 +1376,6 @@ int mom_job_save(
   int      mom_port) // if 0 ignore otherwise append to end of job name. this is for multi-mom mode
 
   {
-  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
-
   char    namebuf1[MAXPATHLEN];
   char    namebuf2[MAXPATHLEN];
 
@@ -1425,11 +1424,8 @@ int mom_job_save(
     {
     log_event(PBSEVENT_ERROR | PBSEVENT_SECURITY, PBS_EVENTCLASS_JOB, pjob->get_jobid(),
       "call to saveJobToXML in job_save failed");
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
     return(-1);
     }
-
-  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
 
   return(PBSE_NONE);
   }  /* END mom_job_save() */
