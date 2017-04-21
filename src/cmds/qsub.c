@@ -31,7 +31,7 @@ int main(
       }
     else
       {
-      std::cout<<error;
+      std::cerr<<error;
       return (-1);
       }
     }
