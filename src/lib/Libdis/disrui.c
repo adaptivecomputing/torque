@@ -169,6 +169,9 @@ unsigned disrui_peek(
     
     *retval = DIS_BADSIGN;
     }
+
+  // Undo the reading
+  tcp_rcommit(chan, 0);
   
   return(value);
   } /* END disrui_peek() */

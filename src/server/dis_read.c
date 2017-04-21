@@ -132,8 +132,6 @@ int dis_request_read(
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
 #ifdef PBS_MOM
-  /* NYI: talk to Ken about this. This is necessary due to the changes to 
-   * decode_DIS_ReqHdr */
   proto_type = disrui(chan, &rc);
 #endif
 

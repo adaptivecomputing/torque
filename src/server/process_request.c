@@ -329,33 +329,23 @@ bool request_passes_acl_check(
 
 
 
-/*
- * read_request_from_socket()
- *
- * Initializes request from the data on the socket
- * @param chan - the wrapper for the socket we're reading data from
- * @param request - the request we're initializing
- * @return PBSE_* to indicate what happened
- */
-
-int read_request_from_socket(
+int validate_request(
 
   tcp_chan      *chan,
-  batch_request &request)
+  batch_request *preq)
 
   {
-  int                   rc = PBSE_NONE;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
-
-  time_t                time_now = time(NULL);
-  char                  tmpLine[MAXLINE];
   enum conn_type        conn_active;
   unsigned short        conn_socktype;
 #ifdef ENABLE_UNIX_SOCKETS
   unsigned short        conn_authen;
 #endif
-  unsigned long         conn_addr;
   int                   sfds = chan->sock;
+  char                  tmpLine[MAXLINE];
+  int                   rc = PBSE_NONE;
+  time_t                time_now = time(NULL);
+  unsigned long         conn_addr;
+  char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((sfds < 0) ||
       (sfds >= PBS_NET_MAX_CONNECTIONS))
@@ -371,11 +361,8 @@ int read_request_from_socket(
   svr_conn[sfds].cn_lasttime = time_now;
   pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
-  request.rq_conn = sfds;
-
-  /*
-   * Read in the request and decode it to the internal request structure.
-   */
+  preq->rq_conn = sfds;
+  
   if ((conn_active == FromClientDIS) ||
       (conn_active == ToServerDIS))
     {
@@ -389,26 +376,6 @@ int read_request_from_socket(
       }
 
 #endif /* END ENABLE_UNIX_SOCKETS */
-    rc = dis_request_read(chan, &request);
-
-    if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL) || (rc == PBSE_SOCKET_CLOSE))
-      {
-      /* read error, likely cannot send reply so just disconnect, indicate permanent
-       * failure by setting the type to PBS_BATCH_Disconnect */
-      request.rq_type = PBS_BATCH_Disconnect;
-      return(rc);
-      }
-    else if (rc > 0)
-      {
-      /* FAILURE */
-
-      /*
-       * request didn't decode, either garbage or unknown
-       * request type, in either case, return reject-reply
-       */
-      request.rq_failcode = rc;
-      return(rc);
-      }
     }
   else
     {
@@ -422,11 +389,11 @@ int read_request_from_socket(
         "request on invalid type of connection (%d) from %s",
         conn_active,
         netaddr_long(conn_addr, out));
-    req_reject(PBSE_BADHOST, 0, &request, NULL, tmpLine);
+    req_reject(PBSE_BADHOST, 0, preq, NULL, tmpLine);
     return(-1);
     }
-
-  if (get_connecthost(sfds, request.rq_host, PBS_MAXHOSTNAME) != 0)
+  
+  if (get_connecthost(sfds, preq->rq_host, PBS_MAXHOSTNAME) != 0)
     {
     char ipstr[80];
     sprintf(log_buf, "%s: %s",
@@ -440,7 +407,7 @@ int read_request_from_socket(
         "cannot determine hostname for connection from %s",
         log_buf);
 
-    req_reject(PBSE_BADHOST, 0, &request, NULL, tmpLine);
+    req_reject(PBSE_BADHOST, 0, preq, NULL, tmpLine);
     return(-1);
     }
 
@@ -448,9 +415,9 @@ int read_request_from_socket(
     {
     sprintf(log_buf,
       msg_request,
-      reqtype_to_txt(request.rq_type),
-      request.rq_user,
-      request.rq_host,
+      reqtype_to_txt(preq->rq_type),
+      preq->rq_user,
+      preq->rq_host,
       sfds);
 
     log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_REQUEST, "", log_buf);
@@ -458,19 +425,61 @@ int read_request_from_socket(
 
   /* is the request from a host acceptable to the server */
   if (conn_socktype & PBS_SOCK_UNIX)
-    strcpy(request.rq_host, server_name);
+    strcpy(preq->rq_host, server_name);
 
-  if (request_passes_acl_check(&request, conn_addr) == false)
+  if (request_passes_acl_check(preq, conn_addr) == false)
     {
     /* See if the request is in the limited acl list */
-    if (limited_acls.is_authorized(request.rq_host, request.rq_user) == false)
+    if (limited_acls.is_authorized(preq->rq_host, preq->rq_user) == false)
       {
       char tmpLine[MAXLINE];
       snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
-        request.rq_host);
-      req_reject(PBSE_BADHOST, 0, &request, NULL, tmpLine);
-      return(-1);
+        preq->rq_host);
+      req_reject(PBSE_BADHOST, 0, preq, NULL, tmpLine);
+      rc = -1;
       }
+    }
+
+  return(rc);
+  } // END validate_request()
+
+
+
+/*
+ * read_request_from_socket()
+ *
+ * Initializes request from the data on the socket
+ * @param chan - the wrapper for the socket we're reading data from
+ * @param request - the request we're initializing
+ * @return PBSE_* to indicate what happened
+ */
+
+int read_request_from_socket(
+
+  tcp_chan      *chan,
+  batch_request &request)
+
+  {
+  int rc = PBSE_NONE;
+
+  /*
+   * Read in the request and decode it to the internal request structure.
+   */
+  rc = dis_request_read(chan, &request);
+
+  if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL) || (rc == PBSE_SOCKET_CLOSE))
+    {
+    /* read error, likely cannot send reply so just disconnect, indicate permanent
+     * failure by setting the type to PBS_BATCH_Disconnect */
+    request.rq_type = PBS_BATCH_Disconnect;
+    return(rc);
+    }
+  else if (rc > 0)
+    {
+    // Request didn't decode, either garbage or unknown request type, in either case
+    // return reject-reply
+    request.rq_failcode = rc;
+    return(rc);
     }
 
   return(PBSE_NONE);
@@ -493,7 +502,8 @@ int read_request_from_socket(
 
 int process_request(
 
-  struct tcp_chan *chan) /* file descriptor (socket) to get request */
+  struct tcp_chan *chan,    // socket struct for reading request
+  batch_request   *req_ptr) // optional, the request if already present
 
   {
   int                   rc = PBSE_NONE;
@@ -516,9 +526,15 @@ int process_request(
   svr_conn[sfds].cn_lasttime = time_now;
   pthread_mutex_unlock(svr_conn[sfds].cn_mutex);
 
-  rc = read_request_from_socket(chan, request);
+  if (req_ptr == NULL)
+    {
+    rc = read_request_from_socket(chan, request);
+    req_ptr = &request;
+    }
 
-  if (request.rq_type == PBS_BATCH_Disconnect)
+  rc = validate_request(chan, req_ptr);
+
+  if (req_ptr->rq_type == PBS_BATCH_Disconnect)
     rc = PBSE_SOCKET_CLOSE;
 
   if (rc != PBSE_NONE)
@@ -535,9 +551,9 @@ int process_request(
     {
     /* request came from another server */
 
-    request.rq_fromsvr = 1;
+    req_ptr->rq_fromsvr = 1;
 
-    request.rq_perm =
+    req_ptr->rq_perm =
       ATR_DFLAG_USRD | ATR_DFLAG_USWR |
       ATR_DFLAG_OPRD | ATR_DFLAG_OPWR |
       ATR_DFLAG_MGRD | ATR_DFLAG_MGWR |
@@ -548,7 +564,7 @@ int process_request(
     /* request not from another server */
     conn_credent[sfds].timestamp = time_now;
 
-    request.rq_fromsvr = 0;
+    req_ptr->rq_fromsvr = 0;
 
     /*
      * Client must be authenticated by an Authenticate User Request, if not,
@@ -566,9 +582,9 @@ int process_request(
      * creds.  Authorization is still granted in svr_get_privilege below
      */
 
-    if (request.rq_type == PBS_BATCH_Connect)
+    if (req_ptr->rq_type == PBS_BATCH_Connect)
       {
-      return(req_connect(&request));
+      return(req_connect(req_ptr));
       }
 
     if (conn_socktype & PBS_SOCK_UNIX)
@@ -584,14 +600,14 @@ int process_request(
     else if (munge_on)
       {
       /* If munge_on is true we will validate the connection now */
-      if (request.rq_type == PBS_BATCH_AltAuthenUser)
+      if (req_ptr->rq_type == PBS_BATCH_AltAuthenUser)
         {
-        rc = req_altauthenuser(&request);
+        rc = req_altauthenuser(req_ptr);
         return(rc);
         }
       else
         {
-        rc = authenticate_user(&request, &conn_credent[sfds], &auth_err);
+        rc = authenticate_user(req_ptr, &conn_credent[sfds], &auth_err);
         }
       }
 #endif
@@ -599,11 +615,11 @@ int process_request(
       /* skip checking user if we did not get an authenticated credential */
       rc = PBSE_BADCRED;
     else
-      rc = authenticate_user(&request, &conn_credent[sfds], &auth_err);
+      rc = authenticate_user(req_ptr, &conn_credent[sfds], &auth_err);
 
     if (rc != 0)
       {
-      req_reject(rc, 0, &request, NULL, auth_err);
+      req_reject(rc, 0, req_ptr, NULL, auth_err);
       if (auth_err != NULL)
         free(auth_err);
 
@@ -616,9 +632,9 @@ int process_request(
      * for root on the jobs execution node.
      */
      
-    if (((request.rq_type == PBS_BATCH_ModifyJob) ||
-        (request.rq_type == PBS_BATCH_ReleaseJob)) &&
-        (strcmp(request.rq_user, PBS_DEFAULT_ADMIN) == 0))
+    if (((req_ptr->rq_type == PBS_BATCH_ModifyJob) ||
+        (req_ptr->rq_type == PBS_BATCH_ReleaseJob)) &&
+        (strcmp(req_ptr->rq_user, PBS_DEFAULT_ADMIN) == 0))
       {
       svr_job *pjob;
       char *dptr;
@@ -627,13 +643,13 @@ int process_request(
 
       /* make short host name */
 
-      strcpy(short_host, request.rq_host);
+      strcpy(short_host, req_ptr->rq_host);
       if ((dptr = strchr(short_host, '.')) != NULL)
         {
         *dptr = '\0';
         }
       
-      if ((pjob = svr_find_job(request.rq_ind.rq_modify.rq_objname, FALSE)) != NULL)
+      if ((pjob = svr_find_job(req_ptr->rq_ind.rq_modify.rq_objname, FALSE)) != NULL)
         {
         mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
         if (pjob->get_state() == JOB_STATE_RUNNING)
@@ -645,7 +661,7 @@ int process_request(
                (csv_find_string(pjob->get_str_attr(JOB_ATR_checkpoint), "enabled") != NULL)) &&
               (strstr(pjob->get_str_attr(JOB_ATR_exec_host), short_host) != NULL))
             {
-            request.rq_perm = svr_get_privilege(request.rq_user, server_host);
+            req_ptr->rq_perm = svr_get_privilege(req_ptr->rq_user, server_host);
             skip = TRUE;
             }
           }
@@ -654,18 +670,18 @@ int process_request(
       
       if (!skip)
         {
-        request.rq_perm = svr_get_privilege(request.rq_user, request.rq_host);
+        req_ptr->rq_perm = svr_get_privilege(req_ptr->rq_user, req_ptr->rq_host);
         }
       }
     else
       {
-      request.rq_perm = svr_get_privilege(request.rq_user, request.rq_host);
+      req_ptr->rq_perm = svr_get_privilege(req_ptr->rq_user, req_ptr->rq_host);
       }
     }  /* END else (conn_authen == PBS_NET_CONN_FROM_PRIVIL) */
 
-  if (threadpool_is_too_busy(request_pool, request.rq_perm))
+  if (threadpool_is_too_busy(request_pool, req_ptr->rq_perm))
     {
-    req_reject(PBSE_SERVER_BUSY, 0, &request, NULL, NULL);
+    req_reject(PBSE_SERVER_BUSY, 0, req_ptr, NULL, NULL);
     return(PBSE_SERVER_BUSY);
     }
 
@@ -674,7 +690,7 @@ int process_request(
 
   if (state > SV_STATE_RUN)
     {
-    switch (request.rq_type)
+    switch (req_ptr->rq_type)
       {
       case PBS_BATCH_AsyrunJob:
       case PBS_BATCH_JobCred:
@@ -686,7 +702,7 @@ int process_request(
       case PBS_BATCH_jobscript:
       case PBS_BATCH_jobscript2:
 
-        req_reject(PBSE_SVRDOWN, 0, &request, NULL, NULL);
+        req_reject(PBSE_SVRDOWN, 0, req_ptr, NULL, NULL);
 
         return(PBSE_SVRDOWN);
       }
@@ -698,7 +714,7 @@ int process_request(
    * the request struture.
    */
 
-  rc = dispatch_request(sfds, &request);
+  rc = dispatch_request(sfds, req_ptr);
 
   return(rc);
   }  /* END process_request() */

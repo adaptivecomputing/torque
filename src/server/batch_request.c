@@ -243,6 +243,72 @@ batch_request::batch_request() : rq_type(-1), rq_perm(0), rq_fromsvr(0), rq_conn
 
 
 
+batch_request::batch_request(
+
+  Json::Value &header) : rq_type(-1), rq_perm(0), rq_fromsvr(0), rq_conn(-1), rq_orgconn(-1),
+                         rq_extsz(0), rq_time(time(NULL)), rq_refcount(0), rq_extra(NULL),
+                         rq_noreply(false), rq_failcode(0), rq_extend(0), rq_id()
+
+  {
+  int version;
+  // We must have a protocol version, a command, and a message or all is lost
+  if ((header["command"].empty()) ||
+      (header["protocol_version"].empty()) ||
+      (header["message"].empty()))
+    {
+    throw(-1);
+    }
+  else
+    {
+    this->rq_type = header["command"].asInt();
+
+    // We cannot deal with future versions
+    version = header["protocol_version"].asInt();
+    if (version > PBS_BATCH_PROT_VER)
+      throw(-1);
+    }
+
+  Json::Value &message = header["message"];
+  if (message["user"].empty())
+    throw(-1);
+  else
+    snprintf(this->rq_user, sizeof(this->rq_user), "%s", message["user"].asString().c_str());
+
+  switch (this->rq_type)
+    {
+
+    case PBS_BATCH_RunJob:
+
+      // Must have a job id
+      if (message["jobid"].empty())
+        throw(-1);
+
+      snprintf(this->rq_ind.rq_run.rq_jid, sizeof(this->rq_ind.rq_run.rq_jid),
+        "%s", message["jobid"].asString().c_str());
+
+      // May be asynchronous
+      if (message["asynchronous"].empty() == false)
+        this->rq_type = PBS_BATCH_AsyrunJob;
+
+      // May specify a hostlist
+      if (message["hostlist"].empty() == false)
+        this->rq_ind.rq_run.rq_destin = strdup(message["hostlist"].asString().c_str());
+      else
+        this->rq_ind.rq_run.rq_destin = NULL;
+
+      break;
+
+    default:
+
+      // NYI or incompatible
+      throw(-1);
+
+      break;
+    }
+  }
+
+
+
 int batch_request::copy_attribute_list(
 
   const batch_request &other)

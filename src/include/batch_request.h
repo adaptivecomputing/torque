@@ -105,6 +105,7 @@
 #include "pbs_job.h"
 #include "container.hpp"
 #include "work_task.h"
+#include "json/json.h"
 
 #define  INITIAL_REQUEST_HOLDER_SIZE 20
 
@@ -400,6 +401,7 @@ class batch_request
   batch_request();
   batch_request(int type);
   batch_request(const batch_request &other);
+  batch_request(Json::Value &header);
   ~batch_request();
   batch_request &operator =(const batch_request &other);
 
@@ -413,17 +415,17 @@ typedef container::item_container<batch_request *>::item_iterator   batch_reques
 extern batch_request_holder brh;
 
 
-extern void    reply_ack (struct batch_request *);
-extern void    req_reject (int code, int aux, struct batch_request *, const char *, const char *);
-extern void    reply_badattr (int code, int aux, svrattrl *, struct batch_request *);
-extern void    reply_text (struct batch_request *, int code, const char *text);
+extern void    reply_ack (batch_request *);
+extern void    req_reject (int code, int aux, batch_request *, const char *, const char *);
+extern void    reply_badattr (int code, int aux, svrattrl *, batch_request *);
+extern void    reply_text (batch_request *, int code, const char *text);
 extern int     reply_jobid (batch_request *, const char *, int);
 extern void    reply_free (struct batch_reply *);
-extern int     authenticate_user (struct batch_request *, struct credential *, char **);
-extern void    free_br (struct batch_request *);
+extern int     authenticate_user (batch_request *, struct credential *, char **);
+extern void    free_br (batch_request *);
 void           set_reply_type(struct batch_reply *preply, int type);
-extern int     isode_request_read (int, struct batch_request *);
-int            process_request(struct tcp_chan *chan);
+extern int     isode_request_read (int, batch_request *);
+int            process_request(struct tcp_chan *chan, batch_request *);
 
 int            get_batch_request_id(batch_request *preq);
 int            insert_batch_request(batch_request *preq);

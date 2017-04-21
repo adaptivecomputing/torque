@@ -323,7 +323,7 @@ void *start_process_request(void *vp)
   struct tcp_chan *chan = NULL;
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     return NULL;
-  process_request(chan);
+  process_request(chan, NULL);
   DIS_tcp_cleanup(chan);
   return(NULL);
   }

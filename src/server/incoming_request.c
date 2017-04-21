@@ -95,6 +95,7 @@
 #include "batch_request.h"
 
 const int SHORT_TIMEOUT = 5;
+const int INVALID_JSON_MESSAGE = -13;
 
 char *netaddr(struct sockaddr_in *ap);
 void netcounter_incr();
@@ -136,6 +137,64 @@ int get_protocol_type(
 
 
 
+int process_json_message(
+
+  tcp_chan   *chan,
+  const char *json_str,
+  long       *args)
+
+  {
+  int          rc = PBSE_NONE;
+  Json::Reader r;
+  Json::Value  header;
+        
+  if (r.parse(json_str, header) == false)
+    {
+    rc = INVALID_JSON_MESSAGE;
+    }
+  else
+    {
+    int protocol_type = -1;
+
+    if (header["protocol"].empty() == false)
+      protocol_type = header["protocol"].asInt();
+
+    switch (protocol_type)
+      {
+    
+      case PBS_BATCH_PROT_TYPE:
+
+        try
+          {
+          batch_request preq(header);
+          preq.rq_conn = chan->sock;
+          process_request(chan, &preq);
+          }
+        catch (...)
+          {
+          rc = INVALID_JSON_MESSAGE;
+          }
+      
+        break;
+      
+      case IS_PROTOCOL:
+
+        // NYI
+
+        break;
+
+      default:
+
+        rc = INVALID_JSON_MESSAGE;
+        break;
+      }
+    }
+
+  return(rc);
+  } // END process_json_message()
+
+
+
 int process_pbs_server_port(
      
   int   sock,
@@ -158,8 +217,10 @@ int process_pbs_server_port(
   switch (protocol_type)
     {
     case PBS_BATCH_PROT_TYPE:
+
+      protocol_type = disrui(chan, &rc);
       
-      rc = process_request(chan);
+      rc = process_request(chan, NULL);
       
       break;
       
@@ -167,6 +228,7 @@ int process_pbs_server_port(
 
       {
       // always close the socket for is requests 
+      protocol_type = disrui(chan, &rc);
       rc = PBSE_SOCKET_CLOSE;
 
       is_request_info isr;
@@ -190,48 +252,62 @@ int process_pbs_server_port(
 
     default:
       {
+      char               *json;
       struct sockaddr     s_addr;
       struct sockaddr_in *addr;
       socklen_t           len = sizeof(s_addr);
 
-      if (getpeername(sock, &s_addr, &len) == 0)
-        {
-        addr = (struct sockaddr_in *)&s_addr;
-        
-        if (protocol_type == 0)
-          {
-          /* 
-           * Don't log error if close is on scheduler port.  Scheduler is
-           * responsible for closing the connection
-           */
-          if (!is_scheduler_port)
-            {
-            if (LOGLEVEL >= 8)
-              {
-              snprintf(log_buf, sizeof(log_buf),
-                "protocol_type: %d: Socket (%d) close detected from %s", protocol_type, sock, netaddr(addr));
-              log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-              }
-            }
+      json = disrst(chan, &rc);
 
-          if (chan->IsTimeout)
-            {
-            chan->IsTimeout = 0;
-            rc = PBSE_TIMEOUT;
-            }
-          else
-            rc = PBSE_SOCKET_CLOSE;
-          }
-        else
-          {
-          snprintf(log_buf,sizeof(log_buf),
-              "Socket (%d) Unknown protocol %d from %s", sock, protocol_type, netaddr(addr));
-          log_err(-1, __func__, log_buf);
-          rc = PBSE_SOCKET_DATA;
-          }
+      if (json != NULL)
+        {
+        rc = process_json_message(chan, json, args);
+        free(json);
         }
       else
-        rc = PBSE_SOCKET_CLOSE;
+        rc = INVALID_JSON_MESSAGE;
+
+      if (rc == INVALID_JSON_MESSAGE)
+        {
+        if (getpeername(sock, &s_addr, &len) == 0)
+          {
+          addr = (struct sockaddr_in *)&s_addr;
+          
+          if (protocol_type == 0)
+            {
+            /* 
+             * Don't log error if close is on scheduler port.  Scheduler is
+             * responsible for closing the connection
+             */
+            if (!is_scheduler_port)
+              {
+              if (LOGLEVEL >= 8)
+                {
+                snprintf(log_buf, sizeof(log_buf),
+                  "protocol_type: %d: Socket (%d) close detected from %s", protocol_type, sock, netaddr(addr));
+                log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
+                }
+              }
+
+            if (chan->IsTimeout)
+              {
+              chan->IsTimeout = 0;
+              rc = PBSE_TIMEOUT;
+              }
+            else
+              rc = PBSE_SOCKET_CLOSE;
+            }
+          else
+            {
+            snprintf(log_buf,sizeof(log_buf),
+                "Socket (%d) Unknown protocol %d from %s", sock, protocol_type, netaddr(addr));
+            log_err(-1, __func__, log_buf);
+            rc = PBSE_SOCKET_DATA;
+            }
+          }
+        else
+          rc = PBSE_SOCKET_CLOSE;
+        }
 
       break;
       }
