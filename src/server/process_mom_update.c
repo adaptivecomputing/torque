@@ -1105,7 +1105,6 @@ int process_node_json_status(
   {
   std::vector<std::string> node_attrs = node_status.getMemberNames();
   std::string              status_line;
-  bool                     force_layout_update = !node_status["force_layout_update"].empty();
   bool                     dont_change_state = false;
   bool                     send_hello = false;
   pbsnode                 *current = NULL;
@@ -1172,10 +1171,13 @@ int process_node_json_status(
       }
     }
 
+#ifdef PENABLE_LINUX_CGROUPS
   if (node_status[LAYOUT].empty() == false)
     {
+    bool force_layout_update = !node_status["force_layout_update"].empty();
     update_layout_if_needed(current, "", &node_status[LAYOUT], force_layout_update);
     }
+#endif
   
   if (node_status["first_update"].empty() == false)
     {
