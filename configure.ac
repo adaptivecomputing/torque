@@ -1965,10 +1965,10 @@ AC_ARG_ENABLE(spool, [
                           $TORQUEHOME/spool and copy them to the users home
                           directory when the job completes.],
 [case "${enableval}" in
-  yes) NO_SPOOL_OUTPUT=0 ;;
-  no)  NO_SPOOL_OUTPUT=1 ;;
+  yes) NO_SPOOL_OUTPUT=0 ; RPM_AC_OPTS="$RPM_AC_OPTS --with spool" ;;
+  no)  NO_SPOOL_OUTPUT=1 ; RPM_AC_OPTS="$RPM_AC_OPTS --without spool" ;;
   *)   AC_MSG_ERROR(--enable-spool cannot take a value) ;;
-esac],[NO_SPOOL_OUTPUT=0])dnl
+esac],[NO_SPOOL_OUTPUT=0 ; RPM_AC_OPTS="$RPM_AC_OPTS --with spool"])dnl
 AC_DEFINE_UNQUOTED(NO_SPOOL_OUTPUT, ${NO_SPOOL_OUTPUT}, [directly use homedirs instead of $TORQUEHOME/spool])
 
 AC_ARG_ENABLE(shell-use-argv, [
