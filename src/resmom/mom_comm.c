@@ -8658,7 +8658,7 @@ int get_job_struct(
       }
     }  /* END if (pjob != NULL) */
 
-  if ((new_job = mom_job_alloc()) == NULL)
+  if ((new_job = new mom_job()) == NULL)
     {
     /* out of memory */
     log_err(-1, __func__, "insufficient memory to create job");
