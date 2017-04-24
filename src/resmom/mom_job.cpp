@@ -1,4 +1,4 @@
-
+#include <pbs_config.h>
 #include <stdio.h>
 
 #include "pbs_job.h"
