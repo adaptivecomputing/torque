@@ -463,27 +463,29 @@ void get_chkpt_dir_to_use(
     int         len;
     const char *checkpoint_dir = pjob->get_str_attr(JOB_ATR_checkpoint_dir);
 
-    sprintf(job_dir,"%s%s",
-      pjob->get_fileprefix(), JOB_CHECKPOINT_SUFFIX);
+    snprintf(job_dir, sizeof(job_dir), "%s%s",  pjob->get_fileprefix(), JOB_CHECKPOINT_SUFFIX);
 
-    len = strlen(checkpoint_dir);
-    if (checkpoint_dir[len-1] != '/')
-      need_slash = true;
-
-    if ((len <= strlen(job_dir)) ||
-        (strcmp(job_dir, checkpoint_dir + len - strlen(job_dir))))
+    if (checkpoint_dir != NULL)
       {
-      if (need_slash == true)
+      len = strlen(checkpoint_dir);
+      if (checkpoint_dir[len-1] != '/')
+        need_slash = true;
+
+      if ((len <= strlen(job_dir)) ||
+          (strcmp(job_dir, checkpoint_dir + len - strlen(job_dir))))
         {
-        snprintf(chkpt_dir, chkpt_dir_size, "%s/%s",
-          pjob->get_str_attr(JOB_ATR_checkpoint_dir), job_dir);
+        if (need_slash == true)
+          {
+          snprintf(chkpt_dir, chkpt_dir_size, "%s/%s",
+            pjob->get_str_attr(JOB_ATR_checkpoint_dir), job_dir);
+          }
+        else
+          snprintf(chkpt_dir, chkpt_dir_size, "%s%s",
+            pjob->get_str_attr(JOB_ATR_checkpoint_dir), job_dir);
         }
       else
-        snprintf(chkpt_dir, chkpt_dir_size, "%s%s",
-          pjob->get_str_attr(JOB_ATR_checkpoint_dir), job_dir);
+        snprintf(chkpt_dir, chkpt_dir_size, "%s", pjob->get_str_attr(JOB_ATR_checkpoint_dir));
       }
-    else
-      snprintf(chkpt_dir, chkpt_dir_size, "%s", pjob->get_str_attr(JOB_ATR_checkpoint_dir));
     }
 
   return;
