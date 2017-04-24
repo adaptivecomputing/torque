@@ -585,7 +585,6 @@ void account_jobend(
   std::string ds = "";
   char                local_buf[MAXLINE * 4];
 #ifdef USESAVEDRESOURCES
-  pbs_attribute      *pattr;
   long                walltime_val = 0;
 #endif
 
