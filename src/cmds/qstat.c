@@ -1685,40 +1685,28 @@ void print_req_information(
 void print_req_information_xml(
 
   struct attrl *req_information_attr,
-  xmlNodePtr    &node)
+  xmlNodePtr   &node)
 
   {
-  char         buf[100];
-  char         name[1024];
-  char        *left_dot;
-  char        *right_dot;
-  int          req_index = 0;
-  int          task_index = 0;
-  std::string out;
-  std::ostringstream osstream;
-  allocation   a;
+  char                buf[100];
+  std::string         out;
+  std::ostringstream  osstream;
+  allocation          a;
   
   a.initialize_from_string(req_information_attr->value);
   
-  if ((left_dot = strchr(req_information_attr->resource, '.')) != NULL)
-       req_index = strtol(left_dot + 1, NULL, 10);
-  if ((right_dot = strrchr(req_information_attr->resource, '.')) != NULL)
-       task_index = strtol(right_dot + 1, NULL, 10);
-  sprintf(name, "task_usage.%d.task.%d", req_index, task_index);
-  
   translate_vector_to_range_string(out, a.cpu_indices);
   
-  xmlNewChild(node, NULL, BAD_CAST req_information_attr->resource,NULL);
-  xmlNodePtr RE = node;
-  xmlNewChild(RE, NULL,  BAD_CAST "cpu_list",BAD_CAST out.c_str()); 
+  xmlNodePtr task_usage_info = xmlNewChild(node, NULL, BAD_CAST req_information_attr->resource,NULL);
+  xmlNewChild(task_usage_info, NULL,  BAD_CAST "cpu_list",BAD_CAST out.c_str()); 
 
   translate_vector_to_range_string(out, a.mem_indices);
-  xmlNewChild(RE,NULL,BAD_CAST "mem_list", BAD_CAST out.c_str());
+  xmlNewChild(task_usage_info, NULL, BAD_CAST "mem_list", BAD_CAST out.c_str());
 
   if (a.task_cput_used != 0)
     {
     sprintf(buf, "%lu", a.task_cput_used);
-    xmlNewChild(RE,NULL, BAD_CAST "cpu_time_used", BAD_CAST a.task_cput_used);
+    xmlNewChild(task_usage_info, NULL, BAD_CAST "cpu_time_used", BAD_CAST a.task_cput_used);
     }
   if (a.task_memory_used != 0)
     {
@@ -1726,18 +1714,18 @@ void print_req_information_xml(
     mem_used = a.task_memory_used/1024;
     sprintf(buf, "%llukb", mem_used);
   
-    xmlNewChild(RE,NULL,BAD_CAST "memory_used", BAD_CAST mem_used);
+    xmlNewChild(task_usage_info, NULL, BAD_CAST "memory_used", BAD_CAST mem_used);
     }
   
   osstream <<  a.cores;
   std::string cores = osstream.str();
-  xmlNewChild(RE,NULL, BAD_CAST "cores", BAD_CAST cores.c_str());
+  xmlNewChild(task_usage_info, NULL, BAD_CAST "cores", BAD_CAST cores.c_str());
 
   osstream << a.threads;
   std::string threads = osstream.str();
-  xmlNewChild(RE,NULL, BAD_CAST "threads", BAD_CAST threads.c_str());
+  xmlNewChild(task_usage_info, NULL, BAD_CAST "threads", BAD_CAST threads.c_str());
 
-  xmlNewChild(RE,NULL,BAD_CAST "host", BAD_CAST a.hostname.c_str());
+  xmlNewChild(task_usage_info, NULL, BAD_CAST "host", BAD_CAST a.hostname.c_str());
   } // END print_req_information_xml()
 
 
