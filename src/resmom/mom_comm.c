@@ -2310,7 +2310,6 @@ int im_join_job_as_sister(
   int                  rc = PBSE_NONE;
   int                  sister_count = 0;
 
-  char                 basename[50];
   char                 namebuf[MAXPATHLEN];
   char                *radix_hosts = NULL;
   char                *radix_ports = NULL;
@@ -2418,7 +2417,7 @@ int im_join_job_as_sister(
     } /* END if job_radix == true */
 
   pjob->set_jobid(jobid);
-  pjob->set_fileprefix(basename);
+  pjob->set_fileprefix(pjob->get_str_attr(JOB_ATR_hashname));
   
   pjob->set_modified(true);
   pjob->ji_nodeid = nodeid;
