@@ -816,7 +816,9 @@ class item_container
     int prev = slots[index].prev;
     int next = slots[index].next;
 
-    map.erase(slots[index].pItem->id);
+    if (map.find(slots[index].pItem->id) != map.end())
+      map.erase(slots[index].pItem->id);
+
     slots[index].prev = ALWAYS_EMPTY_INDEX;
     slots[index].next = ALWAYS_EMPTY_INDEX;
     delete slots[index].pItem;
