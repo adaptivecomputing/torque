@@ -157,6 +157,11 @@ int get_server_and_job_ids(
 
       if (notNULL(parent_server))
         {
+        char *colon = strchr(parent_server, ':');
+
+        if (colon != NULL)
+          *colon = '\0';
+
         snprintf(def_server, PBS_MAXSERVERNAME, "%s", parent_server);
         
         c = def_server;
