@@ -486,6 +486,7 @@ m4_ifdef([AM_SILENT_RULES],[
     src/test/checkpoint/Makefile
     src/test/cray_cpa/Makefile
     src/test/cray_energy/Makefile
+    src/test/cray_taskstats/Makefile
     src/test/generate_alps_status/Makefile
     src/test/mom_job/Makefile
     src/test/mom_job_func/Makefile

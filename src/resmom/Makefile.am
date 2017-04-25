@@ -44,7 +44,7 @@ pbs_mom_SOURCES = catch_child.c mom_comm.c mom_inter.c mom_main.c	\
 		   release_reservation.c generate_alps_status.c	\
 		   parse_config.c node_frequency.cpp cray_energy.c \
 			 accelerators_numa.cpp pmix_interface.c pmix_tracker.cpp \
-			 pmix_operation.cpp mom_job.cpp \
+			 pmix_operation.cpp mom_job.cpp cray_taskstats.cpp \
 		   ../server/attr_recov.c ../server/dis_read.c		\
 		   ../server/job_attr_def.c ../server/job_recov.c	\
 		   ../server/reply_send.c ../server/resc_def_all.c	\

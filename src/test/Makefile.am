@@ -69,7 +69,7 @@ CMDS_UT_DIRS = pbs_track pbsdsh pbsnodes pbspd pbspoe qalter qchkpt qdel qdisabl
 
 MISC_UT_DIRS = momctl
 
-MOM_UT_DIRS = alps_reservations catch_child checkpoint cray_energy generate_alps_status \
+MOM_UT_DIRS = alps_reservations catch_child checkpoint cray_energy cray_taskstats generate_alps_status \
 	mom_comm mom_inter mom_job_func mom_mach mom_main mom_process_request mom_req_quejob \
 	mom_server mom_start parse_config pbs_demux prolog release_reservation requests \
 	start_exec tmsock_recov mom_job
