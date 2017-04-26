@@ -3698,7 +3698,8 @@ int add_job_to_gpu_subnode(
   pnode->nd_ngpus_free--;
   gn.inuse = true;
   gn.job_count++;
-  pnode->nd_ngpus_to_be_used--;
+  if (pnode->nd_ngpus_to_be_used > 0)
+    pnode->nd_ngpus_to_be_used--;
 
   return(PBSE_NONE);
   } /* END add_job_to_gpu_subnode() */
@@ -5872,6 +5873,73 @@ int set_one_old(
   }  /* END set_one_old() */
 
 
+/*
+ * Process gpu token of the form <hostname>-gpu/<first>[-<last>]
+ *
+ * Set gpu subjob information for <hostname> node.
+ */
+
+int process_gpu_token(
+
+  const char *gpu_token,
+  job *pjob)
+
+  {
+  char           *pc;
+  char           *dash;
+  char           *p;
+  int             first;
+  int             last;
+  struct pbsnode *pnode;
+
+  // gpu_token expected to point to something like "numa3-gpu/2"
+
+  if ((gpu_token == NULL) || (pjob == NULL))
+    return(-1);
+     
+  // calculate range indices after the /
+  if ((pc = strchr((char *)gpu_token, (int)'/')))
+    {
+    first = strtol(pc + 1, &dash, 10);
+
+    *pc = '\0';
+
+    if (*dash == '-')
+      last = strtol(dash + 1, NULL, 10);
+    else
+      last = first;
+    }
+  else
+    {
+    first = 0;
+    last = first;
+    }
+
+  // drop -gpu suffix
+  if ((p = strrchr((char *)gpu_token, (int)'-')) != NULL)
+    {
+    if (strcmp(p, "-gpu") == 0)
+      *p = '\0';
+    }
+
+  // lookup node and set gpu info on each gpu subnode
+  if ((pnode = find_nodebyname(gpu_token)) != NULL)
+    {
+    int i;
+
+    for (i = first; i <= last; i++)
+      {
+      gpusubn &gn = pnode->nd_gpusn[i];
+
+      add_job_to_gpu_subnode(pnode, gn, pjob);
+      }
+
+      // unlock node
+      pnode->unlock_node(__func__, NULL, LOGLEVEL);
+    }
+
+  return(PBSE_NONE);
+  }
 
 /*
  * set_old_nodes - set "old" nodes as in use - called from pbsd_init()
@@ -5886,6 +5954,40 @@ int set_old_nodes(
   char     *old;
   char     *po;
   int       rc = PBSE_NONE;
+
+  // handle gpu info
+  if (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET)
+    {
+    char *old_str;
+    
+    if ((old_str = strdup(pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str)) == NULL)
+      {
+      return(PBSE_SYSTEM);
+      }
+
+    while ((po = strrchr(old_str, (int)'+')) != NULL)
+      {
+      // remove +
+      *po++ = '\0';
+
+      if (process_gpu_token(po, pjob) != PBSE_NONE)
+        {
+        free(old_str);
+        return(PBSE_SYSTEM);
+        }
+      }
+
+    if (old_str != NULL)
+      {
+      if (process_gpu_token(old_str, pjob) != PBSE_NONE)
+        {
+        free(old_str);
+        return(PBSE_SYSTEM);
+        }
+      }
+
+    free(old_str);
+    }
 
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
     {
