@@ -1032,7 +1032,7 @@ int trq_cg_add_process_to_all_cgroups(
 
 int trq_cg_create_task_cgroups(
 
-  string  cgroup_path, 
+  string      cgroup_path, 
   mom_job    *pjob)
 
   {
@@ -1051,6 +1051,12 @@ int trq_cg_create_task_cgroups(
     return(PBSE_NONE);
 
   complete_req *cr = pjob->get_creq_attr(JOB_ATR_req_information);
+
+  if (cr == NULL)
+    {
+    // Restore previous behavior. NYI - improve this behavior
+    return(PBSE_NONE);
+    }
     
   if ((cr->get_num_reqs() == 0) ||
       (cr->get_req(0).is_per_task() == false))
