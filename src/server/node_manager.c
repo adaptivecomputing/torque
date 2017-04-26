@@ -5836,7 +5836,7 @@ int set_one_old(
 int process_gpu_token(
 
   const char *gpu_token,
-  job *pjob)
+  svr_job    *pjob)
 
   {
   char           *pc;

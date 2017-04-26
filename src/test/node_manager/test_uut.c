@@ -47,7 +47,7 @@ void update_failure_counts(const char *node_name, int rc);
 void check_node_jobs_existence(struct work_task *pwt);
 int  add_job_to_gpu_subnode(pbsnode *pnode, gpusubn &gn, svr_job *pjob);
 int proplist(char **str, std::vector<prop> &plist, int *node_req, int *gpu_req, int *mic_req);
-int process_gpu_token(const char*, job*);
+int process_gpu_token(const char*, svr_job*);
 
 
 
@@ -954,11 +954,10 @@ END_TEST
 
 START_TEST(test_process_gpu_token)
   {
-  job *pjob;
+  svr_job *pjob = new svr_job();
   char *s;
   struct pbsnode *pnode;
 
-  pjob = (job *)calloc(1, sizeof(job));
   s = strdup("gpunode/5");
 
   fail_unless(process_gpu_token(NULL, pjob) != PBSE_NONE);
