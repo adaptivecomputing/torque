@@ -4,6 +4,7 @@
 #include <vector>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <list>
 
 #include "license_pbs.h" /* See here for the software license */
@@ -46,6 +47,7 @@ void update_failure_counts(const char *node_name, int rc);
 void check_node_jobs_existence(struct work_task *pwt);
 int  add_job_to_gpu_subnode(pbsnode *pnode, gpusubn &gn, svr_job *pjob);
 int proplist(char **str, std::vector<prop> &plist, int *node_req, int *gpu_req, int *mic_req);
+int process_gpu_token(const char*, job*);
 
 
 
@@ -950,6 +952,38 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   }
 END_TEST
 
+START_TEST(test_process_gpu_token)
+  {
+  job *pjob;
+  char *s;
+  struct pbsnode *pnode;
+
+  pjob = (job *)calloc(1, sizeof(job));
+  s = strdup("gpunode/5");
+
+  fail_unless(process_gpu_token(NULL, pjob) != PBSE_NONE);
+  fail_unless(process_gpu_token(s, NULL) != PBSE_NONE);
+  fail_unless(process_gpu_token(NULL, NULL) != PBSE_NONE);
+
+  pjob->ji_internal_id = 10;
+  fail_unless(process_gpu_token(s, pjob) == PBSE_NONE);
+
+  fail_unless((pnode = find_nodebyname("gpunode")) != NULL);
+
+  fail_unless(pnode->nd_gpusn[5].job_internal_id == 10);
+  fail_unless(pnode->nd_gpusn[5].inuse == true);
+  fail_unless(pnode->nd_gpusn[5].job_count == 1);
+
+  s = strdup("gpunode/0-2");
+  fail_unless(process_gpu_token(s, pjob) == PBSE_NONE);
+  fail_unless(pnode->nd_gpusn[0].inuse == true);
+  fail_unless(pnode->nd_gpusn[0].job_count == 1);
+  fail_unless(pnode->nd_gpusn[1].inuse == true);
+  fail_unless(pnode->nd_gpusn[1].job_count == 1);
+  fail_unless(pnode->nd_gpusn[2].inuse == true);
+  fail_unless(pnode->nd_gpusn[2].job_count == 1);
+  }
+END_TEST
 
 Suite *node_manager_suite(void)
   {
@@ -1011,6 +1045,10 @@ Suite *node_manager_suite(void)
   tcase_add_test(tc_core, node_is_spec_acceptable_test);
   tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
   tcase_add_test(tc_core, check_node_jobs_exitence_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_process_gpu_token");
+  tcase_add_test(tc_core, test_process_gpu_token);
   suite_add_tcase(s, tc_core);
 
   return(s);
