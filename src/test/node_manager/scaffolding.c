@@ -54,6 +54,7 @@ bool             job_mode = false;
 int              can_place = 0;
 pbsnode          napali_node;
 
+int create_a_gpusubnode(struct pbsnode*);
 
 struct batch_request *alloc_br(int type)
   {
@@ -137,12 +138,17 @@ struct pbsnode *find_nodebyname(const char *nodename)
   {
   static struct pbsnode bob;
   static struct pbsnode other;
+  static struct pbsnode gpunode;
   static int    called = 0;
 
   if (called == 0)
     {
     memset(&other, 0, sizeof(other));
     other.nd_name = strdup("lihue");
+
+    gpunode.nd_ngpus = 6;
+    create_a_gpusubnode(&gpunode);
+
     called++;
     }
 
@@ -159,9 +165,9 @@ struct pbsnode *find_nodebyname(const char *nodename)
   else if (!strcmp(nodename, "3"))
     return(&bob);
   else if (!strcmp(nodename, "lihue"))
-    {
     return(&other);
-    }
+  else if (!strcmp(nodename, "gpunode"))
+    return(&gpunode);
   else
     return(NULL);
   }
@@ -574,6 +580,10 @@ pbs_net_t get_hostaddr(
 
 int create_a_gpusubnode(struct pbsnode *np)
   {
+  np->nd_gpusn = (struct gpusubn *)calloc((1 + np->nd_ngpus), sizeof(struct gpusubn));
+  np->nd_ngpus++;
+  np->nd_ngpus_free++;
+
   return(0);
   }
 
