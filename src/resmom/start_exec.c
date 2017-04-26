@@ -6124,7 +6124,7 @@ int start_process(
    * to spawn tasks (ji_grpcache).
    */
 
-  if (!check_pwd(pjob))
+  if (check_pwd(pjob) != PBSE_NONE)
     {
     log_err(-1, __func__, log_buffer);
 
