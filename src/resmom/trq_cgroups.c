@@ -1351,6 +1351,9 @@ int trq_cg_populate_task_cgroups(
 
   // See if the JOB_ATR_req_information is set. If not this was not a -L request
   complete_req *cr = pjob->get_creq_attr(JOB_ATR_req_information);
+
+  if (cr == NULL)
+    return(PBSE_NONE);
     
   if ((cr->get_num_reqs() == 0) ||
       (cr->get_req(0).is_per_task() == false))
