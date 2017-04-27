@@ -236,7 +236,6 @@ int client_to_svr(
   char         *EMsg)       /* O (optional,minsize=1024) */
 
   {
-  const char id[] = "client_to_svr";
   struct sockaddr_in local;
   struct sockaddr_in remote;
   int                sock;
@@ -252,9 +251,8 @@ int client_to_svr(
   int         	     trycount = 0;
   struct timespec    rem;
 
-#define STARTPORT 144
 #define ENDPORT (IPPORT_RESERVED - 1)
-#define NPORTS  (ENDPORT - STARTPORT + 1)
+#define NPORTS  (ENDPORT - RESERVED_PORT_START + 1)
 #define SHUFFLE_COUNT 3
 
   if (EMsg != NULL)
@@ -290,7 +288,7 @@ retry:  /* retry goto added (rentec) */
 
     if (EMsg != NULL)
       sprintf(EMsg, "cannot create socket in %s - errno: %d %s",
-              id,
+              __func__,
               errno,
               err_buf);
 
@@ -301,7 +299,7 @@ retry:  /* retry goto added (rentec) */
     {
     if (EMsg != NULL)
       sprintf(EMsg, "PBS_NET_MAX_CONNECTIONS exceeded in %s",
-              id);
+              __func__);
 
     close(sock);  /* too many connections */
 
@@ -364,7 +362,7 @@ retry:  /* retry goto added (rentec) */
       /* bindresvport could not get a privileged port */
       if (EMsg != NULL)
         sprintf(EMsg, "cannot bind to reserved port in %s - errno: %d %s",
-          id,
+          __func__,
           errno,
           err_buf);
 
@@ -379,7 +377,7 @@ retry:  /* retry goto added (rentec) */
 #else /* HAVE_BINDRESVPORT */
 
 		/* Pseudo-casual shuffling of tryport */
-		tryport = (rand() % NPORTS) + STARTPORT;
+		tryport = (rand() % NPORTS) + RESERVED_PORT_START;
 	
 #endif     /* HAVE_BINDRESVPORT */
     }
@@ -389,7 +387,7 @@ retry:  /* retry goto added (rentec) */
 	
 		if (tryport > ENDPORT)
       {
-      tryport = STARTPORT;
+      tryport = RESERVED_PORT_START;
       }
     }
 
@@ -434,7 +432,7 @@ jump_to_check:
         err_buf[0] = '\0';
 
       sprintf(EMsg, "cannot bind to reserved port in %s - errno: %d %s",
-        id,
+        __func__,
         errno,
         err_buf);
       }
@@ -506,7 +504,7 @@ jump_to_check:
       if (EMsg != NULL)
         sprintf(EMsg, "cannot connect to port %d in %s - connection refused.\n Check if trqauthd should be running\n",
           port,
-          id);
+          __func__);
       
       close(sock);
       
@@ -566,7 +564,7 @@ jump_to_check:
 
             sprintf(EMsg, "cannot connect to port %d in %s - errno:%d %s",
               port,
-              id,
+              __func__,
               errno,
               err_buf);
             }
@@ -595,7 +593,7 @@ jump_to_check:
       if (EMsg != NULL)
         sprintf(EMsg, "cannot connect to port %d in %s - errno:%d %s",
           tryport,
-          id,
+          __func__,
           errno,
           err_buf);
       
