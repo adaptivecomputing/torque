@@ -2108,6 +2108,38 @@ AC_DEFINE_UNQUOTED(TCP_RETRY_LIMIT,${TCP_RETRY_LIMIT},[Define to set a max retry
 
 
 
+AC_ARG_WITH(reserved_port_start, [
+  --with-reserved-port-start=NUMBER
+                             Set the starting reserved port number to be used. Must be a number 
+                             greater than 143 and less than 824. Please be careful when setting this,
+                             as restricting the number too much may not leave enough privileged ports
+                             available to pbs_server, which can potential slow down the server 
+                             immensely],
+  [RESERVED_PORT_START=${withval}],[RESERVED_PORT_START=144])
+
+dnl Make sure it's a completely numeric string
+if [[ $(expr "x${RESERVED_PORT_START}" : "x[0-9]*$") -gt 0 ]]; then
+  echo "Setting reserved port to get ports from ${RESERVED_PORT_START} to 1023 inclusive."
+else
+  echo "Value ${RESERVER_PORT_START} is not permitted for --with-reserved-port-start because it contains non-numeric characters."
+  exit -1
+fi
+
+dnl Make sure it isn't less than 144
+if [[ $RESERVED_PORT_START -lt 144 ]]; then
+  echo "Value ${RESERVED_PORT_START} is not permitted for --with-reserved-port-start because it is less than 144"
+  exit -1
+fi
+
+dnl Make sure it's less than 824 so that there are at least 200 reserved ports available for the daemons.
+if [[ $RESERVED_PORT_START -gt 823 ]]; then
+  echo "Value ${RESERVED_PORT_START} is not permitted for --with-reserved-port-start because it is greater than 823 and we need a range of at least 200 possible privileged ports."
+  exit -1
+fi
+AC_DEFINE_UNQUOTED(RESERVED_PORT_START, ${RESERVED_PORT_START},[Define to specify a different reserved port starting point])
+
+
+
 AC_ARG_WITH(default_server, [
   --with-default-server=HOSTNAME
                           set the name of the computer that clients will
