@@ -1775,14 +1775,6 @@ int chk_svr_resc_limit(
               }
             }
           }
-
-        /* Added 6/14/2010 Ken Nielson for ability to parse the procs resource */
-        else if ((r.rs_defin == procresc) &&
-                 (qtype == QTYPE_Execution))
-          {
-          proc_ct = r.rs_value.at_val.at_long;
-          }
-
 #ifdef NERSCDEV
         else if (r.rs_defin == mppwidthresc)
           {
@@ -1809,6 +1801,11 @@ int chk_svr_resc_limit(
                  (r.rs_defin != needresc))
           {
           /* don't check neednodes */
+          if ((r.rs_defin == procresc) &&
+                   (qtype == QTYPE_Execution))
+            {
+            proc_ct = r.rs_value.at_val.at_long;
+            }
 
           rc = r.rs_defin->rs_comp(&cmpwith->rs_value, &r.rs_value);
 
