@@ -1719,7 +1719,7 @@ case "$jobcreatedir" in
 esac
 AC_MSG_RESULT([$jobcreatedir])
 
-AUTH_TYPE="classic (pbs_iff)"
+AUTH_TYPE="trqauthd"
 
 dnl compile for munge authorization - allows sites to use munge
 dnl as a means to validate user identity from remote hosts. (executable based implementation)
