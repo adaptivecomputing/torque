@@ -1720,6 +1720,7 @@ void print_req_information_xml(
   osstream <<  a.cores;
   std::string cores = osstream.str();
   xmlNewChild(task_usage_info, NULL, BAD_CAST "cores", BAD_CAST cores.c_str());
+  osstream.str(""); // clear the buffer
 
   osstream << a.threads;
   std::string threads = osstream.str();
