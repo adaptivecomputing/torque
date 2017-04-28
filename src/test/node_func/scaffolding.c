@@ -544,3 +544,10 @@ int Machine::getTotalChips() const
   return(0);
   }
 
+struct pbsnode *get_compute_node(
+
+  const char *node_name)
+
+  {
+  return(NULL);
+  }
