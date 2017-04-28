@@ -1718,8 +1718,8 @@ void write_node_power_state(void)
 int write_node_note(void)
 
   {
-  struct pbsnode *np;
-  all_nodes_iterator *iter = NULL;
+  struct pbsnode *np = NULL;
+  node_iterator   iter;
   FILE           *nin;
 
   if (LOGLEVEL >= 2)
@@ -1739,9 +1739,11 @@ int write_node_note(void)
 
     return(-1);
     }
+  
+  reinitialize_node_iterator(&iter);
 
   /* for each node ... */
-  while ((np = next_host(&allnodes, &iter, NULL)) != NULL)
+  while ((np = next_node(&allnodes, np, &iter)) != NULL)
     {
     /* write node name followed by its note string */
     if (np->nd_note.size() != 0)
@@ -1752,8 +1754,8 @@ int write_node_note(void)
     np->unlock_node(__func__, NULL, LOGLEVEL);
     }
 
-  if (iter != NULL)
-    delete iter;
+  if (iter.node_index != NULL)
+    delete iter.node_index;
 
   fflush(nin);
 
@@ -5739,7 +5741,7 @@ void free_nodes(
 
 struct pbsnode *get_compute_node(
 
-  char *node_name)
+  const char *node_name)
 
   {
   struct pbsnode *ar = alps_reporter;

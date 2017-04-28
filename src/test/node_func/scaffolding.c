@@ -598,3 +598,11 @@ bool authorized_hosts::remove_address(unsigned long addr, unsigned short port)
 
 authorized_hosts::authorized_hosts() {}
 authorized_hosts auth_hosts;
+
+struct pbsnode *get_compute_node(
+
+  const char *node_name)
+
+  {
+  return(NULL);
+  }
