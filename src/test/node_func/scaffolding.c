@@ -847,3 +847,11 @@ pbs_attribute *job::get_attr(int index)
   {
   return(this->ji_wattr + index);
   }
+
+struct pbsnode *get_compute_node(
+
+  const char *node_name)
+
+  {
+  return(NULL);
+  }
