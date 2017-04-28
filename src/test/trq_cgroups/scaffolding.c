@@ -160,3 +160,12 @@ void log_event(
       global_trq_cg_signal_tasks_ok = true;
     }
   }
+
+void translate_range_string_to_vector(
+
+  const char       *range_string,
+  std::vector<int> &indices)
+
+  {
+  }
+
