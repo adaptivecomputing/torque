@@ -2090,7 +2090,9 @@ int send_job_obit_to_ms(
               unsigned int                    req_index;
 
               complete_req *cr = pjob->get_creq_attr(JOB_ATR_req_information);
-              cr->get_task_stats(req_index, task_index, task_cput_used, task_mem_used, mom_alias);
+
+              if (cr != NULL)
+                cr->get_task_stats(req_index, task_index, task_cput_used, task_mem_used, mom_alias);
 
               if (rc == DIS_SUCCESS)
                 rc = diswsi(chan, task_index.size());
