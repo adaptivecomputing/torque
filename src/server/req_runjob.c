@@ -1343,6 +1343,7 @@ int svr_strtjob2(
     {
     pattr->at_val.at_timeval.tv_sec = start_time.tv_sec;
     pattr->at_val.at_timeval.tv_usec = start_time.tv_usec;
+    pjob->set_attr(JOB_ATR_total_runtime);
     }
 
   /* check if this is a special heterogeneous job */
