@@ -2579,6 +2579,10 @@ dnl
 
 AC_CREATE_GENERIC_CONFIG([pbs],[-ltorque])
 
+# Cause make rpm to default to use the prefix resulting from configure
+RPM_AC_OPTS="--define '_prefix ${prefix}'$RPM_AC_OPTS"
+AC_SUBST(RPM_AC_OPTS)
+
 AC_SUBST(ALPS_LIBS)
 
 dnl these are quoted, and this removes them
@@ -2586,7 +2590,6 @@ SPEC_NAME=$PACKAGE_TARNAME
 SPEC_VERSION=$PACKAGE_VERSION
 AC_SUBST(SPEC_NAME)
 AC_SUBST(SPEC_VERSION)
-AC_SUBST(RPM_AC_OPTS)
 
 dnl  Head and bottom for the config-file
 AH_TOP([#ifndef _PBS_CONFIG_H_
