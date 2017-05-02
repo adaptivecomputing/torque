@@ -420,22 +420,23 @@ START_TEST(test_spread_place)
   Json::Value        out;
 
   allocation         a(jobid);
+  allocation         remaining;
+  allocation         remainder;
   Chip               c;
   c.setId(0);
   c.setThreads(32);
   c.setCores(16);
   c.setMemory(6);
   c.setChipAvailable(true);
+  c.set_gpus(2);
   for (int i = 0; i < 16; i++)
     c.make_core(i);
 
-  int                remaining = 0;
   a.place_type = exclusive_chip;
 
   // Make sure we get 4 evenly spread cores
-  fail_unless(c.spread_place(r, a, 4, remaining) == true);
-  
-
+  remaining.cpus = 4;
+  fail_unless(c.spread_place(r, a, remaining, remainder) == true);
 
   setAllocJson(4);//initialize alloc_json to this tests configuration
   c.displayAsJson(out, true);
@@ -446,14 +447,19 @@ START_TEST(test_spread_place)
 
   // Make sure we do not place another task on this chip before freeing the old one
   fail_unless(c.reserve_core(0, a) == false);
-  remaining = 1;
-  fail_unless(c.spread_place(r, a, 4, remaining) == false);
+  remaining.cpus = 4;
+  remainder.cpus = 1;
+  remaining.gpus = 1;
+  remainder.gpus = 1;
+  fail_unless(c.spread_place(r, a, remaining, remainder) == false);
   fail_unless(c.has_socket_exclusive_allocation() == false);
   c.free_task(jobid);
   
   // Check that we place 5 cores correctly
-  fail_unless(c.spread_place(r, a, 4, remaining) == true);
-  fail_unless(remaining == 0, "remaining = %d", remaining);
+  fail_unless(c.spread_place(r, a, remaining, remainder) == true);
+  fail_unless(remainder.cpus == 0, "remainder = %d", remainder.cpus);
+  fail_unless(remainder.gpus == 0, "remainder = %d", remainder.gpus);
+  fail_unless(remaining.gpus == 0, "remainder = %d", remaining.gpus);
   fail_unless(c.reserve_core(0, a) == false);
   fail_unless(c.reserve_core(3, a) == false);
   fail_unless(c.reserve_core(6, a) == false);
@@ -462,15 +468,17 @@ START_TEST(test_spread_place)
 
   c.free_task(jobid);
   // Make sure we get core 0 if we request 0 + 1 in the remainder
-  remaining = 1;
-  fail_unless(c.spread_place(r, a, 0, remaining) == true);
+  remaining.cpus = 0;
+  remainder.cpus = 1;
+  fail_unless(c.spread_place(r, a, remaining, remainder) == true);
   fail_unless(c.reserve_core(0, a) == false);
-  fail_unless(remaining == 0);
+  fail_unless(remainder.cpus == 0);
  
   // Check what happens we we place an empty set on the chip
   c.free_task(jobid);
   a.place_type = exclusive_socket;
-  fail_unless(c.spread_place(r, a, 0, remaining) == true);
+  remaining.cpus = 0;
+  fail_unless(c.spread_place(r, a, remaining, remainder) == true);
   fail_unless(c.getAvailableCores() == 0);
   fail_unless(c.getAvailableThreads() == 0);
   fail_unless(c.has_socket_exclusive_allocation() == true);
@@ -478,9 +486,10 @@ START_TEST(test_spread_place)
   c.free_task(jobid);
   allocation a2(jobid2);
   a2.place_type = exclusive_chip;
-  remaining = 0;
-  fail_unless(c.spread_place(r, a2, 40, remaining) == false);
-  fail_unless(c.spread_place(r, a2, 18, remaining) == true);
+  remaining.cpus = 40;
+  fail_unless(c.spread_place(r, a2, remaining, remainder) == false);
+  remaining.cpus = 18;
+  fail_unless(c.spread_place(r, a2, remaining, remainder) == true);
   fail_unless(c.getAvailableCores() == 0);
   fail_unless(c.getAvailableThreads() == 0);
   c.free_task(jobid2);
@@ -493,7 +502,8 @@ START_TEST(test_spread_place)
   int tasks = c.place_task(r2, a3, 1, host);
   fail_unless(tasks == 1);
   // We shouldn't place anything in spread place unless we're completely free
-  fail_unless(c.spread_place(r, a2, 18, remaining) == false);
+  remaining.cpus = 18;
+  fail_unless(c.spread_place(r, a2, remaining, remainder) == false);
   }
 END_TEST
 
