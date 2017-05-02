@@ -655,25 +655,6 @@ int svr_enquejob(
     /* do anything needed doing regarding job dependencies */
     que_mgr.unlock();
 
-    if ((pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) && 
-        (pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) && 
-        (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET))
-      {
-      try
-        {
-        rc = depend_on_que(&pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
-        }
-      catch (int pbs_errcode)
-        {
-        rc = pbs_errcode;
-        }
-
-      if (rc == PBSE_JOBNOTFOUND)
-        return(rc);
-      else if (rc != PBSE_NONE)
-        rc = PBSE_BADDEPEND;
-      }
-
     /* set eligible time */
     if (((pjob->ji_wattr[JOB_ATR_etime].at_flags & ATR_VFLAG_SET) == 0) &&
         (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))
@@ -695,6 +676,27 @@ int svr_enquejob(
     /* start attempts to route job */
     pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_ROUTE;
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
+    
+    que_mgr.unlock();
+    }
+  
+  if ((pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) && 
+      (pjob->ji_qs.ji_substate != JOB_SUBSTATE_COMPLETE) && 
+      (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET))
+    {
+    try
+      {
+      rc = depend_on_que(&pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
+      }
+    catch (int pbs_errcode)
+      {
+      rc = pbs_errcode;
+      }
+
+    if (rc == PBSE_JOBNOTFOUND)
+      return(rc);
+    else if (rc != PBSE_NONE)
+      rc = PBSE_BADDEPEND;
     }
 
   return(rc);
