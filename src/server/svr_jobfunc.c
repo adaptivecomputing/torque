@@ -642,25 +642,6 @@ int svr_enquejob(
     /* do anything needed doing regarding job dependencies */
     que_mgr.unlock();
 
-    if ((pjob->get_state() != JOB_STATE_COMPLETE) && 
-        (pjob->get_substate() != JOB_SUBSTATE_COMPLETE) && 
-        (pjob->is_attr_set(JOB_ATR_depend)))
-      {
-      try
-        {
-        rc = depend_on_que(pjob->get_attr(JOB_ATR_depend), pjob, ATR_ACTION_NOOP);
-        }
-      catch (int pbs_errcode)
-        {
-        rc = pbs_errcode;
-        }
-
-      if (rc == PBSE_JOBNOTFOUND)
-        return(rc);
-      else if (rc != PBSE_NONE)
-        rc = PBSE_BADDEPEND;
-      }
-
     /* set eligible time */
     if ((pjob->is_attr_set(JOB_ATR_etime) == false) &&
         (pjob->get_state() == JOB_STATE_QUEUED))
@@ -679,6 +660,27 @@ int svr_enquejob(
     /* start attempts to route job */
     pjob->set_un_type(JOB_UNION_TYPE_ROUTE);
     pjob->set_route_queue_time(time_now);
+    
+    que_mgr.unlock();
+    }
+    
+  if ((pjob->get_state() != JOB_STATE_COMPLETE) && 
+      (pjob->get_substate() != JOB_SUBSTATE_COMPLETE) && 
+      (pjob->is_attr_set(JOB_ATR_depend)))
+    {
+    try
+      {
+      rc = depend_on_que(pjob->get_attr(JOB_ATR_depend), pjob, ATR_ACTION_NOOP);
+      }
+    catch (int pbs_errcode)
+      {
+      rc = pbs_errcode;
+      }
+
+    if (rc == PBSE_JOBNOTFOUND)
+      return(rc);
+    else if (rc != PBSE_NONE)
+      rc = PBSE_BADDEPEND;
     }
 
   return(rc);

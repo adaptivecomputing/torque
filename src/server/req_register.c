@@ -1419,31 +1419,15 @@ int depend_on_que(
   int                rc = PBSE_NONE;
   int                type;
   svr_job           *pjob = (svr_job *)pj;
-  pbs_queue         *pque;
   char               job_id[PBS_MAXSVRJOBID+1];
 
   strcpy(job_id, pjob->get_jobid());
-  pque = get_jobs_queue(&pjob);
 
-  if (pque == NULL)
-    {
-    if (pjob == NULL)
-      {
-      log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 8");
-      return(PBSE_JOBNOTFOUND);
-      }
-    else
-      return(PBSE_NONE);
-    }
-
-  mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
   if (((mode != ATR_ACTION_ALTER) && 
-       (mode != ATR_ACTION_NOOP)) ||
-       (pque->qu_qs.qu_type != QTYPE_Execution))
+       (mode != ATR_ACTION_NOOP)))
     {
     return(PBSE_NONE);
     }
-  pque_mutex.unlock();
 
   if (mode == ATR_ACTION_ALTER)
     {
