@@ -1666,7 +1666,7 @@ void do_dir(
 unsigned int get_port_in_range()
 
   {
-  int span = interactive_port_max - interactive_port_min;
+  int span = interactive_port_max - interactive_port_min + 1;
   return(rand() % span + interactive_port_min);
   } // END get_port_in_range()
 
