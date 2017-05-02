@@ -63,7 +63,7 @@ START_TEST(test_get_port_in_range)
   interactive_port_min = 30000;
   interactive_port_max = 30100;
 
-  for (int i = 0; i < 100; i++)
+  for (int i = 0; i <= 100; i++)
     {
     unsigned int port = get_port_in_range();
     fail_unless(port >= interactive_port_min);
