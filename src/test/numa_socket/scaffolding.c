@@ -147,8 +147,8 @@ bool Chip::spread_place(
 
   req        &r,
   allocation &master,
-  int         execution_slots_per,
-  int        &remaining)
+  allocation &remaining,
+  allocation &remainder)
 
   {
   called_spread_place++;
@@ -361,6 +361,12 @@ void allocation::set_place_type(
   else
     this->place_type = exclusive_none;
   } // END set_place_type()
+
+void allocation::adjust_for_spread(unsigned int quantity, bool find_remainder) {}
+
+void allocation::adjust_for_remainder(allocation &remainder) {}
+
+void allocation::clear() {}
   
 bool Chip::spread_place_threads(
 

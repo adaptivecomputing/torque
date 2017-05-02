@@ -933,22 +933,23 @@ int Machine::spread_place(
     }
 
   // Spread the placement evenly across the number of sockets or numa nodes
-  int execution_slots_per = r.getExecutionSlots() / quantity;
-  int execution_slots_remainder = r.getExecutionSlots() % quantity;
-
   for (int i = 0; i < tasks_for_node; i++)
     {
     bool partial_place = false;
     allocation task_alloc(master.jobid.c_str());
     task_alloc.set_place_type(r.getPlacementType());
+    allocation remaining(r);
+    allocation remainder(r);
+
+    remaining.adjust_for_spread(quantity, false);
+    remainder.adjust_for_spread(quantity, true);
 
     for (int j = 0; j < quantity; j++)
       {
 
       for (unsigned int s = 0; s < this->sockets.size(); s++)
         {
-        if (this->sockets[s].spread_place(r, task_alloc, execution_slots_per,
-                                          execution_slots_remainder, chips))
+        if (this->sockets[s].spread_place(r, task_alloc, remaining, remainder, chips))
           {
           partial_place = true;
 

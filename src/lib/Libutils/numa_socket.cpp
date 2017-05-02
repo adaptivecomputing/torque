@@ -564,15 +564,13 @@ bool Socket::spread_place(
 
   req        &r,
   allocation &task_alloc,
-  int         execution_slots_per,
-  int        &execution_slots_remainder,
+  allocation &remaining,
+  allocation &remainder,
   bool        chip)
 
   {
   bool placed = false;
   int  numa_nodes_required  = 1;
-  int  per_numa = execution_slots_per;
-  int  per_numa_remainder = 0;
 
   // We must either be completely free or be placing on just one chip
   if ((this->is_completely_free()) ||
@@ -582,33 +580,30 @@ bool Socket::spread_place(
       {
       // If we're placing at the socket level, divide execution_slots_per by the number 
       // of chips and place multiple times
-      per_numa_remainder = per_numa % this->chips.size();
-      per_numa /= this->chips.size();
       numa_nodes_required = this->chips.size();
-    
       this->socket_exclusive = true;
       }
 
     for (int c = 0; c < numa_nodes_required; c++)
       {
+      allocation per_numa(remaining);
+      allocation numa_remainder(remaining);
+
+      if (numa_nodes_required == 1)
+        numa_remainder.clear();
+      else
+        {
+        per_numa.adjust_for_spread(numa_nodes_required, false);
+        numa_remainder.adjust_for_spread(numa_nodes_required, true);
+        }
+
       for (unsigned int i = 0; i < this->chips.size(); i++)
         {
-        if (per_numa_remainder > 0)
+        per_numa.adjust_for_remainder(numa_remainder);
+        if (this->chips[i].spread_place(r, task_alloc, per_numa, remainder))
           {
-          if (this->chips[i].spread_place(r, task_alloc, per_numa + 1, execution_slots_remainder))
-            {
-            placed = true;
-            per_numa_remainder--;
-            break;
-            }
-          }
-        else
-          {
-          if (this->chips[i].spread_place(r, task_alloc, per_numa, execution_slots_remainder))
-            {
-            placed = true;
-            break;
-            }
+          placed = true;
+          break;
           }
         }
       }

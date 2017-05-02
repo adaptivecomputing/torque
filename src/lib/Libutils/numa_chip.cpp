@@ -880,6 +880,21 @@ void Chip::setCores(
   this->availableCores = cores;
   }
 
+void Chip::set_gpus(
+
+  int gpus)
+
+  {
+  for (int i = 0; i < gpus; i++)
+    {
+    PCI_Device p;
+    p.set_type(GPU);
+    p.setId(i);
+    this->total_gpus++;
+    this->devices.push_back(p);
+    }
+  }
+
 void Chip::setThreads(
 
   int threads)
@@ -1948,40 +1963,37 @@ bool Chip::spread_place(
 
   req        &r,
   allocation &task_alloc,
-  int         execution_slots_per,
-  int        &execution_slots_remainder)
+  allocation &remaining,
+  allocation &remainder)
 
   {
   bool task_placed = false;
 
   if ((this->is_completely_free() == true) &&
-      ((execution_slots_per + execution_slots_remainder) <= this->totalThreads))
+      ((remaining.cpus + remainder.cpus) <= this->totalThreads))
     {
     allocation from_this_chip(task_alloc.jobid.c_str());
     int        placed = 0;
-    int        to_add = 0;
+    int        execution_slots = remaining.cpus;
 
-    if (execution_slots_remainder > 0)
-      to_add = 1;
+    if (remainder.cpus > 0)
+      {
+      execution_slots++;
+      remainder.cpus--;
+      }
 
     from_this_chip.place_type = task_alloc.place_type;
 
-    if (this->totalCores >= execution_slots_per + to_add)
+    if (this->totalCores >= execution_slots)
       {
-      if (to_add == 1)
-        {
-        execution_slots_per++;
-        execution_slots_remainder--;
-        }
-
       // Spread over just the cores
       float step = 1.0;
-      if (execution_slots_per > 0)
-       step = this->totalCores / (float)execution_slots_per;
+      if (execution_slots > 0)
+       step = this->totalCores / (float)execution_slots;
 
       from_this_chip.cores_only = true;
 
-      for (float i = 0.0; placed < execution_slots_per; i+= step)
+      for (float i = 0.0; placed < execution_slots; i+= step)
         {
         this->reserve_core(std::floor(i + 0.5), from_this_chip);
         placed++;
@@ -1991,17 +2003,10 @@ bool Chip::spread_place(
       {
       // Spread over the cores and the threads - this option doesn't really make any
       // sense but I suppose we have to code for it
-      int per_core = execution_slots_per / this->totalCores;
-      int remainder = execution_slots_per % this->totalCores;
+      int per_core = execution_slots / this->totalCores;
+      int leftover = execution_slots % this->totalCores;
 
-      // Place one extra if we still have a remainder
-      if (execution_slots_remainder > 0)
-        {
-        placed--;
-        execution_slots_remainder--;
-        }
-
-      for (unsigned int i = 0; i < this->cores.size() && placed < execution_slots_per; i++)
+      for (unsigned int i = 0; i < this->cores.size() && placed < execution_slots; i++)
         {
         for (int j = 0; j < per_core; j++)
           {
@@ -2010,14 +2015,14 @@ bool Chip::spread_place(
           }
         }
 
-      while (remainder > 0)
+      while (leftover > 0)
         {
-        for (unsigned int i = 0; i < this->cores.size() && placed < execution_slots_per; i++)
+        for (unsigned int i = 0; i < this->cores.size() && placed < execution_slots; i++)
           {
           if (this->reserve_thread(i, from_this_chip) == true)
             {
             placed++;
-            remainder--;
+            leftover--;
             }
           }
         }
@@ -2025,6 +2030,8 @@ bool Chip::spread_place(
 
     from_this_chip.mem_indices.push_back(this->id);
 
+    place_accelerators(remaining, from_this_chip);
+    place_accelerators(remainder, from_this_chip);
     task_placed = true;
     this->chip_exclusive = true;
     this->aggregate_allocation(from_this_chip);

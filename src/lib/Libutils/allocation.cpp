@@ -610,3 +610,74 @@ bool allocation::partially_placed(
           ((r.getPlaceThreads() > 0) &&
            (this->place_cpus != r.getPlaceThreads())));
   }
+
+
+
+/*
+ * adjust_for_spread()
+ *
+ * Reduces the amount of resources to place for this allocation according to how
+ * many things it is being spread across.
+ *
+ * @param quantity - the number of things it is being spread across
+ * @param finding_remainder - tells us whether or not we're dividing or finding a remainder
+ */
+
+void allocation::adjust_for_spread(
+
+  unsigned int quantity, 
+  bool         finding_remainder)
+
+  {
+  if (quantity != 0)
+    {
+    if (finding_remainder == false)
+      {
+      this->cpus /= quantity;
+      this->gpus /= quantity;
+      this->mics /= quantity;
+      }
+    else
+      {
+      this->cpus %= quantity;
+      this->gpus %= quantity;
+      this->mics %= quantity;
+      }
+    }
+  } // END adjust_for_spread()
+
+
+
+/*
+ * adjust_for_remainder()
+ *
+ * Optionally increases the amount of resources to place for this allocation according to the 
+ * remainder parameter. Also, reduces remainder to account for the adjustment.
+ *
+ * @param remainder - the remainder that needs to be accounted for.
+ */
+
+void allocation::adjust_for_remainder(
+
+  allocation &remainder)
+
+  {
+  if (remainder.cpus > 0)
+    {
+    this->cpus++;
+    remainder.cpus--;
+    }
+
+  if (remainder.mics > 0)
+    {
+    this->mics++;
+    remainder.mics--;
+    }
+
+  if (remainder.gpus > 0)
+    {
+    this->gpus++;
+    remainder.gpus--;
+    }
+  } // END adjust_for_remainder()
+

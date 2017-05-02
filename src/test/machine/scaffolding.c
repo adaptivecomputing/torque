@@ -144,8 +144,8 @@ bool Socket::spread_place(
     
   req        &r,
   allocation &master,
-  int         execution_slots_per,
-  int        &execution_slots_remainder,
+  allocation &remaining,
+  allocation &remainder,
   bool        chips)
 
   {
@@ -372,6 +372,8 @@ allocation &allocation::operator =(const allocation &other)
   {
   return(*this);
   }
+
+void allocation::adjust_for_spread(unsigned int quantity, bool find_remainder) {}
 
 PCI_Device::~PCI_Device() {}
 PCI_Device::PCI_Device() {}

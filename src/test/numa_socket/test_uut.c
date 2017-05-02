@@ -65,25 +65,29 @@ START_TEST(test_spread_place)
   Socket s;
   req        r;
   allocation a;
-  int        remaining = 0;
+  allocation remaining;
+  allocation remainder;
   s.addChip();
   s.addChip();
 
   completely_free = true;
   called_spread_place = 0;
-  fail_unless(s.spread_place(r, a, 5, remaining, false) == true);
+  remaining.cpus = 5;
+  fail_unless(s.spread_place(r, a, remaining, remainder, false) == true);
   fail_unless(called_spread_place == 2);
   
   completely_free = false;
-  fail_unless(s.spread_place(r, a, 5, remaining, false) == false);
+  remaining.cpus = 5;
+  fail_unless(s.spread_place(r, a, remaining, remainder, false) == false);
   fail_unless(called_spread_place == 2);
 
   completely_free = true;
   oscillate = false;
   s.free_task("1.napali");
-  fail_unless(s.spread_place(r, a, 5, remaining, true) == true);
+  remaining.cpus = 5;
+  fail_unless(s.spread_place(r, a, remaining, remainder, true) == true);
   fail_unless(called_spread_place == 3);
-  fail_unless(s.spread_place(r, a, 5, remaining, true) == true);
+  fail_unless(s.spread_place(r, a, remaining, remainder, true) == true);
   fail_unless(called_spread_place == 4);
 
   }
