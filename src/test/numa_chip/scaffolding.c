@@ -278,6 +278,7 @@ void setAllocJson(int test_num)
       alloc_json[ALLOCATIONS][0][ALLOCATION][CPUS] = "0,4,8,12";
       alloc_json[ALLOCATIONS][0][ALLOCATION][EXCLUSIVE] = 3;
       alloc_json[ALLOCATIONS][0][ALLOCATION][CORES_ONLY] = 1;
+      alloc_json[GPUS] = "0-1";
       return;
       }
     }//end test_num <5

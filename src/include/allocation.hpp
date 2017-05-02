@@ -165,6 +165,8 @@ class allocation
   bool fully_placed() const;
   bool partially_placed(const req &r) const;
   void clear();
+  void adjust_for_spread(unsigned int quantity, bool use_modulo);
+  void adjust_for_remainder(allocation &remainder);
   };
 
 #endif 

@@ -188,12 +188,13 @@ class Chip
     void setCores(int cores); // used for unit tests
     void setThreads(int threads); // used for unit tests
     void setChipAvailable(bool available);
+    void set_gpus(int gpus); // used for unit tests
     double how_many_tasks_fit(const req &r, int place_type) const;
     bool has_socket_exclusive_allocation() const;
     bool task_will_fit(const req &r, int place_type) const;
     int  free_core_count() const;
     void calculateStepCounts(const int lprocs_per_task, const int pu_per_task, int &step, int &step_rem, int &place_count, int &place_count_rem);
-    bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder);
+    bool spread_place(req &r, allocation &master, allocation &to_place, allocation &remainder);
     bool spread_place_cores(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs, int &gpus, int &mics);
     bool spread_place_threads(req &r, allocation &master, int &remaining_cores, int &remaining_lprocs, int &gpus, int &mics);
     void place_all_execution_slots(req &r, allocation &task_alloc);
@@ -283,7 +284,7 @@ class Socket
     void addChip(); // used for unit tests
     double how_many_tasks_fit(const req &r, int place_type) const;
     void place_all_execution_slots(req &r, allocation &task_alloc);
-    bool spread_place(req &r, allocation &master, int execution_slots_per, int &remainder, bool chips);
+    bool spread_place(req &r, allocation &master, allocation &to_place, allocation &remainder, bool chips);
     bool spread_place_pu(req &r, allocation &task_alloc, int &cores, int &lprocs, int &gpus, int &mics);
     int  place_task(req &r, allocation &a, int to_place, const char *hostname);
     bool free_task(const char *jobid);
