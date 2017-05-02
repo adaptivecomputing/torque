@@ -2353,6 +2353,7 @@ AC_ARG_WITH(xauth,
         ],
         [
                 TestPath="$PATH"
+                TestPath="${TestPath}${PATH_SEPARATOR}/usr/bin"
                 TestPath="${TestPath}${PATH_SEPARATOR}/usr/X/bin"
                 TestPath="${TestPath}${PATH_SEPARATOR}/usr/bin/X11"
                 TestPath="${TestPath}${PATH_SEPARATOR}/usr/X11R6/bin"
