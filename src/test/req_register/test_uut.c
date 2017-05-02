@@ -39,6 +39,7 @@ int req_register(batch_request *preq);
 bool remove_array_dependency_job_from_job(struct array_depend *pdep, job *pjob, char *job_array_id);
 void removeAfterAnyDependency(const char *pJobID, const char *targetJob);
 bool job_ids_match(const char *parent, const char *child);
+int depend_on_que(pbs_attribute *pattr, void *pj, int mode);
 
 
 extern char  server_name[];
@@ -60,6 +61,26 @@ void initialize_depend_attr(
   memset(pattr, 0, sizeof(pbs_attribute));
   CLEAR_HEAD(pattr->at_val.at_list);
   } /* END initialize_depend_attr() */
+
+
+START_TEST(test_depend_on_que)
+  {
+  job       *pjob = (job *)calloc(1, sizeof(job));
+  depend    *pdep;
+  initialize_depend_attr(pjob->ji_wattr + JOB_ATR_depend);
+  pdep = make_depend(JOB_DEPEND_TYPE_AFTERNOTOK, pjob->ji_wattr + JOB_ATR_depend);
+  make_dependjob(pdep, job2);
+
+  // These three modes should do nothing
+  fail_unless(depend_on_que(pjob->ji_wattr + JOB_ATR_depend, pjob, ATR_ACTION_NEW) == PBSE_NONE);
+  fail_unless(depend_on_que(pjob->ji_wattr + JOB_ATR_depend, pjob, ATR_ACTION_FREE) == PBSE_NONE);
+  fail_unless(depend_on_que(pjob->ji_wattr + JOB_ATR_depend, pjob, ATR_ACTION_RECOV) == PBSE_NONE);
+
+  fail_unless(depend_on_que(pjob->ji_wattr + JOB_ATR_depend, pjob, ATR_ACTION_ALTER) == PBSE_NONE);
+  fail_unless((pjob->ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) != 0);
+  fail_unless(pjob->ji_qs.ji_state == JOB_STATE_HELD);
+  }
+END_TEST
 
 
 START_TEST(test_job_ids_match)
@@ -853,6 +874,7 @@ Suite *req_register_suite(void)
   tc_core = tcase_create("cat_jobsvr_test");
   tcase_add_test(tc_core, cat_jobsvr_test);
   tcase_add_test(tc_core, fast_strcat_test);
+  tcase_add_test(tc_core, test_depend_on_que);
 
   tc_core = tcase_create("set_depend_test");
   tcase_add_test(tc_core, set_depend_test);
