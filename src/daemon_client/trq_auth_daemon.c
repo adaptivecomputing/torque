@@ -39,18 +39,18 @@ extern int debug_mode;
 extern pbs_net_t trq_server_addr;
 extern char *trq_hostname;
 
-bool       down_server = false;
-bool       use_log = true;
-bool       daemonize_server = true;
-static int changed_msg_daem = 0;
-static char *active_pbs_server;
+bool        down_server = false;
+bool        use_log = true;
+bool        daemonize_server = true;
+static int  changed_msg_daem = 0;
+std::string active_pbs_server;
 
 /* Get the name of the active pbs_server */
 int load_trqauthd_config(
 
-  char **default_server_name,
-  int   *t_port,
-  char **trqauthd_unix_domain_port)
+  std::string  &default_server_name,
+  int          *t_port,
+  char        **trqauthd_unix_domain_port)
 
   {
   int rc = PBSE_NONE;
@@ -69,7 +69,7 @@ int load_trqauthd_config(
      * the client utilities determine the pbs_server port)
      */
     printf("hostname: %s\n", tmp_name);
-    *default_server_name = tmp_name;
+    default_server_name = tmp_name;
     PBS_get_server(tmp_name, (unsigned int *)t_port);
     if (*t_port == 0)
       *t_port = PBS_BATCH_SERVICE_PORT;
@@ -106,7 +106,7 @@ void initialize_globals_for_log(const char *port)
   strcpy(pbs_current_user, "trqauthd");   
   if ((msg_daemonname = strdup(pbs_current_user)))
     changed_msg_daem = 1;
-  log_set_hostname_sharelogging(active_pbs_server, port);
+  log_set_hostname_sharelogging(active_pbs_server.c_str(), port);
   }
 
 int init_trqauth_log(const char *server_port)
@@ -429,7 +429,7 @@ int trq_main(
     return(rc);
     }
 
-  if ((rc = load_trqauthd_config(&active_pbs_server, &trq_server_port, &daemon_port)) != PBSE_NONE)
+  if ((rc = load_trqauthd_config(active_pbs_server, &trq_server_port, &daemon_port)) != PBSE_NONE)
     {
     fprintf(stderr, "Failed to load configuration. Make sure the $TORQUE_HOME/server_name file exists\n");
     }
