@@ -3357,6 +3357,12 @@ void removeAfterAnyDependency(
     if (pDepJob != NULL)
       {
       del_depend_job(pDep, pDepJob);
+      
+      if (pDep->dp_jobs.size() == 0)
+        {
+        /* no more dependencies of this type */
+        delete pDep;
+        }
 
       try
         {
