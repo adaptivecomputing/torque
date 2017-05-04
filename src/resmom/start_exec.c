@@ -2171,16 +2171,16 @@ int update_path_attribute(
     return(-1);
 
   // if keeping output on this host, update the hostname
-  if ((pjob->ji_wattr[JOB_ATR_keep].at_flags & ATR_VFLAG_SET) &&
-      (strchr(pjob->ji_wattr[JOB_ATR_keep].at_val.at_str, outchar)) &&
+  const char *keep = pjob->get_str_attr(JOB_ATR_keep);
+  if ((keep != NULL) &&
+      (strchr(keep, outchar)) &&
       (spoolasfinalname == FALSE))
     {
-    char *p;
+    const char *p;
     string full_path;
-    pbs_attribute *pattr;
 
     // get the current path (may include leading hostname)
-    p = pjob->ji_wattr[attr_index].at_val.at_str;
+    p = pjob->get_str_attr(attr_index);
 
     // get just the file path
     remove_leading_hostname(&p);
@@ -2191,20 +2191,7 @@ int update_path_attribute(
     full_path += p;
 
     // update the attribute
-
-    pattr = &pjob->ji_wattr[attr_index];
-
-    job_attr_def[attr_index].at_free(pattr);
-
-    job_attr_def[attr_index].at_decode(
-        pattr,
-        NULL,
-        NULL,
-        full_path.c_str(),
-        0);
-
-    pjob->ji_wattr[attr_index].at_flags =
-      (ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
+    pjob->set_str_attr(attr_index, strdup(full_path.c_str()));
     }
 
     return(0);
