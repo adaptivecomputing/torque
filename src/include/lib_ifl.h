@@ -27,7 +27,7 @@ int parse_response_svr(int sock, char **msg);
 int build_response_client(int code, char *msg, char **send_message);
 int get_trq_server_addr(char *server_name, char **server_addr, int *server_addr_len);
 void *process_svr_conn(void *sock);
-int validate_server(char *active_server_name, int t_server_port, char *ssh_key, char **sign_key);
+int validate_server(std::string &active_server_name, int t_server_port, char *ssh_key, char **sign_key);
 int set_active_pbs_server(const char *, const int);
 int get_active_pbs_server(char **, int *);
 int validate_active_pbs_server(char **);
