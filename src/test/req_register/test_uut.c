@@ -826,10 +826,7 @@ START_TEST(remove_after_any_test)
 
   pattr = pJob->get_attr(JOB_ATR_depend);
   pdep = find_depend(JOB_DEPEND_TYPE_AFTERANY,pattr);
-  pj = find_dependjob(pdep, pTJob->get_jobid());
-  fail_unless((pj == NULL),"Dependency not deleted.");
-  pj = find_dependjob(pdep,pOJob->get_jobid());
-  fail_unless((pj == NULL),"Dependency not deleted.");
+  fail_unless(pdep == NULL, "Dependency not deleted");
   }
 END_TEST
 
