@@ -2190,7 +2190,7 @@ int update_path_attribute(
       (spoolasfinalname == FALSE))
     {
     char *p;
-    string full_path;
+    std::string full_path;
     pbs_attribute *pattr;
 
     // get the current path (may include leading hostname)
