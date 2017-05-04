@@ -24,6 +24,7 @@ int  remove_leading_hostname(char **jobpath);
 int get_num_nodes_ppn(const char*, int*, int*);
 int become_the_user(job*, bool);
 int TMomCheckJobChild(pjobexec_t*, int, int*, int*);
+int update_path_attribute(job*, job_atr);
 
 #if NO_SPOOL_OUTPUT == 1
 int save_supplementary_group_list(int*, gid_t**);
@@ -41,6 +42,7 @@ extern char mom_alias[];
 
 char *penv[MAX_TEST_ENVP]; /* max number of pointers bld_env_variables will create */
 char *envBuffer = NULL; /* points to the max block that bld_env_variables would ever need in this test suite */
+int spoolasfinalname = FALSE;
 extern int  logged_event;
 extern int  num_contacted;
 extern int  send_sisters_called;
@@ -691,6 +693,18 @@ START_TEST(test_TMomCheckJobChild)
   }
 END_TEST
 
+START_TEST(test_update_path_attribute)
+  {
+  job *pjob = NULL;
+
+  fail_unless(update_path_attribute(pjob, JOB_ATR_outpath) != 0);
+  pjob = (job *)calloc(1, sizeof(job));
+  fail_unless(update_path_attribute(pjob, JOB_ATR_LAST) != 0);
+  fail_unless(update_path_attribute(pjob, JOB_ATR_outpath) == 0);
+  fail_unless(update_path_attribute(pjob, JOB_ATR_errpath) == 0);
+  }
+END_TEST
+
 Suite *start_exec_suite(void)
   {
   Suite *s = suite_create("start_exec_suite methods");
@@ -753,6 +767,10 @@ Suite *start_exec_suite(void)
 
   tc_core = tcase_create("test_TMomCheckJobChild");
   tcase_add_test(tc_core, test_TMomCheckJobChild);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_update_path_attribute");
+  tcase_add_test(tc_core, test_update_path_attribute);
   suite_add_tcase(s, tc_core);
 
   return s;

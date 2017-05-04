@@ -382,6 +382,7 @@ extern int  use_nvidia_gpu;
 
 void translate_range_string_to_vector(const char *range_str, std::vector<int> &indices);
 int exec_job_on_ms(job *pjob);
+int remove_leading_hostname(char**);
 
 
 
@@ -2158,7 +2159,71 @@ struct radix_buf **allocate_sister_list(
   } /* END allocate_sister_list() */
 
 
+/*
+ * update the job outpath/errpath attribute with this hostname if needed
+ *
+ * @param pjob - the job to check
+ * @param attr_index - must be JOB_ATR_outpath or JOB_ATR_errpath
+ * @return -1 on failure
+ */
 
+int update_path_attribute(
+
+  job *pjob,
+  job_atr attr_index)
+
+  {
+  char outchar;
+
+  if (pjob == NULL)
+    return(-1);
+
+  if (attr_index == JOB_ATR_outpath)
+    outchar = 'o';
+  else if (attr_index == JOB_ATR_errpath)
+    outchar = 'e';
+  else
+    return(-1);
+
+  // if keeping output on this host, update the hostname
+  if ((pjob->ji_wattr[JOB_ATR_keep].at_flags & ATR_VFLAG_SET) &&
+      (strchr(pjob->ji_wattr[JOB_ATR_keep].at_val.at_str, outchar)) &&
+      (spoolasfinalname == FALSE))
+    {
+    char *p;
+    string full_path;
+    pbs_attribute *pattr;
+
+    // get the current path (may include leading hostname)
+    p = pjob->ji_wattr[attr_index].at_val.at_str;
+
+    // get just the file path
+    remove_leading_hostname(&p);
+
+    // build new host:path string
+    full_path = mom_host;
+    full_path += ":";
+    full_path += p;
+
+    // update the attribute
+
+    pattr = &pjob->ji_wattr[attr_index];
+
+    job_attr_def[attr_index].at_free(pattr);
+
+    job_attr_def[attr_index].at_decode(
+        pattr,
+        NULL,
+        NULL,
+        full_path.c_str(),
+        0);
+
+    pjob->ji_wattr[attr_index].at_flags =
+      (ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
+    }
+
+    return(0);
+  }
 
 /*
  * Used by MOM superior to start the shell process.
@@ -2485,6 +2550,12 @@ int TMomFinalizeJob1(
     pjob->ji_wattr[JOB_ATR_errpath].at_flags =
       (ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
     }   /* END if (TJE->is_interactive == TRUE) */
+  else
+    {
+    // update the hostname in the out/err path attributes if needed
+    update_path_attribute(pjob, JOB_ATR_outpath);
+    update_path_attribute(pjob, JOB_ATR_errpath);
+    }
 
 #if SHELL_USE_ARGV == 0
   #if SHELL_INVOKE == 1
