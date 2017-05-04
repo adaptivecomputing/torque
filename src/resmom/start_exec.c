@@ -2176,8 +2176,8 @@ int update_path_attribute(
       (strchr(keep, outchar)) &&
       (spoolasfinalname == FALSE))
     {
-    const char *p;
-    string full_path;
+    const char  *p;
+    std::string  full_path;
 
     // get the current path (may include leading hostname)
     p = pjob->get_str_attr(attr_index);
