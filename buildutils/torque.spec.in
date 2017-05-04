@@ -13,6 +13,13 @@
 %define bcond_without() %{expand:%%{!?_without_%{1}:%%global with_%{1} 1}}
 %endif
 
+# If _initrddir is defined, which indicates that we are on a system with SYSV
+# init.d services, define _initrddir to be /etc/init.d so that the source
+# tarball will work across both Red Hat and SUSE distros.
+%if %{?_initrddir:1}0
+%define _initrddir /etc/init.d
+%endif
+
 # some binaries under /bin in el5|6 are only provided in /usr/bin in el7+.
 # the el7 rpms actually provide the old location, but can't be used as a rpm requirement
 # introducing the rootbin macro for this, as none seems to exists
