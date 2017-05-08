@@ -48,8 +48,10 @@ bool is_mother_superior(hnodent *np);
 int get_req_and_task_index_from_local_rank(job *pjob, int local_rank, unsigned int &req_index, unsigned int &task_index);
 
 extern bool per_task;
+#endif
 
 
+#ifdef PENABLE_LINUX_CGROUPS
 START_TEST(test_get_req_and_task_index_from_local_rank)
   {
   job *pjob = (job *)calloc(1, sizeof(job));
