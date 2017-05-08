@@ -46,7 +46,7 @@ void port_forwarder(
   torque_socklen_t fromlen;
   int n, n2, sock;
 
-  fromlen = sizeof(from);
+  
 
   while (1)
     {
@@ -102,7 +102,8 @@ void port_forwarder(
         if ((socks + n)->listening)
           {
           int newsock = 0, peersock = 0;
-
+          fromlen = sizeof(from);
+          
           if ((sock = accept((socks + n)->sock, (struct sockaddr *) & from, &fromlen)) < 0)
             {
             if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR) || (errno == ECONNABORTED))
