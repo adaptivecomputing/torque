@@ -261,25 +261,16 @@ int svr_recov_xml(
   int   read_only)  /* I */
 
   {
-  int   sdb;
-  int   bytes_read;
   int   errorCount = 0;
   int   rc;
 
   char  buffer[MAXLINE<<10];
-  char *parent;
-  char *child;
-
-  char *current;
-  char *begin;
-  char *end;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   
   memset(&buffer, 0, sizeof(buffer));
 
-  sdb = open(svrfile, O_RDONLY, 0);
-
-  if (sdb < 0)
+  xmlDocPtr doc = xmlReadFile(svrfile,NULL,0);
+  if (doc == NULL)
     {
     if (errno == ENOENT)
       {
@@ -293,30 +284,13 @@ int svr_recov_xml(
       {
       log_err(errno, __func__, msg_svdbopen);
       }
-
+    xmlFreeDoc(doc);
     return(-1);
     }
 
-  bytes_read = read_ac_socket(sdb,buffer,sizeof(buffer));
-
-  if (bytes_read < 0)
-    {
-    snprintf(log_buf,sizeof(log_buf),
-      "Unable to read from serverdb file - %s",
-      strerror(errno));
-
-    log_err(errno, __func__, log_buf);
-    close(sdb);
-
-    return(-1);
-    }
-
-  /* start reading the serverdb file */
-  current = begin = buffer;
-
-  /* advance past the server tag */
-  current = strstr(current,"<server_db>");
-  if (current == NULL)
+  xmlNodePtr root_node = xmlDocGetRootElement(doc);
+  std::string svrdb_node((char*)root_node->name);
+  if (svrdb_node != "server_db")
     {
     /* no server tag - check if this is the old format */
     log_event(PBSEVENT_SYSTEM,
@@ -324,101 +298,121 @@ int svr_recov_xml(
       __func__,
       "Cannot find a server tag, attempting to load legacy format\n");
 
-    close(sdb);
+    xmlFreeDoc(doc);
     rc = svr_recov(svrfile,read_only);
 
     return(rc);
     }
-  end = strstr(current,"</server_db>");
-
-  if (end == NULL)
-    {
-    /* no server tag???? */
-    log_err(-1, __func__, "No server tag found in the database file???");
-    close(sdb);
-
-    return(-1);
-    }
-
-  /* adjust to not process server tag */
-  current += strlen("<server_db>");
-  /* adjust end for the newline character preceeding the close server tag */
-  end--;
 
   lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
-  server.sv_qs.sv_numjobs = 0; 
-  server.sv_qs.sv_numque = server.sv_qs.sv_jobidnumber = 0;
 
-  while (current < end)
+  for (xmlNodePtr current_node = root_node->xmlChildrenNode;
+       current_node != NULL;
+       current_node = current_node->next)
     {
-    if (get_parent_and_child(current,&parent,&child,&current))
+    std::string parent(((char*)current_node->name));
+    if (parent != "text")//check for filler nodes
       {
-      /* ERROR */
-      errorCount++;
+      xmlChar *content = xmlNodeGetContent(current_node);
+      std::string child((char*)content);
 
-      break;
-      }
-
-    if (!strcmp("numjobs",parent))
-      {
-      server.sv_qs.sv_numjobs = atoi(child);
-      }
-    else if (!strcmp("numque",parent))
-      {
-      server.sv_qs.sv_numque = atoi(child);
-      }
-    else if (!strcmp("nextjobid",parent))
-      {
-      server.sv_qs.sv_jobidnumber = atoi(child);
-      }
-    else if (!strcmp("savetime",parent))
-      {
-      server.sv_qs.sv_savetm = atol(child);
-      }
-    else if (!strcmp("attributes",parent))
-      {
-      char *attr_ptr = child;
-      char *child_parent;
-      char *child_attr;
-
-      while (*attr_ptr != '\0')
+      if (parent == "numjobs")
         {
-        if (get_parent_and_child(attr_ptr,&child_parent,&child_attr,
-              &attr_ptr))
+        server.sv_qs.sv_numjobs = atoi(child.c_str());
+        }
+      else if (parent == "numque")
+        {
+        server.sv_qs.sv_numque = atoi(child.c_str());
+        }
+      else if (parent == "nextjobid")
+        {
+        server.sv_qs.sv_jobidnumber = atoi(child.c_str());
+        }
+      else if (parent == "savetime")
+        {
+        server.sv_qs.sv_savetm = atol(child.c_str());
+        }
+      
+      else if (parent == "attributes")
+        {
+      
+        for (xmlNodePtr attr_children = current_node->xmlChildrenNode;
+             attr_children != NULL;
+             attr_children = attr_children->next)
+        {
+        std::string attr_parent((char*)attr_children->name);
+        if (attr_parent != "text")
           {
-          /* ERROR */
-          errorCount++;
+          xmlChar *attr_content = xmlNodeGetContent(attr_children);
+          char *attr_child = (char *)attr_content;
+          if (attr_parent == ATTR_rescavail)
+            {
+            for (xmlNodePtr res_child_node = attr_children->xmlChildrenNode;
+                 res_child_node != NULL;
+                 res_child_node = res_child_node->next)
+              {
+              std::string res_parent =((char*)res_child_node->name);
+              if (res_parent != "text")
+                {
+                xmlChar *res_child_content = xmlNodeGetContent(res_child_node);
+                std::string res_child((char*)res_child_content);
+                xmlFree(res_child_content);
 
-          break;
-          }
+                res_parent.insert(0,"<");
+                res_parent.insert(res_parent.end(),'>');
+                res_child.insert(0,res_parent);
+                res_parent.insert(1,"/");
+                res_child.insert(res_child.end(),res_parent.begin(),res_parent.end());
 
-        if ((rc = str_to_attr(child_parent,child_attr,server.sv_attr,svr_attr_def,SRV_ATR_LAST)))
+                if ((rc = str_to_attr(attr_parent.c_str(), res_child.c_str(),
+                        server.sv_attr,svr_attr_def,SRV_ATR_LAST)))
+                  {
+                  /* ERROR */
+                  errorCount++;
+                  snprintf(log_buf,sizeof(log_buf),
+                      "Error creating resource attribute %s",
+                      attr_parent.c_str());
+                  log_err(rc, __func__, log_buf);
+  
+                  xmlFree(attr_content);
+                  xmlFree(content);
+                 break;
+                 }
+               }
+             }
+           }//end attr_parent == ATTR_rescavail
+
+
+           
+        else if ((rc = str_to_attr(attr_parent.c_str(),attr_child,server.sv_attr,svr_attr_def,SRV_ATR_LAST)))
           {
           /* ERROR */
           errorCount++;
           snprintf(log_buf,sizeof(log_buf),
             "Error creating attribute %s",
-            child_parent);
+            attr_parent.c_str());
 
           log_err(rc, __func__, log_buf);
+          
+          xmlFree(attr_content);
+          xmlFree(content);
 
           break;
           }
 
-        if (!strcmp(child_parent, ATTR_tcptimeout))
-          pbs_tcp_timeout = strtol(child_attr, NULL, 10);
-        else if (!strcmp(child_parent, ATTR_tcpincomingtimeout))
-          pbs_incoming_tcp_timeout = strtol(child_attr, NULL, 10);
+        if (!strcmp(attr_parent.c_str(), ATTR_tcptimeout))
+          pbs_tcp_timeout = strtol(attr_child, NULL, 10);
+        else if (!strcmp(attr_parent.c_str(), ATTR_tcpincomingtimeout))
+          pbs_incoming_tcp_timeout = strtol(attr_child, NULL, 10);
         }
       }
-    else
-      {
-      /* shouldn't get here */
-      }
-    }
+    }//parent == attributes
+  }//parent != text
+}//node for loop
 
-  close(sdb);
+xmlFreeDoc(doc);
+
   if (errorCount)
     return -1;
     
