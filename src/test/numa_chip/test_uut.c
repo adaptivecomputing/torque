@@ -15,6 +15,21 @@ extern std::string thread_type;
 const char *alloc_json = "\"allocation\":{\"jobid\":\"666979[0].mgr.bwfor.privat\",\"cpus\":\"\",\"mem\":4203424,\"exclusive\":0,\"cores_only\":0}";
 
 
+
+START_TEST(test_initialize_cores_from_strings)
+  {
+  Chip        c;
+  std::string cores;
+  std::string threads;
+
+  // Make sure this doesn't segfault
+  c.initialize_cores_from_strings(cores, threads);
+  fail_unless(c.getTotalCores() == 0);
+  fail_unless(c.getTotalThreads() == 0);
+  }
+END_TEST
+
+
 START_TEST(test_place_tasks_execution_slots)
   {
   const char        *jobid = "1.napali";
@@ -1120,6 +1135,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_spread_place_threads);
   tcase_add_test(tc_core, test_spread_place_cores);
   tcase_add_test(tc_core, test_spread_place);
+  tcase_add_test(tc_core, test_initialize_cores_from_strings);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_displayAsString");
