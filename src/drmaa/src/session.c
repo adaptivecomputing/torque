@@ -553,7 +553,8 @@ int drmaa_job_ps(
 
   static struct attropl attribs[2];
 
-  if (strcmp(attribs[0].name, "job_state"))
+  if ((attribs[0].name == NULL) ||
+      (strcmp(attribs[0].name, "job_state")))
     init_attribs(attribs);
 #if 0
     { NULL, "exit_status", NULL, NULL, 0 }
