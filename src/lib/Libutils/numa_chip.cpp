@@ -229,12 +229,15 @@ void Chip::initialize_cores_from_strings(
   {
   std::vector<int> core_indices;
   std::vector<int> thread_indices;
-  int              ratio;
+  int              ratio = 0;
 
   translate_range_string_to_vector(cores_str.c_str(), core_indices);
   translate_range_string_to_vector(threads_str.c_str(), thread_indices);
 
-  ratio = thread_indices.size() / core_indices.size();
+  // Check if this is a memory-only node
+  if (core_indices.size() > 0)
+    ratio = thread_indices.size() / core_indices.size();
+
   unsigned int j = 0;
 
   for (unsigned int i = 0; i < core_indices.size(); i++)
