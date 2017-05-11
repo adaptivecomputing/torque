@@ -397,7 +397,7 @@ int init_network(
 
   if (port != 0)
     {
-    sock = socket(AF_INET, SOCK_STREAM, 0);
+    sock = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
 
     if (sock < 0)
       {
@@ -449,7 +449,7 @@ int init_network(
     {
     /* setup unix domain socket */
 
-    unixsocket = socket(AF_UNIX, SOCK_STREAM, 0);
+    unixsocket = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
 
     if (unixsocket < 0)
       {
