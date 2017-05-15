@@ -1135,7 +1135,9 @@ char *arst_string(
     return(NULL);
     }
 
-  if ((pattr->at_type != ATR_TYPE_ARST) || !(pattr->at_flags & ATR_VFLAG_SET))
+  if ((pattr->at_type != ATR_TYPE_ARST) ||
+      !(pattr->at_flags & ATR_VFLAG_SET) ||
+      (pattr->at_val.at_arst == NULL))
     {
     /* bad type or value not set */
 
