@@ -17,13 +17,57 @@ extern Json::Value alloc_json;
 extern void setAllocJson(int);
 
 
+START_TEST(test_get_contiguous_thread_vector)
+  {
+  Chip             c;
+  std::vector<int> list;
+
+  // Make sure a memory only node doesn't crash
+  fail_unless(c.getContiguousThreadVector(list, 34) == false);
+
+  c.setId(0);
+  c.setThreads(32);
+  c.setCores(16);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c.make_core(i);
+
+  fail_unless(c.getContiguousThreadVector(list, 34) == true);
+  fail_unless(list.size() == 32);
+  }
+END_TEST
+
+
+START_TEST(test_get_contiguous_core_vector)
+  {
+  Chip             c;
+  std::vector<int> list;
+  
+  // Make sure a memory only node doesn't crash
+  fail_unless(c.getContiguousCoreVector(list, 18) == false);
+
+  c.setId(0);
+  c.setThreads(32);
+  c.setCores(16);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c.make_core(i);
+
+  fail_unless(c.getContiguousCoreVector(list, 18) == true);
+  fail_unless(list.size() == 16);
+  }
+END_TEST
+
+
 START_TEST(test_initialize_cores_from_strings)
   {
   Chip        c;
   std::string cores;
   std::string threads;
 
-  // Make sure this doesn't segfault
+  // Make sure this doesn't segfault for a memory only node
   c.initialize_cores_from_strings(cores, threads);
   fail_unless(c.getTotalCores() == 0);
   fail_unless(c.getTotalThreads() == 0);
@@ -1260,6 +1304,11 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_place_all_execution_slots);
   tcase_add_test(tc_core, test_initialize_allocation);
   tcase_add_test(tc_core, test_place_tasks_execution_slots);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_contiguous_core_vector");
+  tcase_add_test(tc_core, test_get_contiguous_core_vector);
+  tcase_add_test(tc_core, test_get_contiguous_thread_vector);
   suite_add_tcase(s, tc_core);
   
   return(s);
