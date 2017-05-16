@@ -13,6 +13,7 @@ bool non_mother_superior_cleanup(mom_job *pjob);
 bool mother_superior_cleanup(mom_job *pjob, int limit, int *found);
 void *obit_reply(void *new_sock);
 hnodent *get_node(mom_job *pjob, tm_node_id nodeid);
+int run_epilogues(mom_job *pjob, int i_am_ms, int deletejob);
 
 extern int termin_child;
 extern int server_down;
@@ -21,6 +22,7 @@ extern int  DIS_reply_read_count;
 extern int  tc;
 extern int  called_open_socket;
 extern int  called_fork_me;
+extern bool called_epilogue;
 extern bool eintr_test;
 extern std::vector<exiting_job_info> exiting_job_list;
 
@@ -199,6 +201,22 @@ START_TEST(test_mother_superior_cleanup)
   }
 END_TEST
 
+START_TEST(test_epilogues_run_without_prologues)
+  {
+  mom_job *pjob = new mom_job();
+
+  pjob->set_svrflags(JOB_SVFLG_PROLOGUES_RAN);
+  called_epilogue = false;
+  run_epilogues(pjob, 0, 0);
+  ck_assert(called_epilogue);
+
+  pjob->set_svrflags(0x0);
+  called_epilogue = false;
+  run_epilogues(pjob, 0, 0);
+  ck_assert(!called_epilogue);
+  }
+END_TEST
+
 Suite *catch_child_suite(void)
   {
   Suite *s = suite_create("catch_child methods");
@@ -209,6 +227,7 @@ Suite *catch_child_suite(void)
   tcase_add_test(tc_core, test_jobs_main_process);
   tcase_add_test(tc_core, test_non_mother_superior_cleanup);
   tcase_add_test(tc_core, test_mother_superior_cleanup);
+  tcase_add_test(tc_core, test_epilogues_run_without_prologues);
   
   s = suite_create("get_node_tests");
   tcase_add_test(tc_core, test_get_node_1);

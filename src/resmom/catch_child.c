@@ -1066,6 +1066,11 @@ int run_epilogues(
   int       io_type = PE_IO_TYPE_STD;
   int       rc;
 
+  if (!(pjob->get_svrflags() & JOB_SVFLG_PROLOGUES_RAN))
+    {
+    log_err(-1, __func__, "prologues were not run; skipping epilogues");
+    return(PBSE_NONE);
+    }
 
   if (pjob->get_long_attr(JOB_ATR_interactive))
     {
