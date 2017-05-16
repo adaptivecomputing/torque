@@ -98,5 +98,15 @@ job::job()
   }
 job::~job() {}
 
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+void job::set_jobid(const char *jobid)
+  {
+  snprintf(this->ji_qs.ji_jobid, sizeof(this->ji_qs.ji_jobid), "%s", jobid);
+  }
+
 mom_job::mom_job() {}
 mom_job::~mom_job() {}

@@ -279,9 +279,10 @@ int             use_nvidia_gpu = TRUE;
 
 pjobexec_t      TMOMStartInfo[TMAX_JE];
 
-
+const char     *taskstats_basepath = "/var/opt/cray/log/partition-current/messages-";
 /* prototypes */
 
+void            read_rur_stats_file(const char *basepath);
 void            read_mom_hierarchy();
 void            sort_paths();
 void            resend_things();
@@ -6637,6 +6638,10 @@ void main_loop(void)
       {
       MOMCheckRestart();  /* There are no jobs, see if the server needs to be restarted. */
       }
+
+    if (get_cray_taskstats)
+      read_rur_stats_file(taskstats_basepath);
+
     }      /* END while (mom_run_state == MOM_RUN_STATE_RUNNING) */
 
 #ifdef ENABLE_PMIX

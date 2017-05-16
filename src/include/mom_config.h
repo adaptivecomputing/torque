@@ -177,6 +177,7 @@ extern int              MOMJobDirStickySet;
 extern std::string      presetup_prologue;
 extern unsigned long    max_memory;
 extern unsigned long    max_swap;
+extern bool             get_cray_taskstats;
 
 struct specials
   {
