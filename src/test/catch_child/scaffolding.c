@@ -1422,3 +1422,7 @@ task::~task() {}
 batch_request::batch_request(int type) : rq_type(type)
   {
   }
+
+bool get_cray_taskstats;
+
+void update_jobs_usage(job *pjob) {}
