@@ -199,6 +199,7 @@ int              mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
 std::string      presetup_prologue;
 unsigned long    max_memory = 0;
 unsigned long    max_swap = 0;
+bool             get_cray_taskstats = false;
 
 
 
@@ -311,6 +312,7 @@ unsigned long setcudavisibledevices(const char *);
 unsigned long set_presetup_prologue(const char *);
 unsigned long set_max_physical_memory(const char *);
 unsigned long set_max_swap_memory(const char *);
+unsigned long set_get_cray_taskstats(const char *);
 
 struct specials special[] = {
   { "force_overwrite",     setforceoverwrite}, 
@@ -398,6 +400,7 @@ struct specials special[] = {
   { "presetup_prologue",    set_presetup_prologue},
   { "max_physical_memory",  set_max_physical_memory},
   { "max_swap_memory",      set_max_swap_memory},
+  { "get_cray_taskstats",   set_get_cray_taskstats},
   { NULL,                  NULL }
   };
 
@@ -570,6 +573,24 @@ unsigned long set_max_swap_memory(
     }
 
   return(1);
+  }
+
+
+
+unsigned long set_get_cray_taskstats(
+
+  const char *value)
+
+  {
+  int enable;
+
+  if ((enable = setbool(value)) != -1)
+    {
+    get_cray_taskstats = (bool)enable;
+    return(1);
+    }
+    
+  return(0); /* error */
   }
 
 

@@ -530,6 +530,18 @@ typedef std::set<pid_t> job_pid_set_t;
 #ifdef PBS_MOM
 // forward declare task so it can be part of the job
 class task;
+
+class task_usage_info
+  {
+  public:
+
+    unsigned long      cput;
+    unsigned long long mem;
+
+    task_usage_info() : cput(0), mem(0)
+      {
+      }
+  };
 #endif
 
 #define COUNTED_GLOBALLY 0x0001

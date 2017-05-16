@@ -108,6 +108,7 @@ int send_back_std_and_staged_files(job *pjob, int exit_status);
 
 /* END external prototypes */
 
+void update_jobs_usage(job *pjob);
 void exit_mom_job(job *pjob, int mom_radix);
 
 /*
@@ -1202,9 +1203,17 @@ int send_job_obit(
 
   resc_access_perm = ATR_DFLAG_RDACC;
 
-  if (check_rur == true)
+  if (is_login_node == TRUE)
     {
-    get_energy_used(pjob);
+    if (check_rur == true)
+      {
+      get_energy_used(pjob);
+      }
+
+    if (get_cray_taskstats)
+      {
+      update_jobs_usage(pjob);
+      }
     }
   
   encode_used(pjob, resc_access_perm, NULL, &preq->rq_ind.rq_jobobit.rq_attr);
