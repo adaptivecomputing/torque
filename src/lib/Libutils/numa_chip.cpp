@@ -1256,7 +1256,6 @@ bool Chip::getOpenThreadVector(
   int               execution_slots_per_task)
 
   {
-  unsigned int j = 0;
   int i = execution_slots_per_task;
   bool fits = false;
 
@@ -1265,24 +1264,21 @@ bool Chip::getOpenThreadVector(
      are allocated */
   if (execution_slots_per_task == 0)
     return(true);
-  slots.clear();
-  i = execution_slots_per_task;
-  j = 0;
+
   /* Can't get contiguous threads. Just get them where you can find them */
   // Get the thread indices we will use
-  do
+  for (size_t core_index = 0; core_index < this->cores.size() && i != 0; core_index++)
     {
-    for (unsigned int x = 0; x < this->cores[j].indices.size(); x++)
+    for (size_t thread_index = 0;
+         thread_index < this->cores[core_index].indices.size();
+         thread_index++)
       {
-      int thread_index;
-      if (this->cores[j].is_index_busy[x] == true)
+      if (this->cores[core_index].is_index_busy[thread_index] == true)
         continue;
 
-      thread_index = this->cores[j].indices[x];
-
-      slots.push_back(thread_index);
+      slots.push_back(this->cores[core_index].indices[thread_index]);
       i--;
-      if ((i == 0) || ((x + 1) == this->cores[j].indices.size()))
+      if ((i == 0) || ((thread_index + 1) == this->cores[core_index].indices.size()))
         {
         /* We fit if all of the execution slots have been filled
            or it we have used all the chip */
@@ -1290,12 +1286,14 @@ bool Chip::getOpenThreadVector(
         break;
         }
       }
-    j++;
 
-    }while((i != 0) && (j < this->cores.size()));
-  
+    }
+    
   return(fits);
-  }
+  } // END getOpenThreadVector()
+
+
+
 /*
  * getContiguousThreadVector
  *
@@ -1313,8 +1311,7 @@ bool Chip::getContiguousThreadVector(
   int               execution_slots_per_task)
 
   {
-  unsigned int j = 0;
-  int i = execution_slots_per_task;
+  int  i = execution_slots_per_task;
   bool fits = false;
 
   /* this makes it so users can request gpus and mics 
@@ -1324,15 +1321,15 @@ bool Chip::getContiguousThreadVector(
     return(true);
 
   /* First try to get contiguous threads */
-  do
+  for (size_t core_index = 0; core_index < this->cores.size() && i != 0; core_index++)
     {
-    for (unsigned int x = 0; x < this->cores[j].indices.size(); x++)
+    for (size_t thread_index = 0;
+         thread_index < this->cores[core_index].indices.size();
+         thread_index++)
       {
-      int thread_index;
-
       /* if this thread is busy and we have already started creating a list,
            clear the list and start over; otherwise, continue to the next thread */
-      if (this->cores[j].is_index_busy[x] == true)
+      if (this->cores[core_index].is_index_busy[thread_index] == true)
         {
         if (slots.size() > 0)
           {
@@ -1343,9 +1340,7 @@ bool Chip::getContiguousThreadVector(
           continue;
         }
 
-      thread_index = this->cores[j].indices[x];
-
-      slots.push_back(thread_index);
+      slots.push_back(this->cores[core_index].indices[thread_index]);
       i--;
       if (i == 0)
         {
@@ -1354,43 +1349,16 @@ bool Chip::getContiguousThreadVector(
         break;
         }
       }
-    j++;
-    
-    }while((i != 0) && (j < this->cores.size()));
+    }
 
   if (fits == false)
     {
     slots.clear();
-    i = execution_slots_per_task;
-    j = 0;
-    /* Can't get contiguous threads. Just get them where you can find them */
-    // Get the thread indices we will use
-    do
-      {
-      for (unsigned int x = 0; x < this->cores[j].indices.size(); x++)
-        {
-        int thread_index;
-        if (this->cores[j].is_index_busy[x] == true)
-          continue;
-
-        thread_index = this->cores[j].indices[x];
-
-        slots.push_back(thread_index);
-        i--;
-        if ((i == 0) || ((x + 1) == this->cores[j].indices.size()))
-          {
-          /* We fit if all of the execution slots have been filled
-             or it we have used all the chip */
-          fits = true;
-          break;
-          }
-        }
-      j++;
-
-      }while((i != 0) && (j < this->cores.size()));
+    fits = getOpenThreadVector(slots, execution_slots_per_task);
     }
   return(fits);
   }
+
 
 
 /*
@@ -1410,9 +1378,8 @@ bool Chip::getContiguousCoreVector(
   int               execution_slots_per_task)
 
   {
-  unsigned int j = 0;
-  int i = execution_slots_per_task;
-  bool fits = false;
+  int          i = execution_slots_per_task;
+  bool         fits = true;
 
   /* this makes it so users can request gpus and mics 
      from numanodes which are not where the cores or threads
@@ -1421,50 +1388,51 @@ bool Chip::getContiguousCoreVector(
     return(true);
 
   /* First try to get contiguous cores */
-  do
+  for (size_t core_index = 0; core_index < this->cores.size() && i != 0; core_index++)
     {
-    if (this->cores[j].is_free() == true)
+    if (this->cores[core_index].is_free() == true)
       {
-      slots.push_back(j);
+      slots.push_back(core_index);
       i--;
-      j++;
-      if ((i ==0) || (j == this->cores.size()))
-        {
-        /* We fit if all of the execution slots have been filled
-           or it we have used all the chip */
-        fits = true;
-        }
       }
     else
       {
-      i = execution_slots_per_task;
-      j++;
+      if (i != execution_slots_per_task)
+        {
+        fits = false;
+        i = execution_slots_per_task;
+        }
+
       slots.clear();
       }
-    }while((i != 0) && (j < this->cores.size()));
+    }
+
+  if (i == execution_slots_per_task)
+    fits = false;
 
   if (fits == false)
     {
     /* Can't get contiguous cores. Just get them where you can find them */
     // Get the core indices we will use
-    j = 0;
+    size_t core_index = 0;
     for (int i = 0; i < execution_slots_per_task; i++)
       {
-      while (j < this->cores.size())
+      while (core_index < this->cores.size())
         {
-        if (this->cores[j].is_free() == true)
+        if (this->cores[core_index].is_free() == true)
           {
-          slots.push_back(j);
-          j++;
+          slots.push_back(core_index);
+          core_index++;
           break;
           }
         else
-          j++;
+          core_index++;
         }
       }
     }
+  
   return(fits);
-  }
+  } // END getContiguousCoreVector()
 
 
 /*
