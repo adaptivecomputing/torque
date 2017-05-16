@@ -1488,11 +1488,12 @@ AC_ARG_ENABLE(align_memory, [
   --enable-align-memory  Change compile flags to get rid of unaligned memory access errors])
 if test "x$GCC" = "xyes" ;then
   AC_MSG_CHECKING([whether add memory alignment flags])
-  if test "${enable_align_memory}" = "yes" ; then
-    AC_MSG_RESULT([yes])
-    CFLAGS="$CFLAGS -fstack-protector -Wformat -Wformat-security -DFORTIFY_SOURCE=2"
-  else
+  if test "$x{enable_align_memory}" = "xno" ; then
     AC_MSG_RESULT([no])
+  else
+    AC_MSG_RESULT([default yes])
+    CFLAGS="$CFLAGS -fstack-protector -Wformat -Wformat-security -DFORTIFY_SOURCE=2"
+    CXXFLAGS="$CXXFLAGS -fstack-protector -Wformat -Wformat-security -DFORTIFY_SOURCE=2"
   fi
 fi
 
