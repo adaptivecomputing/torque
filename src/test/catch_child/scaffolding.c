@@ -1758,3 +1758,7 @@ pbs_attribute *job::get_attr(int index)
   {
   return(this->ji_wattr + index);
   }
+
+bool get_cray_taskstats;
+
+void update_jobs_usage(mom_job *pjob) {}

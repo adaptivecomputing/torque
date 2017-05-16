@@ -1505,3 +1505,6 @@ int read_all_devices()
   return(PBSE_NONE);
   }
 
+bool get_cray_taskstats;
+
+void read_rur_stats_file(const char *basepath) {}
