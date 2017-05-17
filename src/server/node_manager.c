@@ -1573,8 +1573,6 @@ void *write_node_state_work(
         {
         fprintf(nstatef, fmt, np->get_name(), np->nd_state & savemask);
         }
-
-      np->unlock_node(__func__, NULL, LOGLEVEL);
       } /* END for each node */
     }
   else
