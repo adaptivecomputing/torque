@@ -68,13 +68,20 @@ PCI_Device::~PCI_Device()
 
 int PCI_Device::initializePCIDevice(hwloc_obj_t device_obj, int idx, hwloc_topology_t topology)
   {
-
-  id = device_obj->logical_index;
-  name = device_obj->name;
-  if (device_obj->infos != NULL)
+  if (device_obj != NULL)
     {
-    info_name = device_obj->infos->name;
-    info_value = device_obj->infos->value;
+    id = device_obj->logical_index;
+    name = device_obj->name;
+    if (device_obj->infos != NULL)
+      {
+      info_name = device_obj->infos->name;
+      info_value = device_obj->infos->value;
+      }
+    }
+  else
+    {
+    id = idx;
+    name = "Unknown";
     }
 
 
