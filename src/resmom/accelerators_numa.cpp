@@ -181,10 +181,10 @@ int Machine::initializeNVIDIADevices(
         device_count, found_devices);
       log_err(-1, __func__, log_buffer);
 
-      for (size_t i = 0; i < unfound_devices.size(); i++)
+      for (size_t i = 0; i < unfound_ids.size(); i++)
         {
         PCI_Device new_device;
-        new_device.initializePCIDevice(NULL, unfound_devices[i], topology);
+        new_device.initializePCIDevice(NULL, unfound_ids[i], topology);
         store_device_on_appropriate_chip(new_device, true);
         }
       }
