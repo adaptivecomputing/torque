@@ -1174,10 +1174,12 @@ void Machine::free_job_allocation(
 
 void Machine::store_device_on_appropriate_chip(
     
-  PCI_Device &device)
+  PCI_Device &device,
+  bool        no_info)
 
   {
-  if (this->isNUMA == false)
+  if ((this->isNUMA == false) ||
+      (no_info == true))
     {
     this->sockets[0].store_pci_device_appropriately(device, true);
     }

@@ -86,7 +86,11 @@ hwloc_obj_t Machine::get_non_nvml_device(
 
 
 
-int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t topology)
+int Machine::initializeNVIDIADevices(
+    
+  hwloc_obj_t      machine_obj,
+  hwloc_topology_t topology)
+
   {
   nvmlReturn_t rc;
 
@@ -103,8 +107,9 @@ int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t t
     return(PBSE_NONE);
     }
 
-  unsigned int device_count = 0;
-  unsigned int found_devices = 0;
+  std::vector<unsigned int> unfound_ids;
+  unsigned int              device_count = 0;
+  unsigned int              found_devices = 0;
 
   /* Get the device count. */
   rc = nvmlDeviceGetCount(&device_count);
@@ -136,7 +141,10 @@ int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t t
         // including k80s.
         gpu_obj = this->get_non_nvml_device(topology, gpu, identified);
         if (gpu_obj == NULL)
+          {
+          unfound_ids.push_back(idx);
           continue;
+          }
         }
 
       identified.insert(gpu_obj);
@@ -153,14 +161,14 @@ int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t t
   
         new_device.initializePCIDevice(gpu_obj, idx, topology);
 
-        store_device_on_appropriate_chip(new_device);
+        store_device_on_appropriate_chip(new_device, false);
 
         // hwloc sees the K80 as a single device. We want to display two to stay in sync
         // with NVML, so store an extra for each K80
         if (!strncmp(buf, "Tesla K80", 9))
           {
           new_device.setId(new_device.get_id() + 1);
-          store_device_on_appropriate_chip(new_device);
+          store_device_on_appropriate_chip(new_device, false);
           found_devices++;
           idx++;
           }
@@ -169,9 +177,16 @@ int Machine::initializeNVIDIADevices(hwloc_obj_t machine_obj, hwloc_topology_t t
 
     if (found_devices != device_count)
       {
-      sprintf(log_buffer, "NVML reports %u devices, but we only found %u",
+      sprintf(log_buffer, "NVML reports %u devices, but we only found %u. Placement will be approximated.",
         device_count, found_devices);
       log_err(-1, __func__, log_buffer);
+
+      for (size_t i = 0; i < unfound_devices.size(); i++)
+        {
+        PCI_Device new_device;
+        new_device.initializePCIDevice(NULL, unfound_devices[i], topology);
+        store_device_on_appropriate_chip(new_device, true);
+        }
       }
     }
   else

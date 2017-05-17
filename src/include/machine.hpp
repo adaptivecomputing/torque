@@ -346,7 +346,7 @@ class Machine
     void displayAsString(stringstream &out) const;
     void displayAsJson(stringstream &out, bool include_jobs) const;
     void insertNvidiaDevice(PCI_Device& device);
-    void store_device_on_appropriate_chip(PCI_Device &device);
+    void store_device_on_appropriate_chip(PCI_Device &device, bool no_info);
     void place_all_execution_slots(req &r, allocation &master, const char *hostname);
     int  spread_place(req &r, allocation &master, int tasks_for_node, const char *hostname);
     int  spread_place_pu(req &r, allocation &master, int tasks_for_node, const char *hostname);
