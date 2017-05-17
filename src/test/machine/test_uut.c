@@ -208,13 +208,13 @@ START_TEST(test_store_pci_device_on_appropriate_chip)
 
   // Since this is non numa it should be forced to socket 0 
   m.setIsNuma(false);
-  m.store_device_on_appropriate_chip(d);
+  m.store_device_on_appropriate_chip(d, true);
   fail_unless(called_store_pci == 1);
  
   // Since this is numa it should place on the sockets until it returns true,
   // which due to the scaffolding is never, so once per socket
   m.setIsNuma(true);
-  m.store_device_on_appropriate_chip(d);
+  m.store_device_on_appropriate_chip(d, false);
   fail_unless(called_store_pci == 3);
   }
 END_TEST
