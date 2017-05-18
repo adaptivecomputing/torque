@@ -33,7 +33,7 @@ extern int    is_reporter_mom;
 extern mom_server mom_servers[PBS_MAXSERVER];
 
 bool is_for_this_host(std::string gpu_spec, const char *suffix);
-void get_device_indices(const char *gpu_str, std::vector<unsigned int> &gpu_indices, const char *suffix);
+void get_device_indices(const char *gpu_str, std::vector<int> &gpu_indices, const char *suffix);
 
 START_TEST(test_sort_paths)
   {
@@ -248,7 +248,7 @@ END_TEST
 START_TEST(test_get_device_indices)
   {
   std::string spec;
-  std::vector<unsigned int> gpu_indices;
+  std::vector<int> gpu_indices;
   char suffix[10];
   extern char mom_alias[];
 
