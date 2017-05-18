@@ -385,7 +385,7 @@ START_TEST(translate_job_reservation_info_to_string_test)
   int count = 0;
 
   translate_job_reservation_info_to_string(host_info, &count, exec_host, &exec_port);
-  fail_unless(exec_host == "napali0/0-2+napali1/0-2+napali2/0-2+napali3/0-2+napali4/0-2", exec_host.c_str());
+  fail_unless(exec_host == "napali0/3+napali1/3+napali2/3+napali3/3+napali4/3", exec_host.c_str());
   fail_unless(exec_port.str() == "15002+15002+15002+15002+15002");
   fail_unless(count == 5);
   }
@@ -409,24 +409,24 @@ START_TEST(populate_range_string_from_job_reservation_info_test)
   jri.node_id = 0;
 
   populate_range_string_from_slot_tracker(jri.est, range_str);
-  fail_unless(range_str == "0,3-5");
+  fail_unless(range_str == "4");
 
   jri.est.mark_as_free(0);
   populate_range_string_from_slot_tracker(jri.est, range_str);
-  fail_unless(range_str == "3-5", range_str.c_str());
+  fail_unless(range_str == "3", range_str.c_str());
 
   jri.est.mark_as_used(0);
   jri.est.mark_as_free(4);
   populate_range_string_from_slot_tracker(jri.est, range_str);
-  fail_unless(range_str == "0,3,5");
+  fail_unless(range_str == "3");
 
   jri.est.mark_as_used(1);
   populate_range_string_from_slot_tracker(jri.est, range_str);
-  fail_unless(range_str == "0-1,3,5", range_str.c_str());
+  fail_unless(range_str == "4", range_str.c_str());
  
   jri.est.mark_as_free(3);
   populate_range_string_from_slot_tracker(jri.est, range_str);
-  fail_unless(range_str == "0-1,5");
+  fail_unless(range_str == "3");
   }
 END_TEST
 

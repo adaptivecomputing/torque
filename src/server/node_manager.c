@@ -4363,54 +4363,19 @@ void populate_range_string_from_slot_tracker(
 
   {
   int               est_index;
-  int               prev_est_index = -1;
-  bool              consecutive_indices = false;
   int               est_iterator = -1;
   char              numbuf[10];
+  int               count = 0;
 
   range_str.clear();
     
   while ((est_index = est.get_next_occupied_index(est_iterator)) != -1)
     {
-    if (consecutive_indices == false)
-      {
-      if (range_str.size() == 0)
-        {
-        snprintf(numbuf, sizeof(numbuf), "%d", est_index);
-        range_str += numbuf;
-        }
-      else
-        {
-        if (prev_est_index == est_index - 1)
-          consecutive_indices = true;
-        else
-          {
-          snprintf(numbuf, sizeof(numbuf), ",%d", est_index);
-          range_str += numbuf;
-          }
-        }
-      }
-    else
-      {
-      // currently iterating over consecutive indices
-      if (prev_est_index != est_index - 1)
-        {
-        snprintf(numbuf, sizeof(numbuf), "-%d", prev_est_index);
-        range_str += numbuf;
-        consecutive_indices = false;
-        snprintf(numbuf, sizeof(numbuf), ",%d", est_index);
-        range_str += numbuf;
-        }
-      }
-      
-    prev_est_index = est_index;
+    count++;
     }
 
-  if (consecutive_indices == true)
-    {
-    snprintf(numbuf, sizeof(numbuf), "-%d", prev_est_index);
-    range_str += numbuf;
-    }
+    snprintf(numbuf, sizeof(numbuf), "%d", count);
+    range_str = numbuf;
   } /* END populate_range_string_from_slot_tracker() */
 
 
