@@ -95,6 +95,7 @@
 #include <netinet/in.h>
 #include <sys/time.h>
 #include <string>
+#include <map>
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
@@ -143,6 +144,9 @@ extern int    use_nvidia_gpu;
 extern time_t time_now;
 extern unsigned int global_gpu_count;
 
+#ifdef NVML_API
+std::map<unsigned int, unsigned int> gpu_minor_to_gpu_index;
+#endif  /* NVML_API */
 int    nvidia_gpu_modes[50];
 
 #ifdef NUMA_SUPPORT
@@ -258,6 +262,86 @@ void log_nvml_error(
     }
   }
 
+/**
+ * build_gpu_minor_to_gpu_index_map()
+ *
+ * Create a mapping from the NVIDIA gpu device minor numbers to the index
+ * numbers used with the NVML library.
+ *
+ * Note that the device index ordering used by the NVML library is based on
+ * the PCI bus ID. Torque server assumes an ordering based on the device
+ * minor number (see place_subnodes_in_hostlist()). These two orderings are
+ * not guaranteed to be the same so a mapping is needed to map the minor
+ * number to the index number used by the library.
+ *
+ * @param device_count - the number of gpu devices on this system
+ * @return -1 failure, 0 success
+ *
+ */
+
+int build_gpu_minor_to_gpu_index_map(
+
+  unsigned int device_count)
+
+  {
+  nvmlDevice_t dev_handle;
+  unsigned int minor;
+  unsigned int index;
+
+  // clear the map
+  gpu_minor_to_gpu_index.clear();
+
+  // build the map
+  for (index = 0; index < device_count; index++)
+    {
+    // get the device handle
+    if (nvmlDeviceGetHandleByIndex(index, &dev_handle) != NVML_SUCCESS)
+      {
+      gpu_minor_to_gpu_index.clear();
+      return(-1);
+      }
+
+    // look up the device handle's minor number
+    if (nvmlDeviceGetMinorNumber(dev_handle, &minor) != NVML_SUCCESS)
+      {
+      gpu_minor_to_gpu_index.clear();
+      return(-1);
+      }
+
+    // map the minor number to the NVML index
+    gpu_minor_to_gpu_index[minor] = index;
+    }
+
+  return(0);
+  }
+
+/**
+ * get_gpu_handle_by_minor()
+ *
+ * Get NVIDIA device handle by device minor number.
+ *
+ * @param minor - the device minor number
+ * @param device - reference in which to return the device handle
+ * @return NVML_ERROR_UNKNOWN if minor number not in map, or an nvmlReturn_t value otherwise
+ *
+ */
+
+nvmlReturn_t get_gpu_handle_by_minor(
+
+  unsigned int minor,
+  nvmlDevice_t *device)
+
+  {
+  std::map<unsigned int, unsigned int>::const_iterator it 
+     = gpu_minor_to_gpu_index.find(minor);
+
+  // confirm that minor number is in the map
+  if (it == gpu_minor_to_gpu_index.end())
+    return(NVML_ERROR_UNKNOWN);
+
+  // return the device handle
+  return(nvmlDeviceGetHandleByIndex(it->second, device));
+  }
 
 /*
  * Function to initialize the Nvidia nvml api
@@ -278,7 +362,16 @@ bool init_nvidia_nvml(
     if (rc == NVML_SUCCESS)
       {
       if ((int)device_count > 0)
+        {
+        // build map function for minor_to_gpu_index
+        if (build_gpu_minor_to_gpu_index_map(device_count) != 0)
+          {
+          shut_nvidia_nvml();
+          return(false);
+          }
+
         return(true);
+        }
 
       sprintf(log_buffer,"No Nvidia gpus detected\n");
       log_ext(-1, __func__, log_buffer, LOG_DEBUG);
@@ -308,6 +401,9 @@ int shut_nvidia_nvml()
 
   if (!use_nvidia_gpu)
     return (TRUE);
+
+  // clear the map
+  gpu_minor_to_gpu_index.clear();
 
   rc = nvmlShutdown();
 
@@ -755,19 +851,17 @@ int setgpumode(
     }
 
   /* get the device handle */
-
-  rc = nvmlDeviceGetHandleByIndex(gpuid, &device_hndl);
+  rc = get_gpu_handle_by_minor(gpuid, &device_hndl);
 
   if (device_hndl != NULL)
     {
-	  if (LOGLEVEL >= 7)
-	    {
+    if (LOGLEVEL >= 7)
+      {
       sprintf(log_buffer, "changing to mode %d for gpu %d",
-			        gpumode,
-			        gpuid);
+        gpumode, gpuid);
 
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-	    }
+      }
 
     rc = nvmlDeviceSetComputeMode(device_hndl, compute_mode);
 
@@ -920,20 +1014,17 @@ int resetgpuecc(
     }
 
   /* get the device handle */
-
-  rc = nvmlDeviceGetHandleByIndex(gpuid, &device_hndl);
+  rc = get_gpu_handle_by_minor(gpuid, &device_hndl);
 
   if (device_hndl != NULL)
     {
-	  if (LOGLEVEL >= 7)
-	    {
-		  sprintf(log_buffer, "reseting error count %d-%d for gpu %d",
-						  reset_perm,
-						  reset_vol,
-						  gpuid);
+    if (LOGLEVEL >= 7)
+      {
+      sprintf(log_buffer, "resetting error count %d-%d for gpu %d",
+        reset_perm, reset_vol, gpuid);
 
-		  log_ext(-1, __func__, log_buffer, LOG_DEBUG);
-	    }
+      log_ext(-1, __func__, log_buffer, LOG_DEBUG);
+      }
 
     rc = nvmlDeviceClearEccErrorCounts(device_hndl, counter_type);
 
@@ -1075,7 +1166,7 @@ int resetgpuecc(
 
 int set_gpu_modes(
     
-  std::vector<unsigned int> &gpu_indices, 
+  std::vector<int> &gpu_indices, 
   int gpu_flags)
 
   {
@@ -1109,7 +1200,7 @@ int set_gpu_modes(
   initialized = true;
 #endif
 
-  for (std::vector<unsigned int>::iterator it = gpu_indices.begin(); it != gpu_indices.end(); it++)
+  for (std::vector<int>::iterator it = gpu_indices.begin(); it != gpu_indices.end(); it++)
     {
     int set_mode_result;
     /* check to see if we need to reset error counts */
@@ -1117,7 +1208,7 @@ int set_gpu_modes(
       {
       if (LOGLEVEL >= 7)
         {
-        sprintf(log_buffer, "reseting gpuid %d volatile error counts",
+        sprintf(log_buffer, "resetting gpuid %d volatile error counts",
                   *it);
 
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
@@ -1194,14 +1285,14 @@ int get_gpu_mode(
 
 int set_gpu_req_modes(
     
-  std::vector<unsigned int> &gpu_indices, 
-  int                        gpu_flags,
-  job                       *pjob)
+  std::vector<int> &gpu_indices, 
+  int               gpu_flags,
+  job              *pjob)
 
   {
   pbs_attribute *pattr;
   int            rc;
-  unsigned int   gpu_indices_size = gpu_indices.size();
+  int            gpu_indices_size = gpu_indices.size();
   size_t         gpu_index = 0;
   bool           initialized = false;
 
@@ -1241,7 +1332,7 @@ int set_gpu_req_modes(
       initialized = true;
 #endif
 
-      for (unsigned int i = 0; i < cr->get_num_reqs() && gpu_index < gpu_indices.size(); i++)
+      for (int i = 0; i < cr->get_num_reqs() && gpu_index < gpu_indices.size(); i++)
         {
         int total_req_gpus;
 
@@ -1250,7 +1341,7 @@ int set_gpu_req_modes(
         gpu_mode = r.get_gpu_mode(); /* returns a string indicating the gpu mode */
         total_req_gpus = r.get_gpus();
 
-        for (unsigned int j = 0; j < total_req_gpus && gpu_index < gpu_indices.size(); j++)
+        for (int j = 0; j < total_req_gpus && gpu_index < gpu_indices.size(); j++)
           {
           /* only use as many gpus as requested for the req */
           int mode;
@@ -1323,15 +1414,55 @@ int setup_gpus_for_job(
   job  *pjob) /* I */
 
   {
+#ifdef PENABLE_LINUX_CGROUPS
+  std::string gpus_reserved;
+  std::string gpu_range;
+#else
   char *gpu_str;
+#endif
   int   gpu_flags = 0;
   int   rc;
+  std::vector<int> gpu_indices;
 
   /* if node does not have Nvidia recognized driver version then forget it */
 
   if (MOMNvidiaDriverVersion < 260)
     return(PBSE_NONE);
 
+#ifdef PENABLE_LINUX_CGROUPS
+  /* if there are no gpus, do nothing */
+  if ((pjob->ji_wattr[JOB_ATR_gpus_reserved].at_flags & ATR_VFLAG_SET) == 0)
+    return(PBSE_NONE);
+
+  /* if there are no gpu flags, do nothing */
+  if ((pjob->ji_wattr[JOB_ATR_gpu_flags].at_flags & ATR_VFLAG_SET) == 0)
+    return(PBSE_NONE);
+
+  gpus_reserved = pjob->ji_wattr[JOB_ATR_gpus_reserved].at_val.at_str;
+
+  if (gpus_reserved.length() == 0)
+    return(PBSE_NONE);
+
+  find_range_in_cpuset_string(gpus_reserved, gpu_range);
+  translate_range_string_to_vector(gpu_range.c_str(), gpu_indices);
+
+  gpu_flags = pjob->ji_wattr[JOB_ATR_gpu_flags].at_val.at_long;
+
+  if (LOGLEVEL >= 7)
+    {
+    sprintf(log_buffer, "job %s has gpus_reserved %s gpu_flags %d",
+      pjob->ji_qs.ji_jobid, gpu_range.c_str(), gpu_flags);
+
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    }
+
+  rc = set_gpu_req_modes(gpu_indices, gpu_flags, pjob);
+  if (rc != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Failed to set gpu modes for job %s. error %d", pjob->ji_qs.ji_jobid, rc);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    }
+#else
   /* if there are no gpus, do nothing */
   if ((pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET) == 0)
     return(PBSE_NONE);
@@ -1349,34 +1480,20 @@ int setup_gpus_for_job(
 
   if (LOGLEVEL >= 7)
     {
-		sprintf(log_buffer, "job %s has exec_gpus %s gpu_flags %d",
-						pjob->ji_qs.ji_jobid,
-						gpu_str,
-						gpu_flags);
+      sprintf(log_buffer, "job %s has exec_gpus %s gpu_flags %d",
+      pjob->ji_qs.ji_jobid, gpu_str, gpu_flags);
 
-	  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
     }
 
   /* tokenize all of the gpu allocations 
      the format of the gpu string is <host>-gpu/index[+<host>-gpu/index...]*/
   /* traverse the gpu_str to see what gpus we have assigned */
 
-
-  std::vector<unsigned int> gpu_indices;
   get_device_indices(gpu_str, gpu_indices, "-gpu");
 
-#ifndef PENABLE_LINUX_CGROUPS
   rc = set_gpu_modes(gpu_indices, gpu_flags);
-#else
-  rc = set_gpu_req_modes(gpu_indices, gpu_flags, pjob);
-  if (rc != PBSE_NONE)
-    {
-    sprintf(log_buffer, "Failed to set gpu modes for job %s. error %d", pjob->ji_qs.ji_jobid, rc);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
-    }
-
-#endif /* PENABLE_LINUX_CGROUPS */
-
+#endif
   return(rc);
   } /* END setup_gpus_for_job() */
 
@@ -1470,7 +1587,7 @@ void generate_server_gpustatus_nvml(
   for (idx = 0; idx < (int)device_count; idx++)
 #endif
     {
-    rc = nvmlDeviceGetHandleByIndex(idx, &device_hndl);
+    rc = get_gpu_handle_by_minor(idx, &device_hndl);
 
     if (rc != NVML_SUCCESS)
       {

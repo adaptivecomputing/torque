@@ -3394,7 +3394,7 @@ bool is_for_this_host(
 void get_device_indices(
   
   const char *device_str, 
-  std::vector<unsigned int> &device_indices, 
+  std::vector<int> &device_indices, 
   const char *suffix)
 
   {
@@ -3450,7 +3450,7 @@ void get_device_indices(
 
     if (is_for_this_host(host_name_part, suffix) == true)
       {
-      unsigned int device_index = atoi(device_index_part.c_str());
+      int device_index = atoi(device_index_part.c_str());
 
       device_indices.push_back(device_index);
       }

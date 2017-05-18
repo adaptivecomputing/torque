@@ -41,4 +41,5 @@ bool have_incompatible_dash_l_resource(pbs_attribute *pattr);
 int  trq_cg_add_devices_to_cgroup(job *pjob);
 int init_torque_cgroups();
 void trq_cg_signal_tasks(const std::string& cgroup_path, int signal);
+int find_range_in_cpuset_string(std::string &source, std::string &output);
 #endif /* _TRQ_CGROUPS_H_ */
