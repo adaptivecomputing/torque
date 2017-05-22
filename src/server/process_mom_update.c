@@ -1263,7 +1263,6 @@ int is_gpustat_get(
           }
         else
           {
-          np->nd_gpusn[gpuidx].inuse = 0;
           np->nd_gpusn[gpuidx].state = gpu_unallocated;
           }
         }
@@ -1277,7 +1276,6 @@ int is_gpustat_get(
           }
         else
           {
-          np->nd_gpusn[gpuidx].inuse = 0;
           np->nd_gpusn[gpuidx].state = gpu_unallocated;
           }
         }
@@ -1290,7 +1288,6 @@ int is_gpustat_get(
           }
         else
           {
-          np->nd_gpusn[gpuidx].inuse = 0;
           np->nd_gpusn[gpuidx].state = gpu_unallocated;
           }
         }

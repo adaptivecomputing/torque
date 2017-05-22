@@ -45,7 +45,7 @@ int add_job_to_mic(struct pbsnode *pnode, int index, job *pjob);
 int remove_job_from_nodes_mics(struct pbsnode *pnode, job *pjob);
 void update_failure_counts(const char *node_name, int rc);
 void check_node_jobs_existence(struct work_task *pwt);
-int  add_job_to_gpu_subnode(pbsnode *pnode, gpusubn *gn, job *pjob);
+bool  add_job_to_gpu_subnode(pbsnode *pnode, gpusubn *gn, job *pjob);
 int proplist(char**, struct prop**, int*, int*, int*);
 int process_gpu_token(const char*, job*);
 
@@ -107,8 +107,7 @@ START_TEST(add_job_to_gpu_subnode_test)
   pnode.nd_ngpus_to_be_used = 1;
   pjob.ji_internal_id = 10;
 
-  fail_unless(add_job_to_gpu_subnode(&pnode, &gn, &pjob) == PBSE_NONE);
-  fail_unless(gn.inuse == true);
+  fail_unless(add_job_to_gpu_subnode(&pnode, &gn, &pjob) == true);
   fail_unless(pnode.nd_ngpus_to_be_used == 0);
   fail_unless(gn.job_internal_id == pjob.ji_internal_id);
   }
@@ -993,17 +992,12 @@ START_TEST(test_process_gpu_token)
   fail_unless((pnode = find_nodebyname("gpunode")) != NULL);
 
   fail_unless(pnode->nd_gpusn[5].job_internal_id == 10);
-  fail_unless(pnode->nd_gpusn[5].inuse == true);
-  fail_unless(pnode->nd_gpusn[5].job_count == 1);
 
   s = strdup("gpunode/0-2");
   fail_unless(process_gpu_token(s, pjob) == PBSE_NONE);
-  fail_unless(pnode->nd_gpusn[0].inuse == true);
-  fail_unless(pnode->nd_gpusn[0].job_count == 1);
-  fail_unless(pnode->nd_gpusn[1].inuse == true);
-  fail_unless(pnode->nd_gpusn[1].job_count == 1);
-  fail_unless(pnode->nd_gpusn[2].inuse == true);
-  fail_unless(pnode->nd_gpusn[2].job_count == 1);
+  fail_unless(pnode->nd_gpusn[0].job_internal_id != -1);
+  fail_unless(pnode->nd_gpusn[1].job_internal_id != -1);
+  fail_unless(pnode->nd_gpusn[2].job_internal_id != -1);
   }
 END_TEST
 
