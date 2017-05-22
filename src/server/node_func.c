@@ -1623,7 +1623,6 @@ int create_a_gpusubnode(
 
   /* initialize the node */
   pnode->nd_gpus_real = FALSE;
-  pnode->nd_gpusn[pnode->nd_ngpus].inuse = FALSE;
   pnode->nd_gpusn[pnode->nd_ngpus].job_internal_id = -1;
   pnode->nd_gpusn[pnode->nd_ngpus].mode = gpu_normal;
   pnode->nd_gpusn[pnode->nd_ngpus].state = gpu_unallocated;
@@ -3051,7 +3050,7 @@ static void delete_a_gpusubnode(
     return;
     }
 
-  if (tmp->inuse == FALSE)
+  if (tmp->job_internal_id != -1)
     pnode->nd_ngpus_free--;
 
   /* decrement the number of gpu subnodes */

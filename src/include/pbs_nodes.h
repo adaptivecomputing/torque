@@ -223,14 +223,12 @@ class node_job_add_info
 struct gpusubn
   {
   int             job_internal_id; /* internal id of job on gpu */
-  unsigned short  inuse;  /* 1 if this node is in use, 0 otherwise */
   enum gpstatit   state;  /* gpu state determined by server */
   enum gpmodeit   mode;   /* gpu mode from hardware */
   int             driver_ver;  /* Driver version reported from hardware */
   enum psit       flag;
   short           index;  /* gpu index */
   char           *gpuid;  /* gpu id */
-  int             job_count;
   };
 
 

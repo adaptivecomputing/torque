@@ -3708,21 +3708,27 @@ int reserve_node(
 
     
 
-int add_job_to_gpu_subnode(
+bool add_job_to_gpu_subnode(
     
   struct pbsnode *pnode,
   struct gpusubn *gn,
   job            *pjob)
 
   {
+  bool added = false;
+
+  if ((gn->job_internal_id == -1) ||
+      (gn->state == gpu_unavailable))
+    return(added);
+
+  added = true;
   gn->job_internal_id = pjob->ji_internal_id;
   pnode->nd_ngpus_free--;
-  gn->inuse = TRUE;
-  gn->job_count++;
+
   if (pnode->nd_ngpus_to_be_used > 0)
     pnode->nd_ngpus_to_be_used--;
 
-  return(PBSE_NONE);
+  return(added);
   } /* END add_job_to_gpu_subnode() */
 
 
@@ -3844,11 +3850,9 @@ int place_gpus_in_hostlist(
     
     gn = pnode->nd_gpusn + j;
 
-    if ((gn->inuse == TRUE) ||
-        (gn->state == gpu_unavailable))
+    if (add_job_to_gpu_subnode(pnode, gn, pjob) == false)
       continue;
     
-    add_job_to_gpu_subnode(pnode,gn,pjob);
     naji.gpu_needed--;
     
     sprintf(log_buf,
@@ -5661,14 +5665,11 @@ int remove_job_from_nodes_gpus(
       if (gn->job_internal_id == pjob->ji_internal_id)
         {
         gn->job_internal_id = -1;
-        gn->inuse = false;
         pnode->nd_ngpus_free++;
-        gn->job_count--;
           
         if ((gn->mode == gpu_exclusive_thread) ||
             (gn->mode == gpu_exclusive_process) ||
-            ((gn->mode == gpu_normal) && 
-             (gn->job_count == 0)))
+            (gn->mode == gpu_normal))
           gn->state = gpu_unallocated;
           
         if (LOGLEVEL >= 7)
@@ -6055,7 +6056,7 @@ int process_gpu_token(
     }
 
   return(PBSE_NONE);
-  }
+  } // END process_gpu_token()
 
 /*
  * set_old_nodes - set "old" nodes as in use - called from pbsd_init()
