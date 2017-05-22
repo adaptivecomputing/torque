@@ -95,7 +95,7 @@ int rmdir_ext(const char *dirname, int retry_limit)
 void get_device_indices(
   
   const char *device_str, 
-  std::vector<unsigned int> &device_indices, 
+  std::vector<int> &device_indices, 
   const char *suffix)
 
   {}
