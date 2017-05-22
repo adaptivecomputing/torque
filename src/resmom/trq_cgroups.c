@@ -1472,69 +1472,6 @@ int trq_cg_populate_cgroup(
       log_err(errno, __func__, err_msg.c_str());
     }
 
-  // if the write went fine up to this point
-  // then read back contents to confirm what was
-  // written was what was expected
-
-  if (rc == PBSE_NONE)
-    {
-    FILE *fp;
-    char line_buf[LOG_BUF_SIZE];
-
-    // assume error unless proven otherwise
-    rc = PBSE_SYSTEM;
-
-    if ((fp = fopen(path.c_str(), "r")) == NULL)
-      {
-      err_msg = "cannot open file to read: ";
-      err_msg += path;
-      log_err(-1, __func__, err_msg.c_str());
-      }
-    else
-      {
-      if (fgets(line_buf, sizeof(line_buf), fp) == NULL)
-        {
-        err_msg = "cannot read from file: ";
-        err_msg += path;
-        log_err(-1, __func__, err_msg.c_str());
-        }
-      else
-        {
-        char *p;
-        std::vector<int> v1;
-        std::vector<int> v2;
-
-        // drop newline if present
-        if ((p = strchr(line_buf, '\n')) != NULL)
-          *p = '\0';
-
-        // convert range strings to vectors so we can compare element counts to roughly
-        // determine equality
-        translate_range_string_to_vector(line_buf, v1);
-        translate_range_string_to_vector(used.c_str(), v2);
-
-        // expect same number of elements from both vectors
-        if (v1.size() != v2.size())
-          {
-          err_msg = "unexpected contents read from ";
-          err_msg += path;
-          err_msg += ", expected same number of elements from string to be written \"";
-          err_msg += used;
-          err_msg += "\", and from string actually written \"";
-          err_msg += line_buf;
-          err_msg += "\"";
-          log_err(-1, __func__, err_msg.c_str());
-          }
-        else
-          {
-          // everything ok
-          rc = PBSE_NONE;
-          }
-        }
-        fclose(fp);
-      }
-    }
-
   return(rc);
   } // END trq_cg_populate_cgroup()
 
