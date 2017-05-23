@@ -10,6 +10,8 @@ const std::string PORTOUT("portout");
 const std::string PORTERR("porterr");
 const std::string ATTRIBUTES("attributes");
 
+
+
 /*
  * CONSTRUCTOR
  */
@@ -31,6 +33,8 @@ mom_job::mom_job() : ji_momstat(0), ji_momhandle(-1), ji_radix(0), ji_grpcache(N
                      ji_custom_usage_info(), ji_commit_done(false), maxAdoptedTaskId(0)
 
   {
+  memset(&this->ji_jobque, 0, sizeof(this->ji_jobque));
+  memset(&this->ji_alljobs, 0, sizeof(this->ji_alljobs));
   CLEAR_LINK(this->ji_jobque);
   CLEAR_LINK(this->ji_alljobs);
 
