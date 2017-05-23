@@ -201,6 +201,7 @@ std::string      presetup_prologue;
 unsigned long    max_memory = 0;
 unsigned long    max_swap = 0;
 bool             get_cray_taskstats = false;
+u_long           pbsclient;
 
 
 
@@ -1558,19 +1559,22 @@ u_long setpbsclient(
     {
     /* FAILURE */
 
-    return(1);
+    return(0);
     }
 
   rc = addclient(value);
 
-  if (rc != 0)
+  // addclient() returns the address on success, 0 on failure
+  if (rc == 0)
     {
     /* FAILURE */
 
-    return(1);
+    return(0);
     }
 
-  return(0);
+  pbsclient = rc;
+
+  return(1);
   }  /* END setpbsclient() */
 
 

@@ -2354,6 +2354,11 @@ void reset_okclients()
       }
     }
 
+  if (pbsclient != 0)
+    {
+    auth_hosts.add_authorized_address(pbsclient, 0, "");
+    }
+
   // add localhost
   auth_hosts.add_authorized_address(localaddr, 0, "");
 
