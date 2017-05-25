@@ -432,7 +432,10 @@ void *svr_is_request(
       {
       log_err(-1, __func__, log_buf);
       }
-    
+
+    // Reduce "spamming" from nodes not authorized
+    write_tcp_reply(chan, IS_PROTOCOL, IS_PROTOCOL_VER, IS_STATUS, DIS_SUCCESS);
+
     close_conn(chan->sock, FALSE);
     DIS_tcp_cleanup(chan);
     return(NULL);
