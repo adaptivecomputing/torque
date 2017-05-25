@@ -920,6 +920,13 @@ int main(
           {
           TShowAbout_exit();
           }
+        else if ((optarg != NULL) && !strcmp(optarg, "xml"))
+          {
+          flag = ALLI;
+          DisplayXML = TRUE;
+
+          break;
+          }
 
         errflg = 1;
 
