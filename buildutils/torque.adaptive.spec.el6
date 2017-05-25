@@ -677,8 +677,6 @@ TIMESTAMP="`date +%%Y.%%m.%%d_%%H.%%M.%%S`"
 %{pre_add_back_up_file %{_bindir}/printjob %{client_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_bindir}/printserverdb %{client_sub}-${TIMESTAMP}}
 %{pre_add_back_up_file %{_bindir}/printtracking %{client_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{_bindir}/printtracking %{client_sub}-${TIMESTAMP}}
-%{pre_add_back_up_file %{_bindir}/printtracking %{client_sub}-${TIMESTAMP}}
 for file in %{_bindir}/q*
 do
    %{pre_add_back_up_file ${file} %{client_sub}-${TIMESTAMP}}
