@@ -912,6 +912,13 @@ int main(
           TShowAbout();
           exit(0);
           }
+        else if ((optarg != NULL) && !strcmp(optarg, "xml"))
+          {
+          flag = ALLI;
+          DisplayXML = TRUE;
+
+          break;
+          }
 
         errflg = 1;
 
