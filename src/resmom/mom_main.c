@@ -2499,6 +2499,45 @@ void set_report_mom_cuda_visible_devices(
 
 
 
+void set_report_node_check_on_job_start(
+
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  int enable;
+
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    if ((enable = setbool(curr + 1)) != -1)
+      PBSNodeCheckProlog = enable;
+    }
+
+  output << "node_check_on_job_start=" << PBSNodeCheckProlog;
+
+  } /* END set_node_check_on_job_start() */
+
+
+
+void set_report_node_check_on_job_end(
+
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  int enable;
+
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    if ((enable = setbool(curr + 1)) != -1)
+      PBSNodeCheckEpilog = enable;
+    }
+
+  output << "node_check_on_job_end=" << PBSNodeCheckEpilog;
+  } /* END set_node_check_on_job_end() */
+
+
+
 void set_report_rcpcmd(
 
   std::stringstream &output,
@@ -2760,6 +2799,14 @@ int process_rm_cmd_request(
        else if (!strncasecmp(name, "cuda_visible_devices", strlen("cuda_visible_devices")))
         {
         set_report_mom_cuda_visible_devices(output, curr);
+        }
+       else if (!strncasecmp(name, "node_check_on_job_start", strlen("node_check_on_job_start")))
+        {
+        set_report_node_check_on_job_start(output, curr);
+        }
+       else if (!strncasecmp(name, "node_check_on_job_end", strlen("node_check_on_job_end")))
+        {
+        set_report_node_check_on_job_end(output, curr);
         }
       else
         {
