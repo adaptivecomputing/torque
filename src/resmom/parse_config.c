@@ -313,6 +313,8 @@ unsigned long set_presetup_prologue(const char *);
 unsigned long set_max_physical_memory(const char *);
 unsigned long set_max_swap_memory(const char *);
 unsigned long set_get_cray_taskstats(const char *);
+unsigned long set_node_check_on_job_start(const char *);
+unsigned long set_node_check_on_job_end(const char *);
 
 struct specials special[] = {
   { "force_overwrite",     setforceoverwrite}, 
@@ -401,6 +403,8 @@ struct specials special[] = {
   { "max_physical_memory",  set_max_physical_memory},
   { "max_swap_memory",      set_max_swap_memory},
   { "get_cray_taskstats",   set_get_cray_taskstats},
+  { "node_check_on_job_start", set_node_check_on_job_start },
+  { "node_check_on_job_end", set_node_check_on_job_end },
   { NULL,                  NULL }
   };
 
@@ -816,6 +820,46 @@ unsigned long setnodecheckinterval(
 
   return(1);
   }  /* END setnodecheckinterval() */
+
+
+
+unsigned long set_node_check_on_job_start(
+
+  const char *value)
+
+  {
+  int enable;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if ((enable = setbool(value)) != -1)
+    {
+    PBSNodeCheckProlog = enable;
+    return(1);
+    }
+
+  return(0);
+  }  /* END set_node_check_on_job_start() */
+
+
+
+unsigned long set_node_check_on_job_end(
+
+  const char *value)
+
+  {
+  int enable;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if ((enable = setbool(value)) != -1)
+    {
+    PBSNodeCheckEpilog = enable;
+    return(1);
+    }
+
+  return(0);
+  }  /* END set_node_check_on_job_end() */
 
 
 
