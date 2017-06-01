@@ -133,6 +133,31 @@ START_TEST(test_set_note_str)
   }
 END_TEST
 
+START_TEST(test_encode_jobs)
+  {
+  pbsnode *nd;
+  pbs_attribute attr;
+  int rc;
+  tlist_head ph;
+
+  memset(&ph, 0, sizeof(tlist_head));
+
+  nd = new pbsnode();
+  nd->nd_job_usages.push_back(job_usage_info(1));
+  nd->nd_job_usages.push_back(job_usage_info(2));
+
+  memset(&attr, 0, sizeof(pbs_attribute));
+
+  attr.at_flags = ATR_VFLAG_SET;
+  attr.at_val.at_jinfo = nd;
+
+  rc = encode_jobs(&attr, &ph, "something", "something", 0, 0);
+
+  fail_unless(rc == 0);
+  fail_unless(((svrattrl *)ph.ll_prior)->al_value[1] == '+');
+  }
+END_TEST
+
 Suite *attr_node_func_suite(void)
   {
   Suite *s = suite_create("attr_node_func_suite methods");
@@ -146,6 +171,10 @@ Suite *attr_node_func_suite(void)
 
   tc_core = tcase_create("test_set_note_str");
   tcase_add_test(tc_core, test_set_note_str);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_encode_jobs");
+  tcase_add_test(tc_core, test_encode_jobs);
   suite_add_tcase(s, tc_core);
 
   return s;

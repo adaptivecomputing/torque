@@ -528,7 +528,7 @@ int login_encode_jobs(
       if (pnode->nd_id != login_id)
         {
         if (job_str.length() != 0)
-          snprintf(str_buf, sizeof(str_buf), ",%d/%s", jui_index, job_id);
+          snprintf(str_buf, sizeof(str_buf), "+%d/%s", jui_index, job_id);
         else
           snprintf(str_buf, sizeof(str_buf), "%d/%s", jui_index, job_id);
 
