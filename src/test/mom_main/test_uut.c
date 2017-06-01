@@ -32,6 +32,7 @@ int process_layout_request(tcp_chan *chan);
 bool should_resend_obit(mom_job *pjob, int diff);
 void check_job_in_mom_wait(mom_job *pjob);
 void evaluate_job_in_prerun(mom_job *pjob);
+void add_diag_header(std::stringstream &output);
 
 extern attribute_def job_attr_def[];
 extern int  exiting_tasks;
@@ -44,6 +45,10 @@ extern int wcs_ret;
 extern int flush_ret;
 extern int job_bailed;
 extern bool am_i_ms;
+
+extern char mom_host[PBS_MAXHOSTNAME + 1];
+extern char mom_short_name[PBS_MAXHOSTNAME + 1];
+extern char mom_ipaddr[INET_ADDRSTRLEN];
 
 bool are_we_forking()
 
@@ -446,6 +451,24 @@ START_TEST(test_parse_command_line3)
 END_TEST
 
 
+START_TEST(test_add_diag_header)
+  {
+  std::stringstream output;
+  std::string output_str;
+
+  mom_ipaddr[0] = '\0';
+  mom_short_name[0] = '\0';
+  mom_host[0] = '\0';
+
+  add_diag_header(output);
+
+  output_str = output.str();
+
+  fail_unless(output_str.find("IP address") != std::string::npos);
+  }
+END_TEST
+
+
 Suite *mom_main_suite(void)
   {
   Suite *s = suite_create("mom_main_suite methods");
@@ -480,6 +503,10 @@ Suite *mom_main_suite(void)
 
   tc_core = tcase_create("test_parse_command_line3");
   tcase_add_test(tc_core, test_parse_command_line3);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_add_diag_header");
+  tcase_add_test(tc_core, test_add_diag_header);
   suite_add_tcase(s, tc_core);
 
   return s;

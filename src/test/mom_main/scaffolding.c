@@ -1508,3 +1508,8 @@ int read_all_devices()
 bool get_cray_taskstats;
 
 void read_rur_stats_file(const char *basepath) {}
+
+int get_local_address(struct sockaddr_in &new_sockaddr)
+  {
+  return PBSE_NONE;
+  }
