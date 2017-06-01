@@ -3715,20 +3715,17 @@ bool add_job_to_gpu_subnode(
   job            *pjob)
 
   {
-  bool added = false;
-
-  if ((gn->job_internal_id == -1) ||
+  if ((gn->job_internal_id != -1) ||
       (gn->state == gpu_unavailable))
-    return(added);
+    return(false);
 
-  added = true;
   gn->job_internal_id = pjob->ji_internal_id;
   pnode->nd_ngpus_free--;
 
   if (pnode->nd_ngpus_to_be_used > 0)
     pnode->nd_ngpus_to_be_used--;
 
-  return(added);
+  return(true);
   } /* END add_job_to_gpu_subnode() */
 
 
