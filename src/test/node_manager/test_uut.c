@@ -106,6 +106,7 @@ START_TEST(add_job_to_gpu_subnode_test)
 
   pnode.nd_ngpus_to_be_used = 1;
   pjob.ji_internal_id = 10;
+  gn.job_internal_id = -1;
 
   fail_unless(add_job_to_gpu_subnode(&pnode, &gn, &pjob) == true);
   fail_unless(pnode.nd_ngpus_to_be_used == 0);
@@ -990,8 +991,6 @@ START_TEST(test_process_gpu_token)
   fail_unless(process_gpu_token(s, pjob) == PBSE_NONE);
 
   fail_unless((pnode = find_nodebyname("gpunode")) != NULL);
-
-  fail_unless(pnode->nd_gpusn[5].job_internal_id == 10);
 
   s = strdup("gpunode/0-2");
   fail_unless(process_gpu_token(s, pjob) == PBSE_NONE);
