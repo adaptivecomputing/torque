@@ -983,6 +983,9 @@ build_l26_cpuset=no
 cpuset=0
 AC_MSG_CHECKING([whether to enable cpusets])
 if test "x$enable_cpuset" = "xyes" ; then
+  if test "${build_linux_cgroups}" = "yes" ; then
+    AC_MSG_ERROR([cpuset and cgroups are mutually exclusive options])
+  fi
   AC_MSG_RESULT([yes])
   build_l26_cpuset=yes
   cpuset=1
@@ -1006,6 +1009,9 @@ AC_ARG_ENABLE(geometry_requests, [
 if test "x$GCC" = "xyes" ;then
   AC_MSG_CHECKING([whether to allow geometry requests])
   if test "${enable_geometry_requests}" = "yes" ; then
+    if test "${build_linux_cgroups}" = "yes" ; then
+      AC_MSG_ERROR([geometry-requests and cgroups are mutually exclusive options])
+    fi
     AC_MSG_RESULT([yes])
     build_l26_cpuset=yes
     AC_DEFINE(PENABLE_LINUX26_CPUSETS, 1, [Define to enable Linux 2.6 cpusets])
