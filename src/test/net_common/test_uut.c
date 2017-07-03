@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <poll.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <unistd.h>
 
 #include "pbs_error.h"
 #include "net_cache.h"
@@ -144,6 +147,25 @@ START_TEST(test_socket_wait_for_write)
   }
 END_TEST
 
+START_TEST(test_get_local_address)
+  {
+  int rc;
+  struct sockaddr_in new_sockaddr;
+  char hostname[NI_MAXHOST];
+  char hbuf[NI_MAXHOST];
+
+  gethostname(hostname, sizeof(hostname));
+
+  rc = get_local_address(new_sockaddr);
+  fail_unless(rc == PBSE_NONE);
+
+  rc = getnameinfo((struct sockaddr*)&new_sockaddr, sizeof(new_sockaddr), hbuf, sizeof(hbuf), NULL, 0, 0);
+
+  fail_unless(rc == 0);
+  fail_unless(strncmp(hostname, hbuf, NI_MAXHOST) == 0);
+  }
+END_TEST
+
 Suite *net_common_suite(void)
   {
   Suite *s = suite_create("net_common_suite methods");
@@ -169,6 +191,10 @@ Suite *net_common_suite(void)
 
   tc_core = tcase_create("test_socket_wait_for_write");
   tcase_add_test(tc_core, test_socket_wait_for_write);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_local_address");
+  tcase_add_test(tc_core, test_get_local_address);
   suite_add_tcase(s, tc_core);
 
   return s;
