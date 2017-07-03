@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <poll.h>
 #include "lib_ifl.h"
+#include "lib_net.h"
 
 
 #include "port_forwarding.h"
@@ -335,6 +336,9 @@ int x11_connect_display(
   char buf[1024], *cp;
 
   struct addrinfo hints, *ai, *aitop;
+#ifdef BIND_OUTBOUND_SOCKETS
+  struct sockaddr_in      local;
+#endif
 
   char strport[NI_MAXSERV];
 
@@ -413,6 +417,14 @@ int x11_connect_display(
     return -1;
     }
 
+#ifdef BIND_OUTBOUND_SOCKETS
+  if (get_local_address(local) != PBSE_NONE)
+    {
+    fprintf(stderr, "could not determine local IP address: %s", strerror(errno));
+    return(-1);
+    }
+#endif
+
   for (ai = aitop; ai; ai = ai->ai_next)
     {
     /* Create a socket. */
@@ -423,6 +435,19 @@ int x11_connect_display(
       fprintf(stderr, "socket: %.100s", strerror(errno));
       continue;
       }
+
+#ifdef BIND_OUTBOUND_SOCKETS
+    /* Bind to the IP address associated with the hostname, in case there are
+     * muliple possible source IPs for this destination.*/
+
+    if (bind(sock, (struct sockaddr *)&local, sizeof(sockaddr_in)))
+      {
+      fprintf(stderr, "could not bind local socket: %s", strerror(errno));
+      close(sock);
+      continue;
+      }
+
+#endif
 
     /* Connect it to the display. */
     if (connect(sock, ai->ai_addr, ai->ai_addrlen) < 0)

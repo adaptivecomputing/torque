@@ -205,12 +205,21 @@ int socket_get_tcp_priv()
   int                priv_port = 0;
   int                flags;
 #endif
-  
-  memset(&local, 0, sizeof(struct sockaddr_in));
-  local.sin_family = AF_INET;
-  
+
   if ((local_socket = socket_get_tcp()) < 0)
     return(-1);
+
+#ifdef BIND_OUTBOUND_SOCKETS
+  if (get_local_address(local) != PBSE_NONE)
+    {
+    close(local_socket);
+    return(-1);
+    }
+#else
+  memset(&local, 0, sizeof(struct sockaddr_in));
+  local.sin_family = AF_INET;
+#endif
+
 
 #ifndef NOPRIVPORTS
   /* According to the notes in the previous code:
@@ -1030,4 +1039,49 @@ int connect_to_trqauthd(
   return(rc);
   }
 
-  
+
+/*
+ * get_local_address() - lookup the local IP address associated with the local,
+ * public hostname.
+ *
+ * This function will cache the IP address in each process to speed up
+ * frequent lookups.
+ */
+int get_local_address(
+
+  struct sockaddr_in &new_sockaddr)
+
+  {
+  static struct addrinfo   *local_addr_info = NULL;
+  struct addrinfo           hints;
+  int                       rc;
+  char                      hostname[PBS_MAXHOSTNAME];
+  hostname[PBS_MAXHOSTNAME - 1] = '\0';
+
+  // If we already have the local address cached, return (copy) that value.
+  if (local_addr_info != NULL)
+    {
+    new_sockaddr = *((sockaddr_in*)local_addr_info->ai_addr);
+
+    return PBSE_NONE;
+    }
+
+  /* Bind to the IP address associated with the hostname, in case there are
+   * muliple possible source IPs for this destination.*/
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+
+  gethostname(hostname, sizeof(hostname));
+
+  rc = getaddrinfo(hostname, NULL, &hints, &local_addr_info);
+  if (rc != 0)
+    {
+    return(rc);
+    }
+
+  new_sockaddr = *((sockaddr_in*)local_addr_info->ai_addr);
+
+  return PBSE_NONE;
+  }
+

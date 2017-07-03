@@ -331,6 +331,19 @@ int trq_simple_connect(
   int                  optval = 1;
   std::string          server(server_name);
 
+#ifdef BIND_OUTBOUND_SOCKETS
+  struct sockaddr_in   local;
+
+  /* Bind to the IP address associated with the hostname, in case there are
+   * muliple possible source IPs for this destination.*/
+  if (get_local_address(local) != PBSE_NONE)
+    {
+    fprintf(stderr, "could not determine local IP address: %s", strerror(errno));
+    return(PBSE_SYSTEM);
+    }
+
+#endif
+
   memset(&hints, 0, sizeof(hints));
   /* set the hints so we get a STREAM socket */
   hints.ai_family = AF_UNSPEC; /* allow for IPv4 or IPv6 */
@@ -364,6 +377,19 @@ int trq_simple_connect(
       close(sock);
       continue;
       }
+
+#ifdef BIND_OUTBOUND_SOCKETS
+
+    rc = bind(sock, (struct sockaddr *)&local, sizeof(sockaddr_in));
+    if (rc != 0)
+      {
+      fprintf(stderr, "could not bind local socket: %s", strerror(errno));
+      rc = PBSE_SYSTEM;
+      close(sock);
+      continue;
+      }
+
+#endif
 
     rc = connect(sock, addr_info->ai_addr, addr_info->ai_addrlen);
     if (rc != 0)

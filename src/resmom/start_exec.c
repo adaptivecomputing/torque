@@ -100,6 +100,9 @@ extern "C"
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #if IBM_SP2==2 /* IBM SP with PSSP 3.1 */
   #include <st_client.h>
 #endif /* IBM SP */
@@ -803,6 +806,10 @@ int open_demux(
   torque_socklen_t slen;
   unsigned short local_port;
 
+#ifdef BIND_OUTBOUND_SOCKETS
+  struct sockaddr_in    local;
+#endif
+
   memset(&remote, 0, sizeof(remote));
   remote.sin_addr.s_addr = addr;
   remote.sin_port = htons((unsigned short)port);
@@ -818,6 +825,30 @@ int open_demux(
 
     return(-1);
     }
+
+#ifdef BIND_OUTBOUND_SOCKETS
+  /* Bind to the IP address associated with the hostname, in case there are
+   * muliple possible source IPs for this destination.*/
+
+  if (get_local_address(local) != PBSE_NONE)
+    {
+    sprintf(log_buffer, "could not determine local IP address: %s", strerror(errno));
+    log_err(errno, __func__, log_buffer);
+
+    close(sock);
+    return(-1);
+    }
+
+  if (bind(sock, (struct sockaddr *)&local, sizeof(local)))
+    {
+    sprintf(log_buffer, "could not bind local socket: %s", strerror(errno));
+    log_err(errno, __func__, log_buffer);
+
+    close(sock);
+    return(-1);
+    }
+
+#endif
 
   for (i = 0;i < RETRY;i++)
     {
