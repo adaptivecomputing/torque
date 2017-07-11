@@ -3,12 +3,15 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "pbs_config.h"
+#include "batch_request.h"
 #include "pbs_job.h"
 #include "pbs_error.h"
 #include "test_requests.h"
 
 void string_replchar(const char*, char, char);
 void determine_spooldir(std::string &spooldir, job *pjob);
+batch_request *get_std_file_info(job*);
 
 extern char *TNoSpoolDirList[];
 extern char *path_spool;
@@ -64,6 +67,24 @@ START_TEST(test_string_replchar)
   }
 END_TEST
 
+START_TEST(test_get_std_file_info)
+  {
+  job            myjob;
+  batch_request *brp;
+
+  memset(&myjob, 0, sizeof(job));
+
+  // both stdout and stderr are to be kept so don't copy
+  myjob.ji_wattr[JOB_ATR_keep].at_val.at_str = strdup("eo");
+
+  brp = get_std_file_info(&myjob);
+  fail_unless(brp != NULL);
+
+  // now check for empty list (expect no copy requests)
+  fail_unless(brp->rq_ind.rq_cpyfile.rq_pair.ll_next == brp->rq_ind.rq_cpyfile.rq_pair.ll_prior);
+  }
+END_TEST
+
 
 Suite *requests_suite(void)
   {
@@ -74,6 +95,10 @@ Suite *requests_suite(void)
 
   tc_core = tcase_create("test_determine_spooldir");
   tcase_add_test(tc_core, test_determine_spooldir);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_std_file_info");
+  tcase_add_test(tc_core, test_get_std_file_info);
   suite_add_tcase(s, tc_core);
 
   return s;

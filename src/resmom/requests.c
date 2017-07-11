@@ -4397,6 +4397,15 @@ batch_request *get_std_file_info(
       copy_stdout = false;
     }
 
+  // if files are to be kept, don't copy since they are already at their destination
+  if (pjob->ji_wattr[JOB_ATR_keep].at_val.at_str != NULL)
+    {
+    if (strstr(pjob->ji_wattr[JOB_ATR_keep].at_val.at_str, "o"))
+      copy_stdout = false;
+    if (strstr(pjob->ji_wattr[JOB_ATR_keep].at_val.at_str, "e"))
+      copy_stderr = false;
+    }
+
   preq = initialize_stageout_request(pjob);
   struct rq_cpyfile *pcf = &preq->rq_ind.rq_cpyfile;
     
