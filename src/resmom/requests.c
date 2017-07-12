@@ -4391,6 +4391,15 @@ batch_request *get_std_file_info(
       copy_stdout = false;
     }
 
+  // if files are to be kept, don't copy since they are already at their destination
+  if (pjob->get_str_attr(JOB_ATR_keep) != NULL)
+    {
+    if (pjob->get_str_attr(JOB_ATR_keep), "o")
+      copy_stdout = false;
+    if (pjob->get_str_attr(JOB_ATR_keep), "e")
+      copy_stderr = false;
+    }
+
   preq = initialize_stageout_request(pjob);
   struct rq_cpyfile *pcf = &preq->rq_ind.rq_cpyfile;
     
