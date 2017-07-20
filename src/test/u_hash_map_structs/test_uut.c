@@ -34,12 +34,18 @@ START_TEST(test_hash_priority_add_or_exit)
   hash_priority_add_or_exit(&map, "planet", "nalthis", SCRIPT_DATA);
 
   job_data *stored;
-  fail_unless(hash_find(&map, "planet", &stored) == 1);
+  fail_unless(hash_find(&map, "planet", &stored) == TRUE);
   fail_unless(stored->value == "sel"); // command line is higher priority than script
   
   hash_priority_add_or_exit(&map, "planet", "roshar", ENV_DATA);
-  fail_unless(hash_find(&map, "planet", &stored) == 1);
+  fail_unless(hash_find(&map, "planet", &stored) == TRUE);
   fail_unless(stored->value == "roshar"); // environment data is higher priority than command line
+ 
+  // insert a duplicate item
+  char *planet_name = strdup("mars");
+  hash_priority_add_or_exit(&map, "planet", planet_name, ENV_DATA);
+  fail_unless(hash_find(&map, "planet", &stored) == TRUE);
+  fail_unless(stored->value == planet_name); // should retrieve lastest entry added
   }
 END_TEST
 

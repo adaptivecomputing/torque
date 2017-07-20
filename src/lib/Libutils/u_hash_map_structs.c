@@ -121,7 +121,7 @@ void hash_priority_add_or_exit(
   job_data_container *head,
   const char         *name,
   const char         *value,
-  int                 var_type)
+  int                 var_type) // lower values have higher priority (see "_DATA" suffixed macros in pbs_contants.h)
 
   {
   bool      should_add = true;
@@ -130,7 +130,8 @@ void hash_priority_add_or_exit(
   if (old_item != NULL)
     {
     // Only call insert if we have priority over the old item
-    if (var_type >= old_item->var_type)
+    // Note that items with the same priority will be added
+    if (var_type > old_item->var_type)
       should_add = false;
     }
 
