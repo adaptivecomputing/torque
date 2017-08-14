@@ -1988,6 +1988,7 @@ int cleanup_recovered_arrays()
   char       arrayid[PBS_MAXSVRJOBID+1];
   all_arrays_iterator   *iter = NULL;
   int        rc = PBSE_NONE;
+  char       log_buf[LOCAL_LOG_BUF_SIZE];
 
   while ((pa = next_array(&iter)) != NULL)
     {
@@ -2032,6 +2033,10 @@ int cleanup_recovered_arrays()
 
       if (job_template_exists == FALSE)
         {
+        snprintf(log_buf, sizeof(log_buf), "Cleaning up job array %s of size %d that could not be built during ini    t.",
+            arrayid, pa->ai_qs.array_size);
+        log_event(PBSEVENT_DEBUG | PBSEVENT_FORCE, PBS_EVENTCLASS_JOB, __func__, log_buf);
+
         for (int i = 0; i < pa->ai_qs.array_size; i++)
           {
           if (pa->job_ids[i] != NULL)
@@ -2042,6 +2047,10 @@ int cleanup_recovered_arrays()
               svr_job_purge(pjob);
 
               pa = get_array(arrayid);
+              if (pa == NULL)
+                {
+                break;
+                }
               }
             }
           }
@@ -2049,6 +2058,13 @@ int cleanup_recovered_arrays()
         std::string array_id(pa->ai_qs.parent_id);
         unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
         array_delete(array_id.c_str());
+        if (pa != NULL)
+          {
+          std::string array_id(pa->ai_qs.parent_id);
+          unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+          array_delete(array_id.c_str());
+          }
+
         continue;
         }
       else
