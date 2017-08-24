@@ -599,7 +599,10 @@ bool Socket::spread_place(
 
       for (unsigned int i = 0; i < this->chips.size(); i++)
         {
-        per_numa.adjust_for_remainder(numa_remainder);
+        if (c == 0)
+          {
+          per_numa.adjust_for_remainder(numa_remainder);
+          }
         if (this->chips[i].spread_place(r, task_alloc, per_numa, remainder))
           {
           placed = true;
