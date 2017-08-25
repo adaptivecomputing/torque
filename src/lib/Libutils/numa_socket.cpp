@@ -583,26 +583,23 @@ bool Socket::spread_place(
       numa_nodes_required = this->chips.size();
       this->socket_exclusive = true;
       }
-
+    
+    // In order to evenly spread out resources across nodes, we divide number of nodes
+    // by resources required and are left with number of resources per node plus a
+    // remainder. As we iterate over the nodes and allocate resources, we take one
+    // resource from the remainder every step until there is nothing left in the remainder.
+    allocation numa_remainder(remaining);
+    numa_remainder.adjust_for_spread(numa_nodes_required, true);
+    
     for (int c = 0; c < numa_nodes_required; c++)
       {
       allocation per_numa(remaining);
-      allocation numa_remainder(remaining);
-
-      if (numa_nodes_required == 1)
-        numa_remainder.clear();
-      else
-        {
-        per_numa.adjust_for_spread(numa_nodes_required, false);
-        numa_remainder.adjust_for_spread(numa_nodes_required, true);
-        }
-
+      per_numa.adjust_for_spread(numa_nodes_required, false);
+      
       for (unsigned int i = 0; i < this->chips.size(); i++)
         {
-        if (c == 0)
-          {
-          per_numa.adjust_for_remainder(numa_remainder);
-          }
+        per_numa.adjust_for_remainder(numa_remainder);
+        
         if (this->chips[i].spread_place(r, task_alloc, per_numa, remainder))
           {
           placed = true;
