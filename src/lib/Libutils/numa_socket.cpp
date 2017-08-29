@@ -596,10 +596,13 @@ bool Socket::spread_place(
       allocation per_numa(remaining);
       per_numa.adjust_for_spread(numa_nodes_required, false);
       
-      for (unsigned int i = 0; i < this->chips.size(); i++)
+      per_numa.adjust_for_remainder(numa_remainder);
+
+      // This inner loop is for the case where we are not reserving the whole
+      // socket, but a single chip. In the case of a single chip, we iterate
+      // over all chips to see if there is a chip which is completely free.
+      for (unsigned int i = c; i < this->chips.size(); i++)
         {
-        per_numa.adjust_for_remainder(numa_remainder);
-        
         if (this->chips[i].spread_place(r, task_alloc, per_numa, remainder))
           {
           placed = true;
