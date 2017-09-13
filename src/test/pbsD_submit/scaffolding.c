@@ -18,6 +18,12 @@ int PBSD_commit(int connect, char *jobid)
   exit(1);
   }
 
+int PBSD_commit2(int connect, char *jobid)
+  {
+  fprintf(stderr, "The call to PBSD_commit needs to be mocked!!\n");
+  exit(1);
+  }
+
 int PBSD_rdytocmt(int connect, char *jobid)
   {
   fprintf(stderr, "The call to PBSD_rdytocmt needs to be mocked!!\n");
