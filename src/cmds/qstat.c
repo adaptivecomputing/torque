@@ -2828,6 +2828,16 @@ int process_commandline_opts(
           TShowAbout_exit();
           }
 
+        if ((optarg != NULL) && !strcmp(optarg, "xml"))
+          {
+          DisplayXML = true;
+
+          /* We want to return all attributes */
+          attrib = NULL;
+
+          break;
+          }
+
         /* unexpected '--' option received */
 
         errflg = 1;
