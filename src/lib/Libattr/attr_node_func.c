@@ -547,7 +547,7 @@ int encode_ntype(
  * encode_jobs
  * Once the node's struct jobinfo pointer is put in the data area of
  * temporary pbs_attribute containing a pointer to the parent node, this
- * function will walk the list of jobs and generate the comma separated
+ * function will walk the list of jobs and generate the plus separated
  * list to send back via an svrattrl structure.
  * Returns  <0       an error encountered; value is negative of an error code
  *           0       ok, encode happened and svrattrl created and linked in,
@@ -593,7 +593,7 @@ int encode_jobs(
     populate_range_string_from_slot_tracker(jui.est, range_str);
 
     if (first == false)
-      job_str += ",";
+      job_str += "+";
 
     job_str += range_str;
     job_str += "/";
