@@ -3523,7 +3523,7 @@ void handle_prologs(
       }
     }
 
-  pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_PROLOGUES_RAN);
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_PROLOGUES_RAN;
 
   } /* END handle_prologs() */
 
@@ -7394,7 +7394,7 @@ int start_exec(
     execute_presetup_prologue(pjob);
     }
 
-  pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_PROLOGUES_RAN);
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_PROLOGUES_RAN;
 
   /* start_exec only executed on mother superior */
   pjob->ji_nodeid = 0; /* I'm MS */

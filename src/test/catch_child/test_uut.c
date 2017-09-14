@@ -206,12 +206,12 @@ START_TEST(test_epilogues_run_without_prologues)
   {
   mom_job *pjob = new mom_job();
 
-  pjob->set_svrflags(JOB_SVFLG_PROLOGUES_RAN);
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_PROLOGUES_RAN;
   called_epilogue = false;
   run_epilogues(pjob, 0, 0);
   ck_assert(called_epilogue);
 
-  pjob->set_svrflags(0x0);
+  pjob->ji_qs.ji_svrflags = 0x0;
   called_epilogue = false;
   run_epilogues(pjob, 0, 0);
   ck_assert(!called_epilogue);

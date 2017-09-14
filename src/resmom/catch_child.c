@@ -1070,7 +1070,7 @@ int run_epilogues(
   int       rc;
 
 
-  if (!(pjob->get_svrflags() & JOB_SVFLG_PROLOGUES_RAN))
+  if (!(pjob->ji_qs.ji_svrflags & JOB_SVFLG_PROLOGUES_RAN))
     {
     log_err(-1, __func__, "prologues were not run; skipping epilogues");
     return(PBSE_NONE);
