@@ -25,6 +25,7 @@
 int server_down;
 int called_open_socket = 0;
 int called_fork_me = 0;
+bool called_epilogue = false;
 bool check_rur = true;
 
 char         mom_alias[PBS_MAXHOSTNAME + 1];
@@ -1162,6 +1163,8 @@ char *get_local_script_path(job *pjob, char *base)
 
 int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type, int deletejob)
   {
+  called_epilogue = true;
+
   return 1;
   }
 

@@ -1156,6 +1156,7 @@ class send_job_request
 //#define JOB_SVFLG_RescAssn             0x2000 // Not used on the mom
 //#define JOB_SVFLG_CHECKPOINT_COPIED    0x4000 // Not used on the mom
 #define JOB_SVFLG_INTERMEDIATE_MOM       0x8000 // This is for job_radix. I am an intermediate mom
+#define JOB_SVFLG_PROLOGUES_RAN          0x10000 // job has run prologues
 #endif
 
 
