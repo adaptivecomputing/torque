@@ -209,5 +209,8 @@ int rmdir_ext(const char *dir, int retry_limit = 20);
 int unlink_ext(const char *filename, int retry_limit = 20);
 int mkdir_wrapper(const char *pathname, mode_t mode);
 
+/* from parse_config.c */
+int setbool(const char *value);
+
 #endif /* END #ifndef UTILS_H */
  
