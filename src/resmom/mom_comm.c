@@ -8880,6 +8880,8 @@ int run_prologue_scripts(
   ret = PBSE_NONE;
 
 done:
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_PROLOGUES_RAN;
+
   return(ret);
   } /* END run_prologue_scripts() */
 
