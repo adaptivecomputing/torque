@@ -13,7 +13,7 @@ bool non_mother_superior_cleanup(job *pjob);
 bool mother_superior_cleanup(job *pjob, int limit, int *found);
 void *obit_reply(void *new_sock);
 hnodent *get_node(job *pjob, tm_node_id nodeid);
-int run_epilogues(mom_job *pjob, int i_am_ms, int deletejob);
+int run_epilogues(job *pjob, int i_am_ms, int deletejob);
 
 extern int termin_child;
 extern int server_down;
@@ -204,7 +204,7 @@ END_TEST
 
 START_TEST(test_epilogues_run_without_prologues)
   {
-  mom_job *pjob = new mom_job();
+  job *pjob = (job *)calloc(1, sizeof(job));
 
   pjob->ji_qs.ji_svrflags |= JOB_SVFLG_PROLOGUES_RAN;
   called_epilogue = false;

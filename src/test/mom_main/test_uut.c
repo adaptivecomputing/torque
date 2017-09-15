@@ -22,6 +22,8 @@ extern bool ForceServerUpdate;
 extern int MOMCudaVisibleDevices;
 extern bool daemonize_mom;
 
+int PBSNodeCheckProlog;
+int PBSNodeCheckEpilog;
 time_t pbs_tcp_timeout;
 unsigned long setcudavisibledevices(const char *);
 void set_report_mom_cuda_visible_devices(std::stringstream &output, char *curr);
