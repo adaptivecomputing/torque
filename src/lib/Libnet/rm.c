@@ -207,6 +207,7 @@ int openrm(
 
     struct sockaddr_in  addr;
     struct addrinfo    *addr_info;
+    struct sockaddr_in  local;
 
     if (pbs_getaddrinfo(host, NULL, &addr_info) != 0)
       {
@@ -216,18 +217,36 @@ int openrm(
       return(ENOENT * -1);
       }
 
-    memset(&addr, '\0', sizeof(addr));
+#ifdef BIND_OUTBOUND_SOCKETS
+    /* Bind to the IP address associated with the hostname, in case there are
+     * muliple possible source IPs for this destination.*/
+    if (get_local_address(local) != PBSE_NONE)
+      {
+      DBPRT(("could not determine local IP address: %s", strerror(errno)));
+      close(stream);
+      return(-1);
+      }
 
-    addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+#else
+
+    memset(&local, 0, sizeof(struct sockaddr_in));
+
+    local.sin_family = AF_INET;
+
+#endif
 
     while (retries++ < MAX_RETRIES)
       {
-      rc = bindresvport(stream, &addr);
+      /* Attempt to bind to any reserved port that is free. If BIND_OUTBOUND_SOCKETS
+       * is defined, we need to make sure the socket is bound to a specific
+       * local IP address - passed in using the `local` structure.
+       */
+      rc = bindresvport(stream, &local);
       if (rc != 0)
         {
         if (retries >= MAX_RETRIES)
           {
+          DBPRT(("could not bind local socket: %s", strerror(errno)));
           close(stream);
           return(-1*errno);
           }
