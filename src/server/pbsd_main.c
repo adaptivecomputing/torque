@@ -111,6 +111,7 @@
 #include "../lib/Liblog/pbs_log.h"
 #include "../lib/Liblog/log_event.h"
 #include "../lib/Liblog/chk_file_sec.h"
+#include "../lib/Liblog/setup_env.h"
 #include "lib_ifl.h"
 #include "server_limits.h"
 #include "attribute.h"
@@ -171,6 +172,7 @@ extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
 void stream_eof(int, u_long, uint16_t, int);
 extern void scheduler_close();
+extern char *build_path(char *, const char *, const char *);
 
 #ifndef MAX_PATH_LEN
 #define MAX_PATH_LEN 256
@@ -1619,6 +1621,21 @@ int main(
   memset(&server, 0, sizeof(struct server));
   log_init(NULL, NULL);
   initialize_globals();
+
+  /* The following is code to reduce security risks */
+  if (use_path_home == true)
+    {
+    path_pbs_environment = build_path(path_home, "pbs_environment", "");
+    if (setup_env(path_pbs_environment) == -1)
+      {
+      exit(1);
+      }
+    }
+  else if (setup_env(PBS_ENVIRON) == -1)
+    {
+    exit(1);
+    }
+
   set_globals_from_environment();
 
   /* set standard umask */
