@@ -4912,6 +4912,18 @@ int setup_program_environment(void)
 
   umask(022);
 
+  if (getenv("PBSLOGLEVEL") != NULL)
+    {
+    LOGLEVEL = (int)strtol(getenv("PBSLOGLEVEL"), NULL, 0);
+    }
+
+  if (getenv("PBSDEBUG") != NULL)
+    {
+    DEBUGMODE = 1;
+
+    daemonize_mom = false;
+    }
+
   memset(TMOMStartInfo, 0, sizeof(pjobexec_t)*TMAX_JE);
 
   /* modify program environment */
@@ -4927,18 +4939,6 @@ int setup_program_environment(void)
   else if ((num_var_env = setup_env(PBS_ENVIRON)) == -1)
     {
     exit(1);
-    }
-
-  if (getenv("PBSLOGLEVEL") != NULL)
-    {
-    LOGLEVEL = (int)strtol(getenv("PBSLOGLEVEL"), NULL, 0);
-    }
-
-  if (getenv("PBSDEBUG") != NULL)
-    {
-    DEBUGMODE = 1;
-
-    daemonize_mom = false;
     }
 
   c = getgid();

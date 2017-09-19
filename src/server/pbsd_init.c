@@ -2270,6 +2270,19 @@ int pbsd_init(
     memset(&hints, 0, sizeof(hints));
     hints.ai_flags = AI_CANONNAME;
 
+    /* The following is code to reduce security risks */
+    if (use_path_home == true)
+      {
+      path_pbs_environment = build_path(path_home, "pbs_environment", "");
+      if (setup_env(path_pbs_environment) == -1)
+        {
+        return(-1);
+        }
+      }
+    else if (setup_env(PBS_ENVIRON) == -1)
+      {
+      return(-1);
+      }
 
     gid = getgid();
 
