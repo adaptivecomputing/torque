@@ -484,11 +484,6 @@ static int localmom(void)
 
   struct linger         ltime;
 
-#ifdef BIND_OUTBOUND_SOCKETS
-  struct sockaddr_in     local;
-#endif
-
-
   if (local_conn >= 0)
     {
     return(local_conn); /* already have open connection */
@@ -532,27 +527,6 @@ static int localmom(void)
       }
 
 #endif
-
-#ifdef BIND_OUTBOUND_SOCKETS
-
-    /* Bind to the IP address associated with the hostname, in case there are
-     * muliple possible source IPs for this destination.*/
-
-    if (get_local_address(local) != 0)
-      {
-      TM_DBPRT(("tm_init: unable to determine local IP address"));
-      close(sock);
-      return(-1);
-      }
-
-    if (bind(sock, (struct sockaddr *)&local, sizeof(sockaddr_in)) != 0)
-      {
-      TM_DBPRT(("tm_init: unable to bind to local IP address"));
-      close(sock);
-      return(-1);
-      }
-#endif
-
 
     /* make sure data goes out */
 
