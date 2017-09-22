@@ -839,13 +839,17 @@ int open_demux(
     return(-1);
     }
 
-  if (bind(sock, (struct sockaddr *)&local, sizeof(local)))
+  // do not bind if lochost addr
+  if (!islocalhostaddr(&local))
     {
-    sprintf(log_buffer, "could not bind local socket: %s", strerror(errno));
-    log_err(errno, __func__, log_buffer);
+    if (bind(sock, (struct sockaddr *)&local, sizeof(local)))
+      {
+      sprintf(log_buffer, "could not bind local socket: %s", strerror(errno));
+      log_err(errno, __func__, log_buffer);
 
-    close(sock);
-    return(-1);
+      close(sock);
+      return(-1);
+      }
     }
 
 #endif

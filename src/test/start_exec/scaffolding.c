@@ -1117,6 +1117,7 @@ int ppoll(struct pollfd *fds, nfds_t nfds, const struct timespec *timeout, const
   return(0);
   }
 
+<<<<<<< HEAD
 job::job() 
   
   {
@@ -1504,4 +1505,20 @@ int job::set_ll_attr(int index, long long ll)
   this->ji_wattr[index].at_val.at_ll = ll;
   this->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
   return(PBSE_NONE);
+  }
+
+int get_local_address(struct sockaddr_in &new_sockaddr)
+  {
+  // return 127.0.0.1
+  new_sockaddr.sin_addr.s_addr = (uint32_t)2130706433;
+  return(0);
+  }
+
+bool islocalhostaddr(struct sockaddr_in *saip)
+  {
+  if (saip == NULL)
+    return(false);
+
+  // is 127.0.0.1?
+  return((saip->sin_addr.s_addr == (uint32_t)((127 << 24) + 1)));
   }
