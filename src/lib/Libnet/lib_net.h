@@ -53,6 +53,7 @@ int socket_close(int socket);
 int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **ppAddrInfoOut);
 int connect_to_trqauthd(int *sock);
 int get_local_address(struct sockaddr_in &new_sockaddr);
+bool islocalhostaddr(struct sockaddr_in*);
 
 
 /* from file server_core.c */

@@ -1039,6 +1039,18 @@ int connect_to_trqauthd(
   return(rc);
   }
 
+/*
+ * islocalhostaddr() - check if sockaddr_in holds the locahost address
+ *
+ */
+bool islocalhostaddr(struct sockaddr_in *saip)
+  {
+  if (saip == NULL)
+    return(false);
+
+  // is 127.0.0.1?
+  return((saip->sin_addr.s_addr == (uint32_t)((127 << 24) + 1)));
+  }
 
 /*
  * get_local_address() - lookup the local IP address associated with the local,

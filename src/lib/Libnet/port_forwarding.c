@@ -440,11 +440,15 @@ int x11_connect_display(
     /* Bind to the IP address associated with the hostname, in case there are
      * muliple possible source IPs for this destination.*/
 
-    if (bind(sock, (struct sockaddr *)&local, sizeof(sockaddr_in)))
+    // don't bind localhost addr
+    if (!islocalhostaddr(&local))
       {
-      fprintf(stderr, "could not bind local socket: %s", strerror(errno));
-      close(sock);
-      continue;
+      if (bind(sock, (struct sockaddr *)&local, sizeof(sockaddr_in)))
+        {
+        fprintf(stderr, "could not bind local socket: %s", strerror(errno));
+        close(sock);
+        continue;
+        }
       }
 
 #endif

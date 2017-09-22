@@ -380,13 +380,17 @@ int trq_simple_connect(
 
 #ifdef BIND_OUTBOUND_SOCKETS
 
-    rc = bind(sock, (struct sockaddr *)&local, sizeof(sockaddr_in));
-    if (rc != 0)
+    // only bind if not localhost
+    if (!islocalhostaddr(&local))
       {
-      fprintf(stderr, "could not bind local socket: %s", strerror(errno));
-      rc = PBSE_SYSTEM;
-      close(sock);
-      continue;
+      rc = bind(sock, (struct sockaddr *)&local, sizeof(sockaddr_in));
+      if (rc != 0)
+        {
+        fprintf(stderr, "could not bind local socket: %s", strerror(errno));
+        rc = PBSE_SYSTEM;
+        close(sock);
+        continue;
+        }
       }
 
 #endif
