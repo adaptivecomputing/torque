@@ -47,6 +47,8 @@ void init_attr_def()
 START_TEST(test_issue_signal)
   {
   job pjob;
+
+  memset(&pjob, 0, sizeof(job));
   strcpy(pjob.ji_qs.ji_jobid, "1.nalthis");
   job *ptr = &pjob;
 
