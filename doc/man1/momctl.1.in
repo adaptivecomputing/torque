@@ -1,0 +1,182 @@
+.\"         OpenPBS (Portable Batch System) v2.3 Software License
+.\" 
+.\" Copyright (c) 1999-2000 Veridian Information Solutions, Inc.
+.\" All rights reserved.
+.\" 
+.\" ---------------------------------------------------------------------------
+.\" For a license to use or redistribute the OpenPBS software under conditions
+.\" other than those described below, or to purchase support for this software,
+.\" please contact Veridian Systems, PBS Products Department ("Licensor") at:
+.\" 
+.\"    www.OpenPBS.org  +1 650 967-4675                  sales@OpenPBS.org
+.\"                        877 902-4PBS (US toll-free)
+.\" ---------------------------------------------------------------------------
+.\" 
+.\" This license covers use of the OpenPBS v2.3 software (the "Software") at
+.\" your site or location, and, for certain users, redistribution of the
+.\" Software to other sites and locations.  Use and redistribution of
+.\" OpenPBS v2.3 in source and binary forms, with or without modification,
+.\" are permitted provided that all of the following conditions are met.
+.\" After December 31, 2001, only conditions 3-6 must be met:
+.\" 
+.\" 1. Commercial and/or non-commercial use of the Software is permitted
+.\"    provided a current software registration is on file at www.OpenPBS.org.
+.\"    If use of this software contributes to a publication, product, or service
+.\"    proper attribution must be given; see www.OpenPBS.org/credit.html
+.\" 
+.\" 2. Redistribution in any form is only permitted for non-commercial,
+.\"    non-profit purposes.  There can be no charge for the Software or any
+.\"    software incorporating the Software.  Further, there can be no
+.\"    expectation of revenue generated as a consequence of redistributing
+.\"    the Software.
+.\" 
+.\" 3. Any Redistribution of source code must retain the above copyright notice
+.\"    and the acknowledgment contained in paragraph 6, this list of conditions
+.\"    and the disclaimer contained in paragraph 7.
+.\" 
+.\" 4. Any Redistribution in binary form must reproduce the above copyright
+.\"    notice and the acknowledgment contained in paragraph 6, this list of
+.\"    conditions and the disclaimer contained in paragraph 7 in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 
+.\" 5. Redistributions in any form must be accompanied by information on how to
+.\"    obtain complete source code for the OpenPBS software and any
+.\"    modifications and/or additions to the OpenPBS software.  The source code
+.\"    must either be included in the distribution or be available for no more
+.\"    than the cost of distribution plus a nominal fee, and all modifications
+.\"    and additions to the Software must be freely redistributable by any party
+.\"    (including Licensor) without restriction.
+.\" 
+.\" 6. All advertising materials mentioning features or use of the Software must
+.\"    display the following acknowledgment:
+.\" 
+.\"     "This product includes software developed by NASA Ames Research Center,
+.\"     Lawrence Livermore National Laboratory, and Veridian Information
+.\"     Solutions, Inc.
+.\"     Visit www.OpenPBS.org for OpenPBS software support,
+.\"     products, and information."
+.\" 
+.\" 7. DISCLAIMER OF WARRANTY
+.\" 
+.\" THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. ANY EXPRESS
+.\" OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT
+.\" ARE EXPRESSLY DISCLAIMED.
+.\" 
+.\" IN NO EVENT SHALL VERIDIAN CORPORATION, ITS AFFILIATED COMPANIES, OR THE
+.\" U.S. GOVERNMENT OR ANY OF ITS AGENCIES BE LIABLE FOR ANY DIRECT OR INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+.\" LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+.\" OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+.\" LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+.\" NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+.\" EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\" 
+.\" This license will be governed by the laws of the Commonwealth of Virginia,
+.\" without reference to its choice of law rules.
+.if \n(Pb .ig Iq
+.TH momctl 1B "" Local PBS
+.so ../ers/ers.macros
+.Iq
+.SH NAME
+qdel \- Remote shutdown, reconfiguration, diagnostics, and querying of the pbs_mom daemon.
+.SH SYNOPSIS
+momctl [\-c {jobid|all}] [\-C] [\-d {integer|jobid}] [-f file] [\-H host [,host]...] [\-l] [-p port] [-q attrib] -r {file|LOCAL:file} [-s] [-u]
+.SH DESCRIPTION
+The 
+.B momctl
+command allows remote shutdown, reconfiguration, diagnostics, and querying of the pbs_mom daemon.
+.NL
+.SH OPTIONS
+.IP "\-c {jobid|all}" 15
+Make the MOM unaware of the job's existence. It does not clean up any processes associated with the job.
+.IP "\-C" 15
+Cycle pbs_mom (force the MOM to send a status update to pbs_server).
+.NL
+.IP "\-d {integer|jobid}" 15
+Diagnose MOM(s). (For more details, see DIAGNOSE DETAIL below.)
+.NL
+.IP "\-f file" 15
+A file containing only comma or whitespace (space, tab, or new line) delimited hostnames.
+.NL
+.IP "\-h host[,host]..." 15
+A comma separated list of hosts.
+.NL
+.IP "\-l" 15
+Display the layout of the machine as it is understood by Torque.
+.NL
+.IP "\-p port" 15
+The port number for the specified MOM(s).
+.NL
+.IP "\-q attrib" 15
+Query or set attrib, where attrib is a property listed by pbsnodes -a (see QUERY ATTRIBUTES below for a list of attributes). Can also be used to query or set pbs_mom options (see RESOURCES below).
+.NL
+.IP "\-r {file|LOCAL:file}" 15
+Reconfigure MOM(s) with remote or local config file, file. This does not work if $remote_reconfig is not set to true when the MOM is started.
+.NL
+.IP "\-s" 15
+Have the MOM shut itself down gracefully (this includes reporting to server so that pbsnodes marks the node down).
+.NL
+.IP "\-u"
+Update the hardware configuration on pbs_server with a layout from the MOM.
+.NL
+.SH QUERY ATTRIBUTES
+.IP "\fBarch\fP" 4
+node hardware architecture
+.IP "\fBavailmem\fP" 4
+available RAM
+.IP "\fBloadave\fP" 4
+1 minute load average
+.IP "\fBncpus\fP" 4
+number of CPUs available on the system
+.IP "\fBnetload\fP" 4
+total number of bytes transferred over all network interfaces
+.IP "\fBnsessions\fP" 4
+number of sessions active
+.IP "\fBnusers\fP" 4
+number of users active
+.IP "\fBphysmem\fP" 4
+configured RAM
+.IP "\fBsessions\fP" 4
+list of active sessions
+.IP "\fBtotmem\fP" 4
+configured RAM plus configured swap
+.NL
+.SH RESOURCES
+Resource Manager queries can be made with momctl -q options to retrieve and set pbs_mom options. Any configured static resource may be retrieved with a request of the same name. These are resource requests not otherwise documented in the PBS ERS.
+.br
+.IP "\fBcycle\fP" 4
+Forces an immediate MOM cycle.
+.IP "\fBstatus_update_time\fP" 4
+Retrieve or set the $status_update_time parameter.
+.IP "\fBcheck_poll_time\fP" 4
+Retrieve or set the $check_poll_time parameter.
+.IP "\fBconfigversion\fP" 4
+Retrieve the config version.
+.IP "\fBjobstartblocktime\fP" 4.IP "\fB
+Retrieve or set the $jobstartblocktime parameter.
+.IP "\fBenablemomrestart\fP" 4
+Retrieve or set the $enablemomrestart parameter.
+.IP "\fBloglevel\fP" 4
+Retrieve or set the $loglevel parameter.
+.IP "\fBdown_on_error\fP" 4
+Retrieve or set the $down_on_error parameter.
+.IP "\fBdiag0 - diag4\fP" 4
+Retrieves varied diagnostic information.
+.IP "\fBrcpcmd\fP" 4
+Retrieve or set the $rcpcmd parameter.
+.IP "\fBversion\fP" 4
+Retrieves the pbs_mom version.
+.NL
+.SH DIAGNOSE DETAIL
+.IP "\fBLevel 0\fP" 4
+Display the following information: Local hostname, Expected server hostname, Execution version, MOM home directory. MOM config file version (if specified), Duration MOM has been executing, Duration since last request from pbs_server daemon, Duration since last request to pbs_server daemon, RM failure messages (if any), Log verbosity level, Local job list
+.IP "\fBLevel 1\fP" 4
+All information for level 0 plus the following: Interval between updates sent to server, Number of initialization messages sent to pbs_server daemon, Number of initialization messages received from pbs_server daemon, Prolog/epilog alarm time, List of trusted clients
+.IP "\fBLevel 2\fP" 4
+All information from level 1 plus the following: PID, Event alarm status
+.IP "\fBLevel 3\fP" 4
+All information from level 2 plus the following: syslog enabled
+.NL
+.RE
+
