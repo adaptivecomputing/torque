@@ -19,6 +19,7 @@
 #include <poll.h>
 #include "lib_ifl.h"
 #include "lib_net.h"
+#include <vector>
 
 
 #include "port_forwarding.h"
@@ -34,7 +35,7 @@
 
 void port_forwarder(
 
-  struct pfwdsock *socks,
+  std::vector<pfwdsock> *socks,
   int (*connfunc)(char *, long, char *),
   char            *phost,
   int              pport,
@@ -48,51 +49,42 @@ void port_forwarder(
   int                rc;
   struct sockaddr_in from;
   torque_socklen_t   fromlen;
-  struct pollfd     *PollArray;
-
-  
-
-  PollArray = (struct pollfd *)malloc(NUM_SOCKS * sizeof(struct pollfd));
-
-  if (PollArray == NULL)
-    {
-    return; // no memory
-    }
+  std::vector<pollfd> PollArray(NUM_SOCKS);
 
   while (1)
     {
     for (n = 0; n < NUM_SOCKS; n++)
       {
       // clear the entry
-      PollArray[n].fd = -1;
-      PollArray[n].events = 0;
-      PollArray[n].revents = 0;
+      PollArray.at(n).fd = -1;
+      PollArray.at(n).events = 0;
+      PollArray.at(n).revents = 0;
 
-      if (!(socks + n)->active)
+      if (!socks->at(n).active)
         continue;
 
-      if ((socks + n)->listening)
+      if (socks->at(n).listening)
         {
-        PollArray[n].fd = (socks + n)->sock;
-        PollArray[n].events = POLLIN;
+        PollArray.at(n).fd = socks->at(n).sock;
+        PollArray.at(n).events = POLLIN;
         }
       else
         {
-        if ((socks + n)->bufavail < BUF_SIZE)
+        if (socks->at(n).bufavail < BUF_SIZE)
           {
-          PollArray[n].fd = (socks + n)->sock;
-          PollArray[n].events = POLLIN;
+          PollArray.at(n).fd = socks->at(n).sock;
+          PollArray.at(n).events = POLLIN;
           }
 
-        if ((socks + ((socks + n)->peer))->bufavail - (socks + ((socks + n)->peer))->bufwritten > 0)
+        if (socks->at(socks->at(n).peer).bufavail - socks->at(socks->at(n).peer).bufwritten > 0)
           {
-          PollArray[n].fd = (socks + n)->sock;
-          PollArray[n].events |= POLLOUT;
+          PollArray.at(n).fd = socks->at(n).sock;
+          PollArray.at(n).events |= POLLOUT;
           }
         }
       }
 
-    num_events = poll(PollArray, NUM_SOCKS, -1);
+    num_events = poll(&PollArray[0], NUM_SOCKS, -1);
 
     if ((num_events == -1) && (errno == EINTR))
       continue;
@@ -107,30 +99,30 @@ void port_forwarder(
     for (n = 0; (num_events > 0) && (n < NUM_SOCKS); n++)
       {
       // skip entry with no return events
-      if (PollArray[n].revents == 0)
+      if (PollArray.at(n).revents == 0)
         continue;
 
       // decrement the count of events returned
       num_events--;
 
-      if (!(socks + n)->active)
+      if (!socks->at(n).active)
         continue;
 
-      if ((PollArray[n].revents & POLLIN))
+      if ((PollArray.at(n).revents & POLLIN))
         {
-        if ((socks + n)->listening)
+        if (socks->at(n).listening)
           {
           int newsock = 0, peersock = 0;
           fromlen = sizeof(from);
           
-          if ((sock = accept((socks + n)->sock, (struct sockaddr *) & from, &fromlen)) < 0)
+          if ((sock = accept(socks->at(n).sock, (struct sockaddr *) & from, &fromlen)) < 0)
             {
             if ((errno == EAGAIN) || (errno == EWOULDBLOCK) || (errno == EINTR) || (errno == ECONNABORTED))
               continue;
 
-            close((socks + n)->sock);
+            close(socks->at(n).sock);
 
-            (socks + n)->active = 0;
+            socks->at(n).active = 0;
 
             continue;
             }
@@ -139,7 +131,7 @@ void port_forwarder(
 
           for (n2 = 0; n2 < NUM_SOCKS; n2++)
             {
-            if ((socks + n2)->active || (((socks + n2)->peer != 0) && (socks + ((socks + n2)->peer))->active))
+            if (socks->at(n2).active || ((socks->at(n2).peer != 0) && socks->at(socks->at(n2).peer).active))
               continue;
 
             if (newsock == 0)
@@ -150,56 +142,56 @@ void port_forwarder(
               break;
             }
 
-          (socks + newsock)->sock      = (socks + peersock)->remotesock = sock;
-          (socks + newsock)->listening = (socks + peersock)->listening = 0;
-          (socks + newsock)->active    = (socks + peersock)->active    = 1;
-          (socks + newsock)->peer      = (socks + peersock)->sock      = connfunc(phost, pport, EMsg);
-          (socks + newsock)->bufwritten = (socks + peersock)->bufwritten = 0;
-          (socks + newsock)->bufavail  = (socks + peersock)->bufavail  = 0;
-          (socks + newsock)->buff[0]   = (socks + peersock)->buff[0]   = '\0';
-          (socks + newsock)->peer      = peersock;
-          (socks + peersock)->peer     = newsock;
+          socks->at(newsock).sock      = socks->at(peersock).remotesock = sock;
+          socks->at(newsock).listening = socks->at(peersock).listening = 0;
+          socks->at(newsock).active    = socks->at(peersock).active    = 1;
+          socks->at(newsock).peer      = socks->at(peersock).sock      = connfunc(phost, pport, EMsg);
+          socks->at(newsock).bufwritten = socks->at(peersock).bufwritten = 0;
+          socks->at(newsock).bufavail  = socks->at(peersock).bufavail  = 0;
+          socks->at(newsock).buff[0]   = socks->at(peersock).buff[0]   = '\0';
+          socks->at(newsock).peer      = peersock;
+          socks->at(peersock).peer     = newsock;
           }
         else
           {
           /* non-listening socket to be read */
 
           rc = read_ac_socket(
-                 (socks + n)->sock,
-                 (socks + n)->buff + (socks + n)->bufavail,
-                 BUF_SIZE - (socks + n)->bufavail);
+                 socks->at(n).sock,
+                 socks->at(n).buff + socks->at(n).bufavail,
+                 BUF_SIZE - socks->at(n).bufavail);
 
           if (rc < 1)
             {
-            shutdown((socks + n)->sock, SHUT_RDWR);
-            close((socks + n)->sock);
-            (socks + n)->active = 0;
+            shutdown(socks->at(n).sock, SHUT_RDWR);
+            close(socks->at(n).sock);
+            socks->at(n).active = 0;
             }
           else
             {
-            (socks + n)->bufavail += rc;
+            socks->at(n).bufavail += rc;
             }
           }
         } /* END if read */
 
-      if ((PollArray[n].revents & POLLOUT))
+      if ((PollArray.at(n).revents & POLLOUT))
         {
-        int peer = (socks + n)->peer;
+        int peer = socks->at(n).peer;
 
         rc = write_ac_socket(
-               (socks + n)->sock,
-               (socks + peer)->buff + (socks + peer)->bufwritten,
-               (socks + peer)->bufavail - (socks + peer)->bufwritten);
+               socks->at(n).sock,
+               socks->at(peer).buff + socks->at(peer).bufwritten,
+               socks->at(peer).bufavail - socks->at(peer).bufwritten);
 
         if (rc < 1)
           {
-          shutdown((socks + n)->sock, SHUT_RDWR);
-          close((socks + n)->sock);
-          (socks + n)->active = 0;
+          shutdown(socks->at(n).sock, SHUT_RDWR);
+          close(socks->at(n).sock);
+          socks->at(n).active = 0;
           }
         else
           {
-          (socks + peer)->bufwritten += rc;
+          socks->at(peer).bufwritten += rc;
           }
         } /* END if write */
       } /* END foreach fd */
@@ -210,22 +202,22 @@ void port_forwarder(
         {
         int peer;
 
-        if (!(socks + n)->active || (socks + n)->listening)
+        if (!socks->at(n).active || socks->at(n).listening)
           continue;
 
-        peer = (socks + n)->peer;
+        peer = socks->at(n).peer;
 
-        if ((socks + n)->bufwritten == (socks + n)->bufavail)
+        if (socks->at(n).bufwritten == socks->at(n).bufavail)
           {
-          (socks + n)->bufwritten = (socks + n)->bufavail = 0;
+          socks->at(n).bufwritten = socks->at(n).bufavail = 0;
           }
 
-        if (!(socks + peer)->active && ((socks + peer)->bufwritten == (socks + peer)->bufavail))
+        if (!socks->at(peer).active && (socks->at(peer).bufwritten == socks->at(peer).bufavail))
           {
-          shutdown((socks + n)->sock, SHUT_RDWR);
-          close((socks + n)->sock);
+          shutdown(socks->at(n).sock, SHUT_RDWR);
+          close(socks->at(n).sock);
 
-          (socks + n)->active = 0;
+          socks->at(n).active = 0;
           }
         }
       }
@@ -233,7 +225,7 @@ void port_forwarder(
 
     // never executed but should satisfy code profilers looking
     // for a malloc/free pairing
-    free(PollArray);
+    delete(socks);
   }     /* END port_forwarder() */
 
 

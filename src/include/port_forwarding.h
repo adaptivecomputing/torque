@@ -6,6 +6,8 @@
 #define MAX_DISPLAYS 500
 #define X11OFFSET 50
 
+#include<vector>
+
 
 /* derived from XF4/xc/lib/dps/Xlibnet.h */
 #ifndef X_UNIX_PATH
@@ -33,7 +35,7 @@ struct pfwdsock
   char buff[BUF_SIZE];
   };
 
-void port_forwarder(struct pfwdsock *, int(*connfunc)(char *phost, long pport, char *), char*, int, char *);
+void port_forwarder(std::vector<pfwdsock> *, int(*connfunc)(char *phost, long pport, char *), char*, int, char *);
 void set_nodelay(int);
 int connect_local_xsocket(u_int);
 int x11_connect_display(char *, long, char *);

@@ -40,6 +40,8 @@
 #include <pwd.h>
 #include <stdexcept>
 
+#include <vector>
+
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -2271,20 +2273,18 @@ void x11handler(
   int      param_sock)
 
   {
-  struct pfwdsock *socks;
+  std::vector<pfwdsock> *socks = new std::vector<pfwdsock>(NUM_SOCKS);
   int              n;
   char            *display;
 
-  calloc_or_throw((char **)&socks, sizeof(struct pfwdsock) * NUM_SOCKS, "x11handler");
-
   for (n = 0;n < NUM_SOCKS;n++)
-    (socks + n)->active = 0;
+    socks->at(n).active = 0;
 
-  (socks + 0)->sock = param_sock;
+  socks->at(0).sock = param_sock;
 
-  (socks + 0)->active = 1;
+  socks->at(0).active = 1;
 
-  (socks + 0)->listening = 1;
+  socks->at(0).listening = 1;
 
   /* Try to open a socket for the local X server. */
   display = getenv("DISPLAY");
