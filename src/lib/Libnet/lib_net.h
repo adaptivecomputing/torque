@@ -92,7 +92,7 @@ char *netaddr_pbs_net_t(pbs_net_t ipadd);
 void net_add_close_func(int, void (*func)(int));
 
 /* from file port_forwarding.c */
-void port_forwarder(struct pfwdsock *socks, int (*connfunc)(char *, long, char *), char *phost, int pport, char *EMsg);
+void port_forwarder(std::vector<pfwdsock> *socks, int (*connfunc)(char *, long, char *), char *phost, int pport, char *EMsg);
 void set_nodelay(int fd);
 int connect_local_xsocket(u_int dnr);
 int x11_connect_display(char *display, long alsounused, char *EMsg);

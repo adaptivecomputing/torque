@@ -123,7 +123,7 @@ int locate_job(char *job_id, char *parent_server, char *located_server)
   exit(1);
   }
 
-void port_forwarder( struct pfwdsock *socks, int (*connfunc)(char *, long, char *), char *phost, int pport, char *EMsg)
+void port_forwarder(std::vector<pfwdsock> *socks, int (*connfunc)(char *, long, char *), char *phost, int pport, char *EMsg)
   {
   fprintf(stderr, "The call to port_forwarder to be mocked!!\n");
   exit(1);
