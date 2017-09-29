@@ -538,31 +538,22 @@ int x11_create_display(
   FILE            *f;
   pid_t            childpid;
 
-  struct pfwdsock *socks;
+  std::vector<pfwdsock> *socks = new std::vector<pfwdsock>(NUM_SOCKS);
   const char            *homeenv = "HOME";
 
   *display = '\0';
 
-  if ((socks = (struct pfwdsock *)calloc(sizeof(struct pfwdsock), NUM_SOCKS)) == NULL)
-    {
-    /* FAILURE - cannot alloc memory */
-
-    fprintf(stderr,"ERROR: could not calloc!\n");
-
-    return(-1);
-    }
-
   if (put_env_var(homeenv, homedir))
     {
     /* FAILURE */
-    free(socks);
+    delete(socks);
     fprintf(stderr, "ERROR: could not insert %s into environment\n", homeenv);
 
     return(-1);
     }
 
   for (n = 0;n < NUM_SOCKS;n++)
-    socks[n].active = 0;
+    socks->at(n).active = 0;
 
   x11proto[0] = x11data[0] = '\0';
 
@@ -578,7 +569,7 @@ int x11_create_display(
       n,
       strerror(errno));
 
-    free(socks);
+    delete(socks);
 
     return(-1);
     }
@@ -601,7 +592,7 @@ int x11_create_display(
       fprintf(stderr, "getaddrinfo: %.100s\n",
         gai_strerror(gaierr));
 
-      free(socks);
+      delete(socks);
 
       return(-1);
       }
@@ -626,7 +617,7 @@ int x11_create_display(
           fprintf(stderr, "socket: %.100s\n",
             strerror(errno));
 
-          free(socks);
+          delete(socks);
           freeaddrinfo(aitop);
 
           return (-1);
@@ -666,7 +657,7 @@ int x11_create_display(
 
         for (n = 0; n < num_socks; n++)
           {
-          close(socks[n].sock);
+          close(socks->at(n).sock);
           }
 
         num_socks = 0;
@@ -674,8 +665,8 @@ int x11_create_display(
         break;
         }
 
-      socks[num_socks].sock = sock;
-      socks[num_socks].active = 1;
+      socks->at(num_socks).sock = sock;
+      socks->at(num_socks).active = 1;
       num_socks++;
 #ifndef DONT_TRY_OTHER_AF
 
@@ -706,7 +697,7 @@ int x11_create_display(
     {
     fprintf(stderr, "Failed to allocate internet-domain X11 display socket.\n");
 
-    free(socks);
+    delete(socks);
 
     return(-1);
     }
@@ -716,21 +707,21 @@ int x11_create_display(
   for (n = 0;n < num_socks;n++)
     {
     DBPRT(("listening on fd %d\n",
-      socks[n].sock));
+      socks->at(n).sock));
 
-    if (listen(socks[n].sock,TORQUE_LISTENQUEUE) < 0)
+    if (listen(socks->at(n).sock,TORQUE_LISTENQUEUE) < 0)
       {
       fprintf(stderr,"listen: %.100s\n",
         strerror(errno));
 
-      close(socks[n].sock);
+      close(socks->at(n).sock);
 
-      free(socks);
+      delete(socks);
 
       return(-1);
       }
 
-    socks[n].listening = 1;
+    socks->at(n).listening = 1;
     }  /* END for (n) */
 
   /* setup local xauth */
@@ -766,14 +757,14 @@ int x11_create_display(
     fprintf(stderr, "could not run %s\n",
       cmd);
 
-    free(socks);
+    delete(socks);
 
     return(-1);
     }
 
   if ((childpid = fork()) > 0)
     {
-    free(socks);
+    delete(socks);
 
     DBPRT(("successful x11 init, returning display %d\n",
       display_number));
@@ -785,7 +776,7 @@ int x11_create_display(
     {
     fprintf(stderr, "failed x11 init fork\n");
 
-    free(socks);
+    delete(socks);
 
     return(-1);
     }
