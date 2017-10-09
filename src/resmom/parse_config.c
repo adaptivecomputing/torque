@@ -2436,7 +2436,8 @@ void reset_config_vars()
     {
     delete_link(&pva->va_link);
     
-    free(pva->va_cmd);
+    if (pva->va_value != NULL) free(pva->va_value);
+    if (pva->va_cmd != NULL) free(pva->va_cmd);
     free(pva);
     }
   } // END reset_config_vars()
