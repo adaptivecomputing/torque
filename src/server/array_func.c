@@ -1187,6 +1187,7 @@ int setup_array_struct(
     {
     pa_mutex.unlock();
     array_delete(pjob->ji_qs.ji_jobid);
+    delete pa;
 
     return(rc);
     }
@@ -1195,6 +1196,8 @@ int setup_array_struct(
     {
     pa_mutex.unlock();
     array_delete(pjob->ji_qs.ji_jobid);
+    delete pa;
+
     return(rc);
     }
 
@@ -1203,6 +1206,8 @@ int setup_array_struct(
   strcpy(pjob->ji_arraystructid, pa->ai_qs.parent_id);
 
   insert_array(pa);
+
+  delete pa;
 
   return(PBSE_NONE);
   } /* END setup_array_struct() */
