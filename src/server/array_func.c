@@ -1186,6 +1186,7 @@ int setup_array_struct(
   if ((rc = pa->set_idle_slot_limit(requested_limit)))
     {
     pa_mutex.unlock();
+    array_delete(pjob->get_jobid());
     delete pa;
 
     return(rc);
@@ -1194,7 +1195,9 @@ int setup_array_struct(
   if ((rc = pa->parse_array_request(pjob->get_str_attr(JOB_ATR_job_array_request))))
     {
     pa_mutex.unlock();
+    array_delete(pjob->get_jobid());
     delete pa;
+
     return(rc);
     }
 
@@ -1203,6 +1206,8 @@ int setup_array_struct(
   strcpy(pjob->ji_arraystructid, pa->ai_qs.parent_id);
 
   insert_array(pa);
+
+  delete pa;
 
   return(PBSE_NONE);
   } /* END setup_array_struct() */

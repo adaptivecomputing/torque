@@ -893,6 +893,7 @@ void gen_gen(
       s += "=";
       s += value;
       status.push_back(s);
+      free((void *)value);
       }
     } /* else if (ap) */
 
