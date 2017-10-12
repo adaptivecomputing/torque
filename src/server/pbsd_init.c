@@ -2055,9 +2055,6 @@ int cleanup_recovered_arrays()
             }
           }
 
-        std::string array_id(pa->ai_qs.parent_id);
-        unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-        array_delete(array_id.c_str());
         if (pa != NULL)
           {
           std::string array_id(pa->ai_qs.parent_id);
