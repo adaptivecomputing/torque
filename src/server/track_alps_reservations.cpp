@@ -187,15 +187,25 @@ bool reservation_holder::is_orphaned(
   bool              orphaned = false;
   svr_job              *pjob;
   std::map<std::string, alps_reservation>::iterator it;
+  int              internal_jid = -1;
+  bool             res_found = false;
 
   pthread_mutex_lock(&this->rh_mutex);
   it = this->reservations.find(rsv_id);
 
   if (it != this->reservations.end())
     {
-    job_id = job_mapper.get_name(it->second.internal_job_id);
+    internal_jid = it->second.internal_job_id;
+    res_found = true;
+    }
 
-    if ((pjob = svr_find_job_by_id(it->second.internal_job_id)) != NULL)
+  pthread_mutex_unlock(&this->rh_mutex);
+
+  if (res_found)
+    {
+    job_id = job_mapper.get_name(internal_jid);
+
+    if ((pjob = svr_find_job_by_id(internal_jid)) != NULL)
       {
       if (pjob->get_state() == JOB_STATE_COMPLETE)
         orphaned = true;
@@ -215,6 +225,8 @@ bool reservation_holder::is_orphaned(
 
   if (orphaned == true)
     {
+    pthread_mutex_lock(&this->rh_mutex);
+
     if (this->orphaned_reservations.find(rsv_id) != this->orphaned_reservations.end())
       {
       // Only send one release reservation request at a time.
@@ -225,9 +237,9 @@ bool reservation_holder::is_orphaned(
       // Record this so we only send one at a time
       this->orphaned_reservations.insert(rsv_id);
       }
-    }
 
-  pthread_mutex_unlock(&this->rh_mutex);
+    pthread_mutex_unlock(&this->rh_mutex);
+    }
 
   return(orphaned);
   } /* END is_orphaned() */
