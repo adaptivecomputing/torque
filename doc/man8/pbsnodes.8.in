@@ -81,7 +81,7 @@
 .SH NAME
 pbsnodes \- pbs node manipulation
 .SH SYNOPSIS
-pbsnodes [\^\-{a|x}\^] [\-q] [\-s server] [node|:property]
+pbsnodes [\^\-{a|x|xml|\-xml}\^] [\-q] [\-s server] [node|:property]
 .br
 pbsnodes \-l [\-q] [\-s server] [state] [nodename|:property ...]
 .br
@@ -112,7 +112,7 @@ will append a new note attribute to the existing note attributes delimited by a 
 .IP "\-a" 15
 All attributes of a node or all nodes are listed.  This is the default
 if no flag is given.
-.IP "\-x" 15
+.IP "\-x \-xml \-\-xml" 15
 Same as \-a, but the output has an XML-like format.
 .IP "\-c" 15
 Clear OFFLINE from listed nodes. 

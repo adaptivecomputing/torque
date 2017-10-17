@@ -83,7 +83,7 @@ qstat \- show status of pbs batch jobs
 .SH SYNOPSIS
 qstat [\-f [\-1]] [\-l] [\-W site_specific] [\-x] [\^job_identifier... | destination...\^]
 .sp
-qstat [\-a|\-i|\-r|\-e] [\-l] [\-n [\-1]] [\-s] [\-G|\-M] [\-R] [\-u user_list] [\^job_identifier... |\ 
+qstat [\-a|\-i|\-r|\-e|\-\-xml] [\-l] [\-n [\-1]] [\-s] [\-G|\-M] [\-R] [\-u user_list] [\^job_identifier... |\ 
 destination...\^]
 .sp
 qstat \-Q [\-f [\-1]][\-W site_specific] [\-l] [\^destination...\^]
@@ -202,7 +202,7 @@ the alternative format.
 .IP "\-B" 10
 Specifies that the request is for batch server status and that the operands
 are the names of servers.
-.IP "\-x" 10
+.IP "\-x \-\-xml" 10
 Specifies that the output is to be displayed in XML form.  This option is only
 valid with the \-f option or by itself, which will also specify the \-f full status
 display.
