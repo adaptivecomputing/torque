@@ -75,28 +75,18 @@ int PCI_Device::initializePCIDevice(hwloc_obj_t device_obj, int idx, hwloc_topol
     // use NVML library to look up info about the device
 
     nvmlDevice_t gpu;
-    char *buf;
+    char buf[NVML_DEVICE_NAME_BUFFER_SIZE];
 
     // get the device handle so the name can be looked up
     if (nvmlDeviceGetHandleByIndex(idx, &gpu) != NVML_SUCCESS)
       return(-1);
 
-    // allocate space for the name
-    if ((buf = (char *)malloc(NVML_DEVICE_PCI_BUS_ID_BUFFER_SIZE)) == NULL)
-      return(-1);
-
     // look up the name
-    if (nvmlDeviceGetName(gpu, buf, NVML_DEVICE_PCI_BUS_ID_BUFFER_SIZE) != NVML_SUCCESS)
-      {
-      free(buf);
+    if (nvmlDeviceGetName(gpu, buf, sizeof(buf)) != NVML_SUCCESS)
       return(-1);
-      }
 
     // copy the name
     name = buf;
-
-    // free the buffer
-    free(buf);
 
     // copy the id
     id = idx;
