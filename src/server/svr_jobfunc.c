@@ -696,7 +696,17 @@ int svr_enquejob(
     if (rc == PBSE_JOBNOTFOUND)
       return(rc);
     else if (rc != PBSE_NONE)
+      {
+      // decrement queued job counts
+
+      pque->qu_numjobs--;
+      pque->qu_njstate[pjob->ji_qs.ji_state]--;
+
+      decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
+      decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
+
       rc = PBSE_BADDEPEND;
+      }
     }
 
   return(rc);
