@@ -68,22 +68,48 @@ PCI_Device::~PCI_Device()
 
 int PCI_Device::initializePCIDevice(hwloc_obj_t device_obj, int idx, hwloc_topology_t topology)
   {
-
-  id = device_obj->logical_index;
-  name = device_obj->name;
-  if (device_obj->infos != NULL)
+  // see if we are initializing an NVIDIA PCI device only
+  if (device_obj == NULL)
     {
-    info_name = device_obj->infos->name;
-    info_value = device_obj->infos->value;
-    }
+#if defined(NVIDIA_GPUS) && defined(NVML_API)
+    // use NVML library to look up info about the device
 
+    nvmlDevice_t gpu;
+    char buf[NVML_DEVICE_NAME_BUFFER_SIZE];
+
+    if (nvmlDeviceGetHandleByIndex(idx, &gpu) != NVML_SUCCESS)
+      return(-1);
+
+    if (nvmlDeviceGetName(gpu, buf, sizeof(buf)) != NVML_SUCCESS)
+      return(-1);
+
+    // copy the name
+    name = buf;
+
+    // copy the id
+    id = idx;
+#else
+    // NULL hwloc object passed in
+    return(-1);
+#endif
+    }
+  else
+    {
+    id = device_obj->logical_index;
+    name = device_obj->name;
+    if (device_obj->infos != NULL)
+      {
+      info_name = device_obj->infos->name;
+      info_value = device_obj->infos->value;
+      }
+    }
 
 #ifdef MIC
   this->initializeMic(idx, topology);
 #endif
 
 #ifdef NVIDIA_GPUS
-  this->initializeGpu(idx, topology);
+  this->initializeGpu(idx);
 #endif
   return(PBSE_NONE);
   }

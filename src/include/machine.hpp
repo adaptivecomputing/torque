@@ -60,7 +60,7 @@ class PCI_Device
 #endif
 
 #ifdef NVIDIA_GPUS
-    void initializeGpu(int idx, hwloc_topology_t topology);
+    void initializeGpu(int idx);
 #endif
     void displayAsString(stringstream &out) const;
     void setName(const string &name);
