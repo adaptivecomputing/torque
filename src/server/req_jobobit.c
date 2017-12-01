@@ -3404,6 +3404,9 @@ bool is_job_finished(
     // Must be a version 6.1.0 node or higher for the mom to have cleaned up the job
     if (pnode->get_version() >= 610)
       {
+      // unlock the node first
+      node_mutex.unlock();
+
       /* see if job has any dependencies */
       if (pjob->is_attr_set(JOB_ATR_depend))
         {
@@ -3413,8 +3416,6 @@ bool is_job_finished(
           return(done);
           }
         }
-
-      node_mutex.unlock();
 
       rel_resc(pjob);
       svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
