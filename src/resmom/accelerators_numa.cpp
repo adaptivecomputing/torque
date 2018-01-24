@@ -214,10 +214,16 @@ void PCI_Device::initializeGpu(
     log_err(-1, __func__, log_buffer);
     return;
     }
+
+  string busId = pci.busId;
+
+  // if it starts with 8 zeros, cut it down to 4 zeros for sysfs
+  if (busId.substr(0,8) == "00000000")
+    busId = busId.substr(4);
    
   // build path to cpulist for this PCI device
   snprintf(cpulist_path, sizeof(cpulist_path), "/sys/bus/pci/devices/%s/local_cpulist",
-    pci.busId);
+    busId.c_str());
 
   // open cpulist
   if ((fp = fopen(cpulist_path, "r")) == NULL)
