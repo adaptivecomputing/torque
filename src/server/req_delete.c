@@ -875,18 +875,18 @@ int delete_all_work(
 
   while ((pjob = next_job(&alljobs, iter)) != NULL)
     {
-    // allowed to delete?
-    chk_job_req_permissions(&pjob, preq);
-
-    if (pjob == NULL)
-      {
-      // not allowed
-      continue;
-      }
-
     if ((pjob->ji_arraystructid[0] != '\0') &&
         (pjob->ji_is_array_template == false))
       {
+      // allowed to delete?
+      chk_job_req_permissions(&pjob, preq);
+
+      if (pjob == NULL)
+        {
+        // not allowed
+        continue;
+        }
+
       // Mark this array as being deleted if it hasn't yet been marked
       if (marked_arrays.find(pjob->ji_arraystructid) == marked_arrays.end())
         {
