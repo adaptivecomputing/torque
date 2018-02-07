@@ -167,6 +167,7 @@ extern void set_resc_assigned(job *, enum batch_op);
 extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 extern int   svr_chk_owner(struct batch_request *, job *);
+extern int  svr_authorize_jobreq(struct batch_request *, job *);
 void chk_job_req_permissions(job **,struct batch_request *);
 void          on_job_exit_task(struct work_task *);
 void           remove_stagein(job **pjob_ptr);
@@ -879,9 +880,7 @@ int delete_all_work(
         (pjob->ji_is_array_template == false))
       {
       // allowed to delete?
-      chk_job_req_permissions(&pjob, preq);
-
-      if (pjob == NULL)
+      if (svr_authorize_jobreq(preq, pjob) == -1)
         {
         // not allowed
         continue;
