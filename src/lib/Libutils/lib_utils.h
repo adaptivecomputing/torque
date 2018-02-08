@@ -41,6 +41,7 @@ int        MXMLFromString(mxml_t **EP, char *XMLString, char **Tail, char *EMsg,
 
 /* u_groups.c */
 void free_grname(struct group *, char *);
+bool is_group_member(char *user_name, char *group_name);
 struct group * getgrnam_ext(char **user_buf, char * grp_name );
 struct group * getgrgid_ext(char **user_buf, gid_t grp_id );
 

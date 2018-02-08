@@ -1,14 +1,6 @@
 #include "license_pbs.h" /* See here for the software license */
     
-#include <stdio.h>  /* sprintf */
-#include <stdlib.h> /* calloc */
-#include <string.h>
-#include <pwd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <errno.h>
-
+#include "u_wrapper.h"
 #include "log.h"
 
 #include "pbs_error.h"

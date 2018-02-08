@@ -145,6 +145,7 @@ extern char *OriginalPath;
 /* group functions in u_groups.c */
 extern void free_grname(struct group *, char *);
 extern void free_pwnam(struct passwd *pwdp, char *buf);
+extern bool is_group_member(char *user_name, char *group_name);
 extern struct group *getgrnam_ext (char **, char *);
 extern struct group *getgrgid_ext (char **, gid_t);
 

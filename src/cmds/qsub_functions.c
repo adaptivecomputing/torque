@@ -2626,8 +2626,6 @@ void interactive(
   }  /* END interactive() */
 
 
-
-
 int validate_group_list(
 
   char *glist)
@@ -2635,14 +2633,11 @@ int validate_group_list(
   {
   /* check each group to determine if it is a valid group that the user can be a part of.
    * group list is of the form group[@host][,group[@host]...] */
-  char           *buf = NULL;
   char           *groups = strdup(glist);
   const char     *delims = ",";
-  char           *tmp_group = strtok(groups, delims); 
+  char           *tmp_group = strtok(groups, delims);
   char           *at;
   char           *u_name;
-  char          **pmem;
-  struct group   *grent;
   struct passwd  *pwent;
 
   if ((pwent = getpwuid(getuid())) == NULL)
@@ -2657,44 +2652,21 @@ int validate_group_list(
     {
     if ((at = strchr(tmp_group,'@')) != NULL)
       *at = '\0';
-    
-    if ((grent = getgrnam_ext(&buf, tmp_group)) == NULL)
-      {
-      free(groups);
-      return(FALSE);
-      }
-    
-    pmem = grent->gr_mem;
-    free_grname(grent, buf);
-    
-    if (pmem == NULL)
-      {
-      free(groups);
-      return(FALSE);
-      }
-    
-    while (*pmem != NULL)
-      {
-      if (!strcmp(*pmem,u_name))
-        break;
 
-      pmem++;
-      }
-
-    if (*pmem == NULL)
-      {
-      /* match not found */
+    if (is_group_member(u_name, tmp_group) == FALSE)
+    {
       free(groups);
-      return(FALSE);
-      }
-
+      return(false);
+    }
+    
     tmp_group = strtok(NULL,delims);
     }
       
   free(groups);
 
-  return(TRUE);
+  return(true);
   }
+
 
 
 bool came_from_moab(
