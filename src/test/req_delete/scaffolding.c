@@ -567,3 +567,7 @@ pbs_net_t get_hostaddr(
   return(0);
   }
 
+int svr_authorize_jobreq(batch_request *brp, job *pjob)
+  {
+  return(-1);
+  }
