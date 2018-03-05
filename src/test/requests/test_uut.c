@@ -1,6 +1,7 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include <stdio.h>
 
 #include "pbs_config.h"
@@ -12,6 +13,7 @@
 void string_replchar(const char*, char, char);
 void determine_spooldir(std::string &spooldir, mom_job *pjob);
 batch_request *get_std_file_info(mom_job*);
+void quote_spaces(std::string &);
 
 extern char *TNoSpoolDirList[];
 extern char *path_spool;
@@ -85,6 +87,20 @@ START_TEST(test_get_std_file_info)
 END_TEST
 
 
+START_TEST(test_quote_spaces)
+  {
+  std::string my_str = "this is my string";
+  
+  quote_spaces(my_str);
+  fail_unless(my_str.compare("this\\ is\\ my\\ string") == 0);
+
+  my_str = "this_is_my_string";
+  quote_spaces(my_str);
+  fail_unless(my_str.compare("this_is_my_string") == 0);
+  }
+END_TEST
+
+
 Suite *requests_suite(void)
   {
   Suite *s = suite_create("requests_suite methods");
@@ -98,6 +114,10 @@ Suite *requests_suite(void)
 
   tc_core = tcase_create("test_get_std_file_info");
   tcase_add_test(tc_core, test_get_std_file_info);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_quote_spaces");
+  tcase_add_test(tc_core, test_quote_spaces);
   suite_add_tcase(s, tc_core);
 
   return s;
