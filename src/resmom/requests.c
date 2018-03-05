@@ -88,6 +88,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include <unistd.h>
 #include <assert.h>
 #include <time.h>
@@ -3118,6 +3119,30 @@ void req_returnfiles(
 
 
 /*
+ * quote_spaces - quote spaces in std::string with backslash (\)
+ *
+ */
+
+void quote_spaces(
+
+  std::string &s) 
+
+  {
+  std::string::size_type n = 0;
+
+  // find spaces in string
+  while ((n = s.find(" ", n)) != std::string::npos)
+    {   
+    // quote space
+    s.replace(n, 1, "\\ ");
+
+    // skip past quoted space
+    n += 2;
+    }   
+  }
+
+
+/*
  * sys_copy - issue system call to copy file
  *
  * Check error and retry as required
@@ -3136,6 +3161,12 @@ static int sys_copy(
   int i;
   int loop;
   int rc;
+  std::string ag2_str = ag2;
+  std::string ag3_str = ag3;
+
+  // quote spaces in source and destination paths
+  quote_spaces(ag2_str);
+  quote_spaces(ag3_str);
 
   sprintf(rcperr, "%srcperr.%ld",
           path_spool,
@@ -3159,8 +3190,8 @@ static int sys_copy(
     sprintf(log_buffer, "executing copy command: %s %s %s %s",
             ag0,
             ag1,
-            ag2,
-            ag3);
+            ag2_str.c_str(),
+            ag3_str.c_str());
 
     log_ext(-1, __func__, log_buffer, LOG_DEBUG);
     }
@@ -3231,15 +3262,15 @@ static int sys_copy(
 
       /* NOTE:  arg2 should be source, arg3 should be destination */
 
-      execl(ag0, ag0, ag1, ag2, ag3, NULL);
+      execl(ag0, ag0, ag1, ag2_str.c_str(), ag3_str.c_str(), NULL);
 
       /* reached only if execl() fails */
 
       sprintf(log_buffer, "exec of command '%s %s %s %s' failed, errno=%d %s",
               ag0,
               ag1,
-              ag2,
-              ag3,
+              ag2_str.c_str(),
+              ag3_str.c_str(),
               errno,
               pbs_strerror(errno));
 
@@ -3259,8 +3290,8 @@ static int sys_copy(
   sprintf(log_buffer, "command '%s %s %s %s' failed with status=%d, giving up after %d attempts",
           ag0,
           ag1,
-          ag2,
-          ag3,
+          ag2_str.c_str(),
+          ag3_str.c_str(),
           rc,
           loop);
 
