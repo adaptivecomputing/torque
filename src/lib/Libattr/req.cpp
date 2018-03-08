@@ -1036,7 +1036,7 @@ int req::set_from_submission_string(
 
   {
   char       *current;
-  int         rc;
+  int         rc = PBSE_NONE;
 
   if (submission_string_precheck(submission_str, error))
     return(PBSE_BAD_PARAMETER);
@@ -1054,7 +1054,7 @@ int req::set_from_submission_string(
 
   if (*current == ':')
     current++;
-  else if (current != '\0')
+  else if (*current != '\0')
     {
     error = "Invalid task specification";
     return(PBSE_BAD_PARAMETER);
