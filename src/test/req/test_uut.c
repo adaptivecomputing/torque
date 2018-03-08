@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <check.h>
+#include <limits.h>
+#include <values.h>
 
 #include "req.hpp"
 #include "pbs_error.h"
@@ -9,6 +11,7 @@
 extern bool good_err;
 
 int parse_positive_integer(const char *str, int &parsed);
+int read_mem_value(const char*, unsigned long &);
 
 
 START_TEST(test_cpt)
@@ -798,6 +801,69 @@ START_TEST(test_get_task_allocation)
   }
 END_TEST
 
+START_TEST(test_read_mem_value)
+  {
+  const char *value;
+  unsigned long parsed;
+  char buf[4096];
+
+  value = strdup("10.0eb");
+  fail_unless(read_mem_value(value, parsed) == PBSE_NONE);
+  fail_unless(parsed == (unsigned long)(10.0*1024.0*1024.0*1024.0*1024.0*1024.0));
+
+  value = strdup("1000pb");
+  fail_unless(read_mem_value(value, parsed) == PBSE_NONE);
+  fail_unless(parsed == (unsigned long)(1000*1024.0*1024.0*1024.0*1024.0));
+
+  value = strdup("1024gb");
+  fail_unless(read_mem_value(value, parsed) == PBSE_NONE);
+  fail_unless(parsed == (unsigned long)(1024*1024.0*1024.0));
+
+  value = strdup("9.5tb");
+  fail_unless(read_mem_value(value, parsed) == PBSE_NONE);
+  fail_unless(parsed == (unsigned long)(9.5*1024.0*1024.0*1024.0));
+
+  value = strdup("9.50TB");
+  fail_unless(read_mem_value(value, parsed) == PBSE_NONE);
+  fail_unless(parsed == (unsigned long)(9.50*1024.0*1024.0*1024.0));
+
+  value = strdup("5gb");
+  fail_unless(read_mem_value(value, parsed) == PBSE_NONE);
+  fail_unless(parsed == (unsigned long)(5*1024.0*1024.0));
+
+  value = strdup("100.7gb");
+  fail_unless(read_mem_value(value, parsed) == PBSE_NONE);
+  fail_unless(parsed == (unsigned long)(100.7*1024.0*1024.0));
+
+  value = strdup("3mb");
+  fail_unless(read_mem_value(value, parsed) == PBSE_NONE);
+  fail_unless(parsed == (unsigned long)(3*1024.0));
+
+  value = strdup("3.3mb");
+  fail_unless(read_mem_value(value, parsed) == PBSE_NONE);
+  fail_unless(parsed == (unsigned long)(3.3*1024.0));
+
+  value = strdup("2.5mb");
+  fail_unless(read_mem_value(value, parsed) == PBSE_NONE);
+  fail_unless(parsed == (unsigned long)(2.5*1024.0));
+
+  value = strdup("-2mb");
+  fail_unless(read_mem_value(value, parsed) != PBSE_NONE);
+
+  value = strdup("foo");
+  fail_unless(read_mem_value(value, parsed) != PBSE_NONE);
+
+  sprintf(buf, "%f", DBL_MAX + 1.0);
+  fail_unless(read_mem_value(buf, parsed) != PBSE_NONE);
+
+  sprintf(buf, "%fM", (double)ULONG_MAX);
+  fail_unless(read_mem_value(buf, parsed) != PBSE_NONE);
+
+  sprintf(buf, "%fM", (double)DBL_MAX - 1.0);
+  fail_unless(read_mem_value(buf, parsed) != PBSE_NONE);
+  }
+END_TEST
+
 
 Suite *req_suite(void)
   {
@@ -833,6 +899,10 @@ Suite *req_suite(void)
   tcase_add_test(tc_core, test_set_hostlist);
   suite_add_tcase(s, tc_core);
   
+  tc_core = tcase_create("test_read_mem_value");
+  tcase_add_test(tc_core, test_read_mem_value);
+  suite_add_tcase(s, tc_core);
+
   return(s);
   }
 
