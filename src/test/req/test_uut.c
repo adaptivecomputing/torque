@@ -337,6 +337,12 @@ START_TEST(test_submission_string_has_duplicates)
   fail_unless(r.set_from_submission_string(strdup("1.0"), error) != PBSE_NONE);
   fail_unless(r.set_from_submission_string(strdup(err_str8), error) != PBSE_NONE);
   fail_unless(r.set_from_submission_string(strdup(err_str9), error) != PBSE_NONE);
+
+  error.clear();
+  fail_unless(r.set_from_submission_string(strdup("1"), error) == PBSE_NONE);
+
+  error.clear();
+  fail_unless(r.set_from_submission_string(strdup("5z"), error) != PBSE_NONE);
   }
 END_TEST
 
