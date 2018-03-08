@@ -5,6 +5,7 @@
 #include "req.hpp"
 #include "pbs_error.h"
 #include "utils.h"
+#include "limits.h"
 
 // define the class constants
 const int USE_CORES = 0;
@@ -398,38 +399,62 @@ int read_mem_value(
 
   {
   char      *suffix;
-  long long  memval = strtoll((char *)value, &suffix, 10);
+  double memval = strtod((char *)value, &suffix);
 
-  if (memval < 1)
+  if ( (memval <= 0) || (memval == HUGE_VAL) )
     return(PBSE_BAD_PARAMETER);
   
   switch (*suffix)
     {
       /* We will multiply by 1024 later as well. Default 
          multiplier for memory is kilobytes. */
+
+    // exabytes
+    case 'e':
+    case 'E':
+
+      memval *= 1024.0 * 1024.0 * 1024.0 * 1024.0 * 1024.0;
+
+      break;
+
+    // petabytes
+    case 'p':
+    case 'P':
+
+      memval *= 1024.0 * 1024.0 * 1024.0 * 1024.0;
+
+      break;
+
+    // terabytes
     case 't':
     case 'T':
 
-      memval *= 1024 * 1024 * 1024;
+      memval *= 1024.0 * 1024.0 * 1024.0;
 
       break;
 
+    // gigabytes
     case 'g':
     case 'G':
 
-      memval *= 1024 * 1024;
+      memval *= 1024.0 * 1024.0;
 
       break;
 
+    // megabytes
     case 'm':
     case 'M':
 
-      memval *= 1024;
+      memval *= 1024.0;
 
       break;
     }
 
-  parsed = memval;
+  // check for overflow
+  if (memval > (double) ULONG_MAX)
+    return(PBSE_BAD_PARAMETER);
+
+  parsed = (unsigned long) memval;
 
   return(PBSE_NONE);
   } // END read_mem_value()
