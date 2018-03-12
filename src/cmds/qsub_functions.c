@@ -902,7 +902,7 @@ void validate_qsub_host_pbs_o_server(
   else
     {
     char *tmp_host = pbs_default();
-    if (tmp_host == '\0')
+    if (*tmp_host == '\0')
       hash_add_or_exit(job_attr, ATTR_pbs_o_server, qsub_host, LOGIC_DATA);
     else
       hash_add_or_exit(job_attr, ATTR_pbs_o_server, tmp_host, LOGIC_DATA);
@@ -2665,11 +2665,11 @@ int validate_group_list(
       }
     
     pmem = grent->gr_mem;
-    free_grname(grent, buf);
     
     if (pmem == NULL)
       {
       free(groups);
+      free_grname(grent, buf);
       return(FALSE);
       }
     
@@ -2685,9 +2685,11 @@ int validate_group_list(
       {
       /* match not found */
       free(groups);
+      free_grname(grent, buf);
       return(FALSE);
       }
 
+    free_grname(grent, buf);
     tmp_group = strtok(NULL,delims);
     }
       
