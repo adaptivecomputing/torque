@@ -831,6 +831,25 @@ START_TEST(record_external_node_test)
   }
 END_TEST
 
+START_TEST(test_proplist)
+  {
+  char *str;
+  std::string mystr;
+  std::vector<prop> plist;
+  int n;
+  int g;
+  int m;
+
+  // 91 chars
+  str = strdup("P012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789");
+  mystr = str;
+
+  cray_enabled = false;
+  fail_unless(proplist(&str, plist, &n, &g, &m) == PBSE_NONE);
+  fail_unless(plist.size() == 1);
+  fail_unless(plist[0].name == mystr);
+  }
+END_TEST
 
 START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   {
@@ -951,6 +970,10 @@ Suite *node_manager_suite(void)
   tcase_add_test(tc_core, node_is_spec_acceptable_test);
   tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
   tcase_add_test(tc_core, check_node_jobs_exitence_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_proplist");
+  tcase_add_test(tc_core, test_proplist);
   suite_add_tcase(s, tc_core);
 
   return(s);
