@@ -2097,7 +2097,6 @@ int proplist(
   int                *mic_req)
 
   {
-  char         name_storage[80];
   char        *pname;
   char        *pequal;
   bool         have_gpus = false;
@@ -2105,13 +2104,21 @@ int proplist(
 
   *node_req = 1; /* default to 1 processor per node */
 
-  pname  = name_storage;
+  if ((str == NULL) || (*str == NULL))
+    return(1);
+
+  // allocate enough space to copy *str
+  if ((pname = (char *)malloc(strlen(*str) + 1)) == NULL)
+    return(1);
+
+  // empty string
   *pname = '\0';
 
   for (;;)
     {
     if (property(str, &pname))
       {
+      free(pname);
       return(1);
       }
 
@@ -2133,6 +2140,7 @@ int proplist(
 
         if ((number(&pequal, node_req) != 0) || (*pequal != '\0'))
           {
+          free(pname);
           return(1);
           }
         }
@@ -2143,6 +2151,7 @@ int proplist(
         if ((number(&pequal, mic_req) != PBSE_NONE) ||
             (*pequal != '\0'))
           {
+          free(pname);
           return(1);
           }
         }
@@ -2152,6 +2161,7 @@ int proplist(
 
         if ((number(&pequal, gpu_req) != 0) || (*pequal != '\0'))
           {
+          free(pname);
           return(1);
           }
 
@@ -2178,6 +2188,7 @@ int proplist(
         }
       else
         {
+        free(pname);
         return(1); /* not recognized - error */
         }
       }
@@ -2234,6 +2245,7 @@ int proplist(
     (*str)++;
     }  /* END for(;;) */
 
+  free(pname);
   return(PBSE_NONE);
   }  /* END proplist() */
 
