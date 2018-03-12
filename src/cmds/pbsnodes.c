@@ -1015,7 +1015,7 @@ int main(
         {
         nodeargs = (char **)calloc(2, sizeof(char *));
         nodeargs[0] = strdup("");
-        nodeargs[1] = '\0';
+        nodeargs[1] = NULL;
         }
       }
     }
@@ -1129,7 +1129,7 @@ int main(
 
         xmlDocSetRootElement(doc, root_node);
 
-        for (lindex = 0;nodeargs[lindex] != '\0';lindex++)
+        for (lindex = 0;nodeargs[lindex] != NULL;lindex++)
           {
           bstatus = statnode(con, nodeargs[lindex]);
 
@@ -1151,7 +1151,7 @@ int main(
         }
       else
         {
-        for (lindex = 0;nodeargs[lindex] != '\0';lindex++)
+        for (lindex = 0;nodeargs[lindex] != NULL;lindex++)
           {
           bstatus = statnode(con, nodeargs[lindex]);
 
@@ -1175,7 +1175,7 @@ int main(
 
       /* list any node that is DOWN, OFFLINE, or UNKNOWN */
 
-      for (lindex = 0;nodeargs[lindex] != '\0';lindex++)
+      for (lindex = 0;nodeargs[lindex] != NULL;lindex++)
         {
         bstatus = statnode(con, nodeargs[lindex]);
 
