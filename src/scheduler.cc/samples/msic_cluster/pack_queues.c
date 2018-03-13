@@ -728,7 +728,7 @@ Queue *make_room_for_job(Job *priority_job, QueueList *qlist, char *reason)
     }
 
   /* If we reach this point, then we know the best queue to use. So walk
-   * that queue again, stopping the the N jobs necessary to free the
+   * that queue again, stopping the N jobs necessary to free the
    * resources we need.
    */
 
@@ -942,7 +942,7 @@ int schd_checkpoint_job(Job *job)
     else
       {
       /* DEBUG: there's a window of opportunity between the Server
-       * ACK'ing the qhold, and MOM actually completing the the
+       * ACK'ing the qhold, and MOM actually completing the
        * checkpoint. Bob is investigating this. Until its resolved,
        * we are disabling the forceable requeue of jobs (if both
        * suspend and checkpoint fail).

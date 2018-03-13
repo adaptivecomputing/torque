@@ -91,7 +91,7 @@ svr_job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode)
 /* Functions in this file
  * find_nodebyname()   -     given a node host name, search allnodes
  * find_subnodebyname() -     given a subnode name
- * save_characteristic() - save the the characteristics of the node along with
+ * save_characteristic() - save the characteristics of the node along with
  *  the address of the node
  * chk_characteristic() -  check for changes to the node's set of
  *  characteristics and set appropriate flag bits in the "need_todo"

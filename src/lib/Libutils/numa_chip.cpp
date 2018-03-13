@@ -1847,7 +1847,7 @@ void Chip::calculateStepCounts(
  * @param r  - The req to be filled
  * @param task_alloc - the allocation which will be filled
  * @param threads_per_task_remaining - the number of threads to allocate per task
- * @param lprocs_per_task_remaining - The number of logical processes to allocate the the cpuset
+ * @param lprocs_per_task_remaining - The number of logical processes to allocate to the cpuset
  *
  */
 
@@ -1970,7 +1970,7 @@ bool Chip::spread_place_threads(
  * @param r  - The req to be filled
  * @param task_alloc - the allocation which will be filled
  * @param cores_per_task_remaining - the number of cores to allocate per task
- * @param lprocs_per_task_remaining - The number of logical processes to allocate the the cpuset
+ * @param lprocs_per_task_remaining - The number of logical processes to allocate to the cpuset
  *
  */
 

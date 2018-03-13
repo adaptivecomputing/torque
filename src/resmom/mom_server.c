@@ -363,7 +363,7 @@ void clear_servers()
  *
  * Does the memory intialization for all instances of the mom server
  * structures.  Called from the pbs_mom startup code.
- * @see setup_program_envrionment
+ * @see setup_program_environment
  */
 
 void mom_server_all_init(void)

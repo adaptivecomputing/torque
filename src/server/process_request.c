@@ -790,7 +790,7 @@ int dispatch_request(
 
       /* if this is a server size job delete request, then the request
        * could also be for an entire array.  we check to see if the
-       * request object name is an array id. If so we hand off the the
+       * request object name is an array id. If so we hand off the
        * req_deletearray() function.  If not we pass along to the normal
        * req_deletejob() function.
       */

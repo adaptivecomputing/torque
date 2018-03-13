@@ -162,7 +162,7 @@ void empty_alarm_handler(int signo)
 
 /**
  * Attempts to get a list of server names.  Trys first
- * to obtain the list from an envrionment variable PBS_DEFAULT.
+ * to obtain the list from an environment variable PBS_DEFAULT.
  * If this is not set, it then trys to read the first line
  * from the file <b>server_name</b> in the <b>/var/spool/torque</b>
  * directory.
@@ -259,7 +259,7 @@ void get_port_from_server_name_file(unsigned int *server_name_file_port)
 /**
  * The routine is called to get the name of the primary
  * server.  It can possibly trigger reading of the server name
- * list from the envrionment or the disk.
+ * list from the environment or the disk.
  * As a side effect, it set file local strings <b>dflt_server</b>
  * and <b>server_name</b>.  I am not sure if this is needed but
  * it seems in the spirit of the original routine.
@@ -294,7 +294,7 @@ char *pbs_default(void)
 /**
  * The routine is called to get the name of the fall-back
  * server.  It can possibly trigger reading of the server name
- * list from the envrionment or the disk.
+ * list from the environment or the disk.
  * As a side effect, it set file local strings <b>fb_server</b>
  * and <b>server_name</b>.  I am not sure if this is needed but
  * it seems in the spirit of the original routine.

@@ -3585,7 +3585,7 @@ int copy_and_process(
 
       /*
        * If the checkpoint file
-       * is in the the TRemChkptDirList then we do not delete since directory
+       * is in the TRemChkptDirList then we do not delete since directory
        * is remotely mounted.
        */
       if (!in_remote_checkpoint_dir(localname))
@@ -3995,7 +3995,7 @@ void req_cpyfile(
 
         /*
          * If the checkpoint directory
-         * is in the the TRemChkptDirList then we do not transfer since directory
+         * is in the TRemChkptDirList then we do not transfer since directory
          * is remotely mounted.
          */
         if (in_remote_checkpoint_dir(localname))
@@ -4042,7 +4042,7 @@ void req_cpyfile(
 
         /*
          * If the checkpoint directory
-         * is in the the TRemChkptDirList then we do not transfer since directory
+         * is in the TRemChkptDirList then we do not transfer since directory
          * is remotely mounted.
          */
         if (in_remote_checkpoint_dir(arg3))

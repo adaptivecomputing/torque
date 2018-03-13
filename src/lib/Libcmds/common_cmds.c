@@ -249,7 +249,7 @@ void calloc_or_fail(
 
 
 /* This takes comma delimited list of name=value pairs.
- * If value is empty (i.e. name=,name1=...) the the value is pulled from the
+ * If value is empty (i.e. name=,name1=...) the value is pulled from the
  * env
  * return 1 on success, 0 on failure
  */
