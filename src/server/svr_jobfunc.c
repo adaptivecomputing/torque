@@ -1323,7 +1323,7 @@ int svr_setjobstate(
 /*
  * 
  - evaluate and return the job state and substate
- * according to the the values of the hold, execution time, and
+ * according to the values of the hold, execution time, and
  * dependency attributes.  This is typically called after the job has been
  * enqueued or the (hold, execution-time) attributes have been modified.
  */

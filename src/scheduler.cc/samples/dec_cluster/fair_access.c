@@ -368,7 +368,7 @@ int schd_user_accesslimits(char *user, char *qname, int *maxjobs, int *maxtime)
     }
 
   /* if we get here all we can do is return the system default, if
-   * there is one. If there isn't, the the return value is 0.
+   * there is one. If there isn't, the return value is 0.
    */
   *maxjobs = default_jobs;
 
