@@ -41,6 +41,7 @@ int add_job_to_mic(struct pbsnode *pnode, int index, job *pjob);
 int remove_job_from_nodes_mics(struct pbsnode *pnode, job *pjob);
 void update_failure_counts(const char *node_name, int rc);
 void check_node_jobs_existence(struct work_task *pwt);
+int proplist(char **str, std::vector<prop> &plist, int *node_req, int *gpu_req, int *mic_req); 
 
 
 
