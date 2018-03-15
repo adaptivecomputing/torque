@@ -374,7 +374,7 @@ int translate_range_string_to_vector(
 
       curr = strtol(ptr, &ptr, 10);
 
-      if (prev >= curr)
+      if (prev > curr)
         {
         // invalid range
         rc = -1;
@@ -383,14 +383,11 @@ int translate_range_string_to_vector(
 
       while (prev <= curr)
         {
-        if (vector_values.insert(prev).second == false)
+        if (vector_values.insert(prev).second == true)
           {
-          // duplicate entry
-          rc = -1;
-          break;
+          // add non-duplicate value to vector
+          indices.push_back(prev);
           }
-
-        indices.push_back(prev);
 
         prev++;
         }
@@ -404,14 +401,11 @@ int translate_range_string_to_vector(
       }
     else
       {
-      if (vector_values.insert(prev).second == false)
+      if (vector_values.insert(prev).second == true)
         {
-        // duplicate entry
-        rc = -1;
-        break;
+        // add non-duplicate value to vector
+        indices.push_back(prev);
         }
-
-      indices.push_back(prev);
 
       while ((*ptr == ',') ||
              (is_whitespace(*ptr)))
