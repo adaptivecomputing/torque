@@ -121,10 +121,38 @@ START_TEST(test_translate_range_string_to_vector)
   fail_unless(translate_range_string_to_vector("3-1", indices) != PBSE_NONE);
 
   indices.clear();
-  fail_unless(translate_range_string_to_vector("10,10", indices) != PBSE_NONE);
+  fail_unless(translate_range_string_to_vector("10,10", indices) == PBSE_NONE);
+  fail_unless(indices.size() == 1);
+  fail_unless(indices[0] == 10);
 
   indices.clear();
-  fail_unless(translate_range_string_to_vector("5-5", indices) != PBSE_NONE);
+  fail_unless(translate_range_string_to_vector("5-5", indices) == PBSE_NONE);
+  fail_unless(indices.size() == 1);
+  fail_unless(indices[0] == 5);
+
+  indices.clear();
+  fail_unless(translate_range_string_to_vector("1,5-5", indices) == PBSE_NONE);
+  fail_unless(indices.size() == 2);
+  fail_unless(indices[0] == 1);
+  fail_unless(indices[1] == 5);
+
+  indices.clear();
+  fail_unless(translate_range_string_to_vector("1-1,1,1-1", indices) == PBSE_NONE);
+  fail_unless(indices.size() == 1);
+  fail_unless(indices[0] == 1);
+
+  indices.clear();
+  fail_unless(translate_range_string_to_vector("0,5-10,100,1,9", indices) == PBSE_NONE);
+  fail_unless(indices.size() == 9);
+  fail_unless(indices[0] == 0);
+  fail_unless(indices[1] == 5);
+  fail_unless(indices[2] == 6);
+  fail_unless(indices[3] == 7);
+  fail_unless(indices[4] == 8);
+  fail_unless(indices[5] == 9);
+  fail_unless(indices[6] == 10);
+  fail_unless(indices[7] == 100);
+  fail_unless(indices[8] == 1);
   }
 END_TEST
 
