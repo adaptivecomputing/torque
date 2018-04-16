@@ -688,13 +688,22 @@ int str_to_attr(
 
     case ATR_TYPE_BOOL:
 
-      if ((val[0] == 'T') ||
-          (val[0] == 't'))
+      {
+      char bval = tolower(val[0]);
+
+      // expect 't' or 'T' but permit '1' or 'y' or 'Y' to indicate true to enable upgrade
+      //  from pre-6.1 value in server db file
+      // proper value (true or false) will be written when svr_save() is called
+
+      if ((bval == 't') ||
+          (bval == '1') ||
+          (bval == 'y'))
         attr[index].at_val.at_bool = true;
       else
         attr[index].at_val.at_bool = false;
 
       break;
+      }
     } /* END switch (pbs_attribute type) */
 
   attr[index].at_flags |= ATR_VFLAG_SET;
