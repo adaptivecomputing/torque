@@ -282,8 +282,16 @@ int  decrement_queued_jobs(
         log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
       }
+    else if (pjob->ji_is_array_template == TRUE)
+      {
+      unsigned int num_submitted = count_jobs_submitted(pjob);
+
+      // Decrement the count for array template jobs
+      ui->num_jobs_queued -= num_submitted;
+      }
     else
       {
+      // Decrement the count for normal jobs
       ui->num_jobs_queued--;
       }
     rc = PBSE_NONE;
