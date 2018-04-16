@@ -144,6 +144,60 @@ START_TEST(test_size_to_str)
 END_TEST
 
 
+START_TEST(test_str_to_attr)
+  {
+  pbs_attribute *pattr;
+  attribute_def *pad;
+
+  fail_unless((pattr = (pbs_attribute *)calloc(1, sizeof(pbs_attribute))) != NULL);
+  fail_unless((pad = (attribute_def *)calloc(1, sizeof(attribute_def))) != NULL);
+
+  pad->at_type = ATR_TYPE_BOOL;
+  pad->at_name = strdup(ATTR_crayenabled);
+
+  // t, 1 and y should all be true
+
+  pattr->at_val.at_bool = false;
+  fail_unless(str_to_attr(ATTR_crayenabled, (char *)"t", pattr, pad, 1) == PBSE_NONE);
+  fail_unless(pattr->at_val.at_bool == true);
+
+  pattr->at_val.at_bool = false;
+  fail_unless(str_to_attr(ATTR_crayenabled, (char *)"T", pattr, pad, 1) == PBSE_NONE);
+  fail_unless(pattr->at_val.at_bool == true);
+
+  pattr->at_val.at_bool = false;
+  fail_unless(str_to_attr(ATTR_crayenabled, (char *)"1", pattr, pad, 1) == PBSE_NONE);
+  fail_unless(pattr->at_val.at_bool == true);
+
+  pattr->at_val.at_bool = false;
+  fail_unless(str_to_attr(ATTR_crayenabled, (char *)"y", pattr, pad, 1) == PBSE_NONE);
+  fail_unless(pattr->at_val.at_bool == true);
+
+  pattr->at_val.at_bool = false;
+  fail_unless(str_to_attr(ATTR_crayenabled, (char *)"Y", pattr, pad, 1) == PBSE_NONE);
+  fail_unless(pattr->at_val.at_bool == true);
+
+  // everything else should be false
+
+  pattr->at_val.at_bool = true;
+  fail_unless(str_to_attr(ATTR_crayenabled, (char *)"f", pattr, pad, 1) == PBSE_NONE);
+  fail_unless(pattr->at_val.at_bool == false);
+
+  pattr->at_val.at_bool = true;
+  fail_unless(str_to_attr(ATTR_crayenabled, (char *)"0", pattr, pad, 1) == PBSE_NONE);
+  fail_unless(pattr->at_val.at_bool == false);
+
+  pattr->at_val.at_bool = true;
+  fail_unless(str_to_attr(ATTR_crayenabled, (char *)"n", pattr, pad, 1) == PBSE_NONE);
+  fail_unless(pattr->at_val.at_bool == false);
+
+  pattr->at_val.at_bool = true;
+  fail_unless(str_to_attr(ATTR_crayenabled, (char *)"z", pattr, pad, 1) == PBSE_NONE);
+  fail_unless(pattr->at_val.at_bool == false);
+  }
+END_TEST
+
+
 
 
 Suite *attr_str_conversion_suite(void)
@@ -157,6 +211,10 @@ Suite *attr_str_conversion_suite(void)
   tc_core = tcase_create("test_size_to_str");
   tcase_add_test(tc_core, test_size_to_str);
   tcase_add_test(tc_core, test_attr_to_str);
+  suite_add_tcase(s, tc_core);
+  
+  tc_core = tcase_create("test_str_to_attr");
+  tcase_add_test(tc_core, test_str_to_attr);
   suite_add_tcase(s, tc_core);
   
   return(s);
