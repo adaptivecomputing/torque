@@ -1,4 +1,5 @@
 #include <pbs_config.h>
+#include <algorithm>
 #include "log.h"
 #include "pbs_error_db.h"
 #include "pbs_error.h"
@@ -220,6 +221,9 @@ void PCI_Device::initializeGpu(
   // if it starts with 8 zeros, cut it down to 4 zeros for sysfs
   if (busId.substr(0,8) == "00000000")
     busId = busId.substr(4);
+
+  // convert bus id to lower case
+  transform(busId.begin(), busId.end(), busId.begin(), ::tolower);
    
   // build path to cpulist for this PCI device
   snprintf(cpulist_path, sizeof(cpulist_path), "/sys/bus/pci/devices/%s/local_cpulist",
