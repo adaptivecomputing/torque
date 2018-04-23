@@ -4,6 +4,8 @@
 #include "tcp.h"
 #include "attribute.h" /* attrl */
 
+time_t pbs_tcp_timeout = 0;
+
 int disrfst(tcp_chan *chan, size_t achars, char *value)
   {
   fprintf(stderr, "The call to disrfst needs to be mocked!!\n");

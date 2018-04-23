@@ -66,6 +66,7 @@ bool exit_called = false;
 bool ms_val = true;
 job_pid_set_t    global_job_sid_set;
 char             mom_alias[PBS_MAXHOSTNAME + 1];
+time_t pbs_tcp_timeout = 300;
 
 #undef disrus
 unsigned short disrus(tcp_chan *c, int *retval)

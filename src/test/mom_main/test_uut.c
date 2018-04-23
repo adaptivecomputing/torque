@@ -50,6 +50,9 @@ extern char mom_host[PBS_MAXHOSTNAME + 1];
 extern char mom_short_name[PBS_MAXHOSTNAME + 1];
 extern char mom_ipaddr[INET_ADDRSTRLEN];
 
+int PBSNodeCheckEpilog = 0;
+int PBSNodeCheckProlog = 0;
+
 bool are_we_forking()
 
   {

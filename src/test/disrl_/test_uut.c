@@ -15,7 +15,7 @@ START_TEST(test_one)
   {
   struct tcp_chan   chan;
   long double       ldval;
-  dis_long_double_t *ptr = &ldval;
+  dis_long_double_t *ptr = (dis_long_double_t*)&ldval;
   unsigned          ndigs;
   unsigned          nskips;
 

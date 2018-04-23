@@ -168,3 +168,42 @@ int translate_range_string_to_vector(
 {
 return(0);
 }
+
+const char *job::get_str_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_str);
+  }
+
+bool job::get_bool_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_bool);
+  }
+
+const char *job::get_jobid() const
+  {
+  return(this->ji_qs.ji_jobid);
+  }
+
+complete_req *job::get_creq_attr(int index) const
+  {
+  complete_req *cr = NULL;
+  if (this->ji_wattr[index].at_flags & ATR_VFLAG_SET)
+    cr = (complete_req *)this->ji_wattr[index].at_val.at_ptr;
+
+  return(cr);
+  }
+
+bool job::is_attr_set(int index) const
+  {
+  return((this->ji_wattr[index].at_flags & ATR_VFLAG_SET) != 0);
+  }
+
+pbs_attribute *job::get_attr(int index)
+  {
+  return(this->ji_wattr + index);
+  }
+
+long job::get_long_attr(int index) const
+  {
+  return(this->ji_wattr[index].at_val.at_long);
+  }

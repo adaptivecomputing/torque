@@ -141,7 +141,7 @@ START_TEST(can_queue_new_job_test)
 
 
   fail_unless(can_queue_new_job((char *)"jerry", &pjob) == FALSE, (char *)"jerry allowed over limit");
-  pjob.ji_wattr[JOB_ATR_job_array_request].at_val.at_str = (char *)"0-10";
+  pjob.set_str_attr(JOB_ATR_job_array_request, (char *)"0-10");
 
   fail_unless(can_queue_new_job((char *)"jerry", &pjob) == FALSE, "array job allowed over limit");
   }
@@ -239,7 +239,7 @@ START_TEST(increment_queued_jobs_test)
   // test array job
 
   // set array string
-  pjob.ji_wattr[JOB_ATR_job_array_request].at_val.at_str = strdup("0-10");
+  pjob.set_str_attr(JOB_ATR_job_array_request, strdup("0-10"));
 
   // users
   pjob.ji_queue_counted = 0;
@@ -325,7 +325,7 @@ START_TEST(decrement_queued_jobs_test)
   // test array job
 
   // set array string
-  pjob.ji_wattr[JOB_ATR_job_array_request].at_val.at_str = strdup("0-10");
+  pjob.set_str_attr(JOB_ATR_job_array_request, strdup("0-10"));
 
   // users
   // first increment

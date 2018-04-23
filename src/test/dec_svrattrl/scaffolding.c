@@ -4,6 +4,8 @@
 #include "tcp.h"
 #include "list_link.h" /* tlist_head, list_link */
 
+time_t pbs_tcp_timeout = 0;
+
 unsigned disrui(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrui needs to be mocked!!\n");

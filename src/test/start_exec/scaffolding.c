@@ -1117,7 +1117,6 @@ int ppoll(struct pollfd *fds, nfds_t nfds, const struct timespec *timeout, const
   return(0);
   }
 
-<<<<<<< HEAD
 job::job() 
   
   {

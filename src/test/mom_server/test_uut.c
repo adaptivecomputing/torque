@@ -20,6 +20,7 @@ int mom_server_update_stat(mom_server *pms, std::vector<std::string> &strings);
 char PBSNodeMsgBuf[MAXLINE];
 char PBSNodeCheckPath[MAXLINE];
 int  PBSNodeCheckInterval = 2;
+u_long pbsclient;
 
 extern bool no_error;
 extern bool no_event;

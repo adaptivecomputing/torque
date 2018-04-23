@@ -5,6 +5,8 @@
 #include "tcp.h"
 #include "list_link.h" /* tlist_head */
 
+time_t pbs_tcp_timeout = 0;
+
 int decode_DIS_svrattrl(tcp_chan *chan, tlist_head *phead)
   {
   fprintf(stderr, "The call to decode_DIS_svrattrl needs to be mocked!!\n");

@@ -167,7 +167,7 @@ extern void set_resc_assigned(svr_job *, enum batch_op);
 extern svr_job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_stage(struct batch_request *, svr_job *, enum job_atr, int);
 extern int   svr_chk_owner(struct batch_request *, svr_job *);
-extern int  svr_authorize_jobreq(struct batch_request *, job *);
+extern int  svr_authorize_jobreq(struct batch_request *, svr_job *);
 void chk_job_req_permissions(svr_job **,struct batch_request *);
 void          on_job_exit_task(struct work_task *);
 void           remove_stagein(svr_job **pjob_ptr);

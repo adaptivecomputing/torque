@@ -684,10 +684,10 @@ int svr_enquejob(
       // decrement queued job counts
 
       pque->qu_numjobs--;
-      pque->qu_njstate[pjob->ji_qs.ji_state]--;
+      pque->qu_njstate[pjob->get_state()]--;
 
-      decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
-      decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
+      decrement_queued_jobs(pque->qu_uih, pjob->get_str_attr(JOB_ATR_job_owner), pjob);
+      decrement_queued_jobs(&users, pjob->get_str_attr(JOB_ATR_job_owner), pjob);
 
       rc = PBSE_BADDEPEND;
       }

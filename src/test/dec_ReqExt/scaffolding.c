@@ -3,6 +3,8 @@
 #include <stdio.h> /* fprintf */
 #include "tcp.h"
 
+time_t pbs_tcp_timeout = 0;
+
 char *disrst(tcp_chan *chan, int *retval)
   {
   fprintf(stderr, "The call to disrst needs to be mocked!!\n");
