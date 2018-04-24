@@ -179,7 +179,7 @@ START_TEST(handle_im_poll_job_response_test)
   disrsi_return_index = 0;
   np->hn_node = 4;
 
-  fail_unless(handle_im_poll_job_response(chan, pjob, 4, np) == -1);
+  fail_unless(handle_im_poll_job_response(chan, *pjob, 4, np) == -1);
   pjob->set_svrflags(JOB_SVFLG_HERE);
 
   fail_unless(handle_im_poll_job_response(chan, *pjob, 4, np) == 0);

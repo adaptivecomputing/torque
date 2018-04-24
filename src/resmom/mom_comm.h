@@ -76,7 +76,7 @@ int handle_im_get_info_response(struct tcp_chan *chan, mom_job *pjob, tm_task_id
 
 int handle_im_get_resc_response(struct tcp_chan *chan, mom_job *pjob, tm_task_id event_task, tm_event_t event);
 
-int handle_im_poll_job_response(struct tcp_chan *chan, mom_job *pjob, int nodeidx, struct hnodent *np);
+int handle_im_poll_job_response(struct tcp_chan *chan, mom_job &pjob, int nodeidx, struct hnodent *np);
 
 int handle_im_get_tid_response(struct tcp_chan *chan, mom_job *pjob, char *cookie, char **argv, char **envp, struct fwdevent *efwd);
 
