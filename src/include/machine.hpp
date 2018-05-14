@@ -206,6 +206,7 @@ class Chip
     void remove_last_allocation(const char *jobid);
     void free_cpu_index(int index, bool increment_available_cores);
     void make_core(int id = 0); // used for unit tests
+    void make_core_not_free(int id = 0); // used for unit tests
     void set_cpuset(const char *cpuset); // used for unit tests
     bool partially_place_task(allocation &remaining, allocation &master);
     bool store_pci_device_appropriately(PCI_Device &device, bool force);

@@ -1110,6 +1110,24 @@ void Chip::make_core(
   this->cores.push_back(c);
   }
 
+// This function is for unit testing
+void Chip::make_core_not_free(
+    
+  int id)
+
+  {
+  Core c;
+  c.id = id;
+  c.totalThreads = 2;
+  c.free = false;
+  c.indices.push_back(id);
+  c.indices.push_back(id + 16);
+  c.is_index_busy.push_back(true);
+  c.is_index_busy.push_back(true);
+  c.processing_units_open = 2;
+  this->cores.push_back(c);
+  }
+
 
 
 // This is used only for unit tests
@@ -1429,6 +1447,10 @@ bool Chip::getContiguousCoreVector(
     {
     /* Can't get contiguous cores. Just get them where you can find them */
     // Get the core indices we will use
+
+    // clear any previous results
+    slots.clear();
+
     size_t core_index = 0;
     for (int i = 0; i < execution_slots_per_task; i++)
       {
