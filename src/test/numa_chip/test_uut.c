@@ -57,6 +57,22 @@ START_TEST(test_get_contiguous_core_vector)
 
   fail_unless(c.getContiguousCoreVector(list, 18) == true);
   fail_unless(list.size() == 16);
+
+  // test non-contiguous case
+  Chip c1;
+  list.clear();
+
+  c1.setId(0);
+  c1.setThreads(6);
+  c1.setCores(3);
+  c1.setMemory(6);
+  c1.setChipAvailable(true);
+  c1.make_core(0);
+  c1.make_core_not_free(1);
+  c1.make_core(2);
+
+  fail_unless(c1.getContiguousCoreVector(list, 2) == false);
+  fail_unless(list.size() == 2);
   }
 END_TEST
 
