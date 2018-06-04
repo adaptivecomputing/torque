@@ -58,6 +58,7 @@ int              can_place = 0;
 pbsnode          napali_node;
 
 int create_a_gpusubnode(struct pbsnode*);
+int add_execution_slot(struct pbsnode*);
 
 struct batch_request *alloc_br(int type)
   {
@@ -136,6 +137,7 @@ struct pbsnode *find_nodebyname(const char *nodename)
   static struct pbsnode bob;
   static struct pbsnode other;
   static struct pbsnode gpunode;
+  static struct pbsnode jane;
   static int    called = 0;
 
   if (called == 0)
@@ -148,6 +150,18 @@ struct pbsnode *find_nodebyname(const char *nodename)
     create_a_gpusubnode(&gpunode);
     create_a_gpusubnode(&gpunode);
     create_a_gpusubnode(&gpunode);
+    create_a_gpusubnode(&gpunode);
+    create_a_gpusubnode(&gpunode);
+
+    jane.change_name("jane");
+    add_execution_slot(&jane);
+    add_execution_slot(&jane);
+    add_execution_slot(&jane);
+    add_execution_slot(&jane);
+    add_execution_slot(&jane);
+    add_execution_slot(&jane);
+    add_execution_slot(&jane);
+    add_execution_slot(&jane);
 
     called++;
     }
@@ -166,6 +180,8 @@ struct pbsnode *find_nodebyname(const char *nodename)
     return(&other);
   else if (!strcmp(nodename, "gpunode"))
     return(&gpunode);
+  else if (!strcmp(nodename, "jane"))
+    return(&jane);
   else
     return(NULL);
   }
@@ -518,6 +534,10 @@ int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
 int add_execution_slot(struct pbsnode *pnode)
 
   {
+  std::string s = "jane";
+  if (pnode->get_name() == s)
+    pnode->nd_slots.add_execution_slot();
+
   return(0);
   }
 

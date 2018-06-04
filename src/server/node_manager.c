@@ -5776,42 +5776,59 @@ struct pbsnode *get_compute_node(
   } /* END get_compute_node() */
 
 
+/*
+ * split_str_on_character - split a string on a character into a vector
+ */
+
+std::vector<std::string> split_str_on_character(
+
+  const std::string& s,
+  char  delimiter)
+
+  {
+  std::vector<std::string> tokens;
+  std::string token;
+  std::istringstream tokenStream(s);
+
+  while (std::getline(tokenStream, token, delimiter))
+    {
+    tokens.push_back(token);
+    }
+
+  return(tokens);
+  }
 
 
 /*
- * set_one_old - set a named node as allocated to a job
+ * set_one_old_slotrange - set a named node with slot range as allocated to a job
+ *  slotrange_string expected to be <m>[-<n>]
  */
 
-int set_one_old(
+int set_one_old_slotrange(
 
-  char *name,
+  const char *name,
+  const char *slotrange_string,
   job  *pjob)
 
   {
   int             first;
   int             last;
   int             rc = PBSE_NONE;
-
-  struct pbsnode *pnode;
-  char           *pc;
   char           *dash;
+  struct pbsnode *pnode;
 
-  if ((pc = strchr(name, (int)'/')))
-    {
-    first = strtol(pc + 1, &dash, 10);
+  // check params for NULL
+  if ((name == NULL) ||
+      (slotrange_string == NULL) ||
+      (pjob == NULL))
+    return(PBSE_UNKNODE);
 
-    *pc = '\0';
+  first = strtol(slotrange_string, &dash, 10);
 
-    if (*dash == '-')
-      last = strtol(dash + 1, NULL, 10);
-    else
-      last = first;
-    }
+  if (*dash == '-')
+    last = strtol(dash + 1, NULL, 10);
   else
-    {
-    first = 0;
     last = first;
-    }
 
   pnode = find_nodebyname(name);
 
@@ -5882,60 +5899,87 @@ int set_one_old(
     rc = PBSE_UNKNODE;
 
   return(rc);
-  }  /* END set_one_old() */
+  }  /* END set_one_old_slotrange() */
 
 
 /*
- * Process gpu token of the form <hostname>-gpu/<first>[-<last>]
- *
- * Set gpu subjob information for <hostname> node.
+ * set_one_old - set a named node as allocated to a job
+ *   name expected to have this form: <hostname>/<m>[-<n>][,...]
  */
 
-int process_gpu_token(
+int set_one_old(
 
-  const char *gpu_token,
+  const char *name,
+  job  *pjob)
+
+  {
+  char *remainder;
+  int   rc = PBSE_UNKNODE;
+  std::vector<std::string> rangestrings;
+
+  // check params
+  if ((name == NULL) ||
+      (pjob == NULL))
+    return(PBSE_UNKNODE);
+
+  // find hostname
+  if ((remainder = strchr((char *)name, '/')) != NULL)
+    {
+    // terminate the string -- the hostname preceeds this
+    *remainder = '\0'; 
+
+    // the remainder of the string
+    remainder++;
+    }
+
+  // see if there's anything left to parse
+  if ((remainder == NULL) || *remainder == '\0')
+    return(PBSE_UNKNODE);
+
+  // get vector of slot ranges
+  rangestrings = split_str_on_character(remainder, ',');
+
+  // process each <m>[-<n>] range
+  for (std::vector<int>::size_type i = 0; i < rangestrings.size(); i++)
+    {
+    if ((rc = set_one_old_slotrange(name, rangestrings[i].c_str(), pjob)) != PBSE_NONE)
+      break;
+    }
+
+  return(rc);
+  }
+
+
+/*
+ * process_gpu_token_slotrange - Set gpu subjob information for <hostname> node.
+ *   slotrange_string expected to have this form: <m>[-<n>]
+ */
+
+int process_gpu_token_slotrange(
+
+  const char *name,
+  const char *slotrange_string,
   job *pjob)
 
   {
-  char           *pc;
   char           *dash;
-  char           *p;
   int             first;
   int             last;
   struct pbsnode *pnode;
 
-  // gpu_token expected to point to something like "numa3-gpu/2"
-
-  if ((gpu_token == NULL) || (pjob == NULL))
+  if ((name == NULL) || (slotrange_string == NULL) || (pjob == NULL))
     return(-1);
      
-  // calculate range indices after the /
-  if ((pc = strchr((char *)gpu_token, (int)'/')))
-    {
-    first = strtol(pc + 1, &dash, 10);
+  // calculate range indices
+  first = strtol(slotrange_string, &dash, 10);
 
-    *pc = '\0';
-
-    if (*dash == '-')
-      last = strtol(dash + 1, NULL, 10);
-    else
-      last = first;
-    }
+  if (*dash == '-')
+    last = strtol(dash + 1, NULL, 10);
   else
-    {
-    first = 0;
     last = first;
-    }
-
-  // drop -gpu suffix
-  if ((p = strrchr((char *)gpu_token, (int)'-')) != NULL)
-    {
-    if (strcmp(p, "-gpu") == 0)
-      *p = '\0';
-    }
 
   // lookup node and set gpu info on each gpu subnode
-  if ((pnode = find_nodebyname(gpu_token)) != NULL)
+  if ((pnode = find_nodebyname(name)) != NULL)
     {
     int i;
 
@@ -5952,6 +5996,63 @@ int process_gpu_token(
 
   return(PBSE_NONE);
   }
+
+
+/*
+ * process_gpu_token - Set gpu subjob information for <hostname> node.
+ *   gpu_token expected to have this form: <hostname>[-gpu]/<m>[-<n>][,...]
+ */
+
+int process_gpu_token(
+
+  const char *gpu_token,
+  job  *pjob)
+
+  {
+  char *remainder;
+  char *p;
+  int   rc = PBSE_UNKNODE;
+  std::vector<std::string> rangestrings;
+
+  // check params
+  if ((gpu_token == NULL) ||
+      (pjob == NULL))
+    return(PBSE_UNKNODE);
+
+  // find hostname
+  if ((remainder = strchr((char *)gpu_token, '/')) != NULL)
+    {
+    // terminate the string -- the hostname preceeds this
+    *remainder = '\0'; 
+
+    // the remainder of the string
+    remainder++;
+    }
+
+  // see if there's anything left to parse
+  if ((remainder == NULL) || *remainder == '\0')
+    return(PBSE_UNKNODE);
+
+  // drop -gpu suffix
+  if ((p = strrchr((char *)gpu_token, '-')) != NULL)
+    {
+    if (strcmp(p, "-gpu") == 0)
+      *p = '\0';
+    }
+
+  // get vector or slot ranges
+  rangestrings = split_str_on_character(remainder, ',');
+
+  // process each <m>[-<n>] range
+  for (std::vector<int>::size_type i = 0; i < rangestrings.size(); i++)
+    {
+    if ((rc = process_gpu_token_slotrange(gpu_token, rangestrings[i].c_str(), pjob)) != PBSE_NONE)
+      break;
+    }
+
+  return(rc);
+  }
+
 
 /*
  * set_old_nodes - set "old" nodes as in use - called from pbsd_init()
