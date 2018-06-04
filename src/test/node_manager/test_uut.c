@@ -48,6 +48,10 @@ void check_node_jobs_existence(struct work_task *pwt);
 int  add_job_to_gpu_subnode(pbsnode *pnode, gpusubn &gn, svr_job *pjob);
 int proplist(char **str, std::vector<prop> &plist, int *node_req, int *gpu_req, int *mic_req);
 int process_gpu_token(const char*, svr_job*);
+int process_gpu_token_slotrange(const char*, const char*, svr_job*);
+std::vector<std::string> split_str_on_character(const std::string&, char);
+int set_one_old(const char*, svr_job*);
+int set_one_old_slotrange(const char*, const char*, svr_job*);
 
 
 
@@ -946,8 +950,8 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   job_reservation_info jri;
   int rc =  place_subnodes_in_hostlist(&pjob, pnode, *naji, jri, buf);
 
-  fail_unless((rc == PBSE_NONE), "Call to place_subnodes_in_hostlit failed");
-  fail_unless(pnode->nd_state == INUSE_JOB, "Call to place_subnodes_in_hostlit was not set to job exclusive state");
+  fail_unless((rc == PBSE_NONE), "Call to place_subnodes_in_hostlist failed");
+  fail_unless(pnode->nd_state == INUSE_JOB, "Call to place_subnodes_in_hostlist was not set to job exclusive state");
 
   /* turn job_exclusive_on_use off and reset the node state */
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags=ATR_VFLAG_SET;
@@ -956,8 +960,8 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
 
   job_reservation_info jri2;
   rc = place_subnodes_in_hostlist(&pjob, pnode, *naji, jri2, buf);
-  fail_unless((rc == PBSE_NONE), "2nd call to place_subnodes_in_hostlit failed");
-  fail_unless(pnode->nd_state != INUSE_JOB, "2nd call to place_subnodes_in_hostlit was not set to job exclusive state");
+  fail_unless((rc == PBSE_NONE), "2nd call to place_subnodes_in_hostlist failed");
+  fail_unless(pnode->nd_state != INUSE_JOB, "2nd call to place_subnodes_in_hostlist was not set to job exclusive state");
 
   /* test case when the attribute SVR_ATR_JobExclusiveOnUse was never set */
   server.sv_attr[SRV_ATR_JobExclusiveOnUse].at_flags=0;
@@ -966,8 +970,8 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
 
   job_reservation_info jri3;
   rc = place_subnodes_in_hostlist(&pjob, pnode, *naji, jri3, buf);
-  fail_unless((rc == PBSE_NONE), "3rd call to place_subnodes_in_hostlit failed");
-  fail_unless(pnode->nd_state != INUSE_JOB, "3rd call to place_subnodes_in_hostlit was not set to job exclusive state");
+  fail_unless((rc == PBSE_NONE), "3rd call to place_subnodes_in_hostlist failed");
+  fail_unless(pnode->nd_state != INUSE_JOB, "3rd call to place_subnodes_in_hostlist was not set to job exclusive state");
   }
 END_TEST
 
@@ -975,9 +979,10 @@ START_TEST(test_process_gpu_token)
   {
   svr_job *pjob = new svr_job();
   char *s;
+  char *r;
   struct pbsnode *pnode;
 
-  s = strdup("gpunode/5");
+  s = strdup("gpunode/7");
 
   fail_unless(process_gpu_token(NULL, pjob) != PBSE_NONE);
   fail_unless(process_gpu_token(s, NULL) != PBSE_NONE);
@@ -988,9 +993,31 @@ START_TEST(test_process_gpu_token)
 
   fail_unless((pnode = find_nodebyname("gpunode")) != NULL);
 
-  fail_unless(pnode->nd_gpusn[5].job_internal_id == 10);
+  fail_unless(pnode->nd_gpusn[7].job_internal_id == 10);
+  fail_unless(pnode->nd_gpusn[7].inuse == true);
+  fail_unless(pnode->nd_gpusn[7].job_count == 1);
+
+  // clear
+  pnode->nd_gpusn[7].inuse= false;
+  pnode->nd_gpusn[7].job_count = 0;
+
+  s = strdup("gpunode");
+  r = strdup("4-6");
+  fail_unless(process_gpu_token_slotrange(s, r, pjob) == PBSE_NONE);
+  fail_unless(pnode->nd_gpusn[4].inuse == true);
+  fail_unless(pnode->nd_gpusn[4].job_count == 1);
   fail_unless(pnode->nd_gpusn[5].inuse == true);
   fail_unless(pnode->nd_gpusn[5].job_count == 1);
+  fail_unless(pnode->nd_gpusn[6].inuse == true);
+  fail_unless(pnode->nd_gpusn[6].job_count == 1);
+
+  // clear
+  pnode->nd_gpusn[4].inuse= false;
+  pnode->nd_gpusn[4].job_count = 0;
+  pnode->nd_gpusn[5].inuse= false;
+  pnode->nd_gpusn[5].job_count = 0;
+  pnode->nd_gpusn[6].inuse= false;
+  pnode->nd_gpusn[6].job_count = 0;
 
   s = strdup("gpunode/0-2");
   fail_unless(process_gpu_token(s, pjob) == PBSE_NONE);
@@ -1000,8 +1027,90 @@ START_TEST(test_process_gpu_token)
   fail_unless(pnode->nd_gpusn[1].job_count == 1);
   fail_unless(pnode->nd_gpusn[2].inuse == true);
   fail_unless(pnode->nd_gpusn[2].job_count == 1);
+
+  // clear
+  pnode->nd_gpusn[0].inuse= false;
+  pnode->nd_gpusn[0].job_count = 0;
+  pnode->nd_gpusn[1].inuse= false;
+  pnode->nd_gpusn[1].job_count = 0;
+  pnode->nd_gpusn[2].inuse= false;
+  pnode->nd_gpusn[2].job_count = 0;
+
+  s = strdup("gpunode/0-2,3,7");
+  fail_unless(process_gpu_token(s, pjob) == PBSE_NONE);
+  fail_unless(pnode->nd_gpusn[0].inuse == true);
+  fail_unless(pnode->nd_gpusn[0].job_count == 1);
+  fail_unless(pnode->nd_gpusn[1].inuse == true);
+  fail_unless(pnode->nd_gpusn[1].job_count == 1);
+  fail_unless(pnode->nd_gpusn[2].inuse == true);
+  fail_unless(pnode->nd_gpusn[2].job_count == 1);
+  fail_unless(pnode->nd_gpusn[3].inuse == true);
+  fail_unless(pnode->nd_gpusn[3].job_count == 1);
+  fail_unless(pnode->nd_gpusn[7].inuse == true);
+  fail_unless(pnode->nd_gpusn[7].job_count == 1);
+ }
+END_TEST
+
+
+START_TEST(test_split_str_on_character)
+  {
+  std::string s;
+  std::vector<std::string> my_v;
+
+  s = "0";
+  my_v = split_str_on_character(s, ',');
+  fail_unless(my_v.size() == 1);
+  fail_unless(my_v[0] == "0");
+
+  s = "0,1,2";
+  my_v = split_str_on_character(s, ',');
+  fail_unless(my_v.size() == 3);
+  fail_unless(my_v[0] == "0");
+  fail_unless(my_v[1] == "1");
+  fail_unless(my_v[2] == "2");
+
+  s = "a:b";
+  my_v = split_str_on_character(s, ':');
+  fail_unless(my_v.size() == 2);
+  fail_unless(my_v[0] == "a");
+  fail_unless(my_v[1] == "b");
   }
 END_TEST
+
+
+START_TEST(test_set_one_old)
+  {
+  svr_job *pjob;
+  char *s;
+  struct pbsnode *pnode;
+
+  pjob = (svr_job *)calloc(1, sizeof(pjob));
+  s = strdup("jane/7");
+
+  fail_unless(set_one_old(NULL, pjob) != PBSE_NONE);
+  fail_unless(set_one_old(s, NULL) != PBSE_NONE);
+  fail_unless(set_one_old(NULL, NULL) != PBSE_NONE);
+
+  pjob->ji_internal_id = 10;
+  fail_unless(set_one_old(s, pjob) == PBSE_NONE);
+
+  fail_unless((pnode = find_nodebyname("jane")) != NULL);
+
+  fail_unless(pnode->nd_slots.get_total_execution_slots() == 8);
+  // have one used so far so 7 should be free
+  fail_unless(pnode->nd_slots.get_number_free() == 7);
+
+  s = strdup("jane/0-2,5");
+  fail_unless(set_one_old(s, pjob) == PBSE_NONE);
+  // used 4 so 3 free
+  fail_unless(pnode->nd_slots.get_number_free() == 3);
+
+  fail_unless(set_one_old_slotrange("jane", "3-4", pjob) == PBSE_NONE);
+  // used 2 so 1 free
+  fail_unless(pnode->nd_slots.get_number_free() == 1);
+ }
+END_TEST
+
 
 Suite *node_manager_suite(void)
   {
@@ -1071,6 +1180,14 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("test_proplist");
   tcase_add_test(tc_core, test_proplist);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_split_str_on_character");
+  tcase_add_test(tc_core, test_split_str_on_character);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_set_one_old");
+  tcase_add_test(tc_core, test_set_one_old);
   suite_add_tcase(s, tc_core);
 
   return(s);
