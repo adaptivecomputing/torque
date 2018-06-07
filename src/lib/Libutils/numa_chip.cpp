@@ -1258,7 +1258,7 @@ double Chip::how_many_tasks_fit(
     if (mics > 0)
       {
       mic_tasks = this->available_mics / mics;
-      if (mem_tasks > mics)
+      if (mem_tasks > mic_tasks)
         mem_tasks = mic_tasks;
       }
     
