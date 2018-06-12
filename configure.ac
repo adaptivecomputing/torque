@@ -1863,7 +1863,7 @@ dnl  Make a bind() call before making a connect() call
 AC_MSG_CHECKING([whether to build with bind() calls before connect() calls])
 AC_ARG_ENABLE(bind-outbound-sockets,
     [  --enable-bind-outbound-sockets           enable build with bind() calls before connect() calls],
-    BIND_OUTBOUND_SOCKETS=$enableval,BIND_OUTBOUND_SOCKETS=yes)
+    BIND_OUTBOUND_SOCKETS=$enableval,BIND_OUTBOUND_SOCKETS=no)
 AC_MSG_RESULT($BIND_OUTBOUND_SOCKETS)
 if test "$BIND_OUTBOUND_SOCKETS" = "yes" ; then
 	AC_DEFINE(BIND_OUTBOUND_SOCKETS, 1, [turns on the compilation of BIND_OUTBOUND_SOCKETS code])
