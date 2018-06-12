@@ -1452,7 +1452,7 @@ int delete_array_range(
           if (err != PBSE_JOB_RECYCLED)
             {
             char log_buf[LOCAL_LOG_BUF_SIZE];
-            sprintf(log_buf, "Error when purging %s", pa->job_ids[i]);
+            sprintf(log_buf, "Error when purging %s", pa->job_ids[index]);
             log_err(err, __func__, log_buf);
             deleted = false;
             }
@@ -1477,7 +1477,7 @@ int delete_array_range(
         if (running == FALSE)
           num_deleted++;
 
-        pa->update_array_values(old_state, aeTerminate, pa->job_ids[i], cancel_exit_code);
+        pa->update_array_values(old_state, aeTerminate, pa->job_ids[index], cancel_exit_code);
         }
       }
     }
