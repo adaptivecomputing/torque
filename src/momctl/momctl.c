@@ -999,6 +999,8 @@ void MCShowUsage(
 
   fprintf(stderr, "            [ -s ]                // SHUTDOWN\n");
 
+  fprintf(stderr, "            [ -u ]                // UPDATE PBS_SERVER HARDWARE CONFIGURATION\n");
+
   fprintf(stderr, "\n");
 
   fprintf(stderr, " Only one of c, C, d, q, r, or s must be specified, but -q may\n");
