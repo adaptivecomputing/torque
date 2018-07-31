@@ -1326,7 +1326,9 @@ static int get_script(
           directive_prefix_on = true;
           }
 
+        cfilter += "'";
         cfilter += ArgV[index];
+        cfilter += "'";
         }
       }    /* END for (index) */
 
