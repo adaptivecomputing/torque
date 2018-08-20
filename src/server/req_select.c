@@ -343,9 +343,6 @@ int req_selectjobs(
   if (cntl)
     free(cntl);
 
-  if (pque != NULL)
-    unlock_queue(pque, "req_selectjobs", (char *)NULL, LOGLEVEL);
-
   return PBSE_NONE;
   }  /* END req_selectjobs() */
 
