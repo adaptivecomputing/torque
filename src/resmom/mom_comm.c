@@ -674,7 +674,9 @@ int task_recov(
 
   if (fds < 0)
     {
-    log_err(errno, __func__, "open of task file");
+    snprintf(log_buffer, sizeof(log_buffer),
+      "open of task file %s", namebuf);
+    log_err(errno, __func__, log_buffer);
 
     unlink(namebuf);
 
