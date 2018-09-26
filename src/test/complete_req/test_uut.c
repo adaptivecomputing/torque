@@ -155,7 +155,7 @@ START_TEST(test_constructor)
   const req &rl = list3.get_req(0);
   fail_unless(rl.getTaskCount() == 1);
   fail_unless(rl.getExecutionSlots() == 16);
-  fail_unless(rl.get_total_memory() == 40, "mem is %lu", rl.get_total_memory());
+  fail_unless(rl.get_total_memory() == 16*40, "mem is %lu", rl.get_total_memory());
 
   resources.clear();
   add_resource(resources, "nodes", "1:ppn=2", 16, -1);
