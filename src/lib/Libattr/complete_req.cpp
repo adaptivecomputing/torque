@@ -199,8 +199,8 @@ complete_req::complete_req(
       r.set_placement_type(place_legacy);
       }
 
-    r.set_memory(mem_per_task * task_count);
-    r.set_swap(vmem_per_task * task_count);
+    r.set_memory(mem_per_task * task_count * ((execution_slots > 0) ? execution_slots : 1));
+    r.set_swap(vmem_per_task * task_count * ((execution_slots > 0) ? execution_slots : 1));
 
     if (execution_slots != 0)
       r.set_execution_slots(execution_slots);
