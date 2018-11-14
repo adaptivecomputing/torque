@@ -1132,3 +1132,5 @@ bool islocalhostaddr(struct sockaddr_in *saip)
   // is 127.0.0.1?
   return((saip->sin_addr.s_addr == (uint32_t)((127 << 24) + 1)));
 }
+
+void syslog_close(void) {}
