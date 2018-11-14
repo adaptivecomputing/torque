@@ -142,7 +142,7 @@ static FILE     *logfile;  /* open stream for log file */
 static char     *logpath = NULL;
 static volatile int  log_opened = 0;
 #if SYSLOG
-static int      syslogopen = 0;
+static bool     syslogopen = false;
 #endif /* SYSLOG */
 
 pthread_mutex_t log_mutex = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
@@ -628,11 +628,11 @@ void log_ext(
     pthread_mutex_unlock(&log_mutex);
 
 #if SYSLOG
-  if (syslogopen == 0)
+  if (!syslogopen)
     {
     openlog(msg_daemonname, LOG_NOWAIT, LOG_DAEMON);
 
-    syslogopen = 1;
+    syslogopen = true;
     }
 
   syslog(severity|LOG_DAEMON,"%s",buf);
@@ -642,6 +642,21 @@ void log_ext(
   return;
   }  /* END log_ext() */
 
+
+#if SYSLOG
+/**
+ * Close the system log.
+ */
+
+void syslog_close(
+
+  void)
+
+  {
+  closelog();
+  syslogopen = false;
+  }
+#endif
 
 
 /**
@@ -786,11 +801,11 @@ void log_record(
 #if SYSLOG
   if (eventtype & PBSEVENT_SYSLOG)
     {
-    if (syslogopen == 0)
+    if (!syslogopen)
       {
       openlog(msg_daemonname, LOG_NOWAIT, LOG_DAEMON);
 
-      syslogopen = 1;
+      syslogopen = true;
       }
 
     syslog(LOG_ERR | LOG_DAEMON,"%s",text);

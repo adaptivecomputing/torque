@@ -174,6 +174,9 @@ bool log_available(int eventtype);
 /* extern int  log_remove_old (char *,unsigned long); */
 extern char log_buffer[LOG_BUF_SIZE];
 int log_init(const char *suffix, const char *hostname);
+#if SYSLOG
+void syslog_close(void);
+#endif
 
 /* extern int  IamRoot (void); */
 /* #ifdef __CYGWIN__ */
