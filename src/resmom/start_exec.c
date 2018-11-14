@@ -7672,6 +7672,13 @@ pid_t fork_me(
   fflush(stdout);
   fflush(stderr);
 
+#if SYSLOG
+  // Close syslog before forking to avoid potential syslog
+  // deadlock in child. Note that parent and child will
+  // reopen if needed.
+  syslog_close();
+#endif
+
   pid = fork();
 
   if (pid == 0)

@@ -40,4 +40,6 @@ void log_set_hostname_sharelogging(const char *server_name, const char *server_p
 
 void log_get_host_port(char *host_n_port, size_t s);
 
+void syslog_close(void);
+
 #endif /* _PBS_LOG_H */
