@@ -60,7 +60,8 @@ SKIP:
         if ($line =~ /^\s+np = (\d+)/) and defined $node;
       }
 
-    map { $proccount += $_ } (values %nodes);
+    # As far as I know, Torque cann't start a job on every processor when proccount are different among nodes
+    map { $proccount += 1 } (values %nodes);
     $Jobcount = 2 * $proccount;
     ok($proccount, 'Processor Count') or
       BAIL_OUT('TORQUE reported 0 processors');
@@ -72,12 +73,13 @@ SKIP:
     {
     my $walltime = 1.1 * $Joblength;
     my $baseid   = `su $Testuser -c 'echo "sleep $Joblength" | qsub -k oe -l nodes=1,walltime=$walltime -t 0-$Jobcount'` || undef;
-       $baseid   =~ s/\D//g if defined $baseid;
+       $baseid =~ s/\d+//;
+       $baseid = $& if defined $baseid;
     ok(defined $baseid, "Job Submission") or
       BAIL_OUT("Unable to submit job to TORQUE as '$Testuser' - see TORQUE docs, Section 2.1");
     ok($baseid =~ /^\d+\S*\s*$/, "Job Submission") or
       BAIL_OUT("Unable to submit job to TORQUE as '$Testuser' - see TORQUE docs, Section 2.1");
-    @Jobs = map { "$baseid-$_" } (0..$Jobcount);
+    @Jobs = map { "$baseid\[$_\]" } (0..$Jobcount);
     }
 
   # Jobs In Queue
@@ -177,14 +179,14 @@ sub qstat_info
   {
   my %data;
   # Gather Information
-  my $qstat = `qstat` || undef;
+  my $qstat = `qstat -t` || undef;
   ok(defined $qstat, 'qstat Results') or
     BAIL_OUT('Cannot gather information from qstat');
   foreach my $line (split /[\r\n]+/, $qstat)
     {
     next unless $line =~
       /^
-        (\d+-\d+)\S*\s+ # Job ID
+        (\d+\[\d+\])\S*\s+ # Job ID
         \S+\s+          # Name
         \S+\s+          # User
         \S+\s+          # Time Use

@@ -35,7 +35,8 @@ foreach my $line (split /[\r\n]+/, $pbsnodes)
   $nodes{$node} += $1 - 1
     if ($line =~ /^\s+np = (\d+)/) and defined $node;
   }
-map { $proccount += $_ } (values %nodes);
+# As far as I know, Torque cann't start a job on every processor when proccount are different among nodes
+map { $proccount += 1 } (values %nodes);
 ok($proccount, 'Processor Count') or
   BAIL_OUT('TORQUE reported 0 processors');
 
@@ -64,7 +65,9 @@ sub submit_job ($)
     BAIL_OUT("Unable to submit job to TORQUE as '$testuser' - see TORQUE docs, Section 2.1");
   ok($job =~ /^\d+\S*\s*$/, 'Job Submission') or
     BAIL_OUT("Unable to submit job to TORQUE as '$testuser' - see TORQUE docs, Section 2.1");
-  $job =~ s/\D//g;
+  # shouldn't use global match lest hostname should contain figures
+  $job =~ s/\d+//;
+  $job = $&;
   return $job;
   }
 #

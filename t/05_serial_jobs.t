@@ -30,7 +30,9 @@ ok($job =~ /^\d+\S*\s*$/, 'Job Submission') or
   BAIL_OUT("Unable to submit job to TORQUE as '$testuser' - see TORQUE docs, Section 2.1");
 
 # Job In Queue
-$job =~ s/\D//g;
+# shouldn't use global match lest hostname should contain figures
+$job =~ s/\d+//;
+$job = $&;
 sleep 1;
 my $qstat = `qstat | grep $job` || undef;
 ok(defined $qstat, 'Job in Queue') or
@@ -60,7 +62,8 @@ ok($running, 'Job Running') or
   BAIL_OUT("Submitted job has failed to start within $waittime seconds - check scheduler - see TORQUE docs, Section 5.1");
 
 # Check Output Files
-my $remaining  = $joblength - $timer + 1;
+# giving more remaining time so that output files could have been created
+my $remaining  = $joblength - $timer + 2;
 my $outputfile = "STDIN.o$job";
 my $errorfile  = "STDIN.e$job";
 sleep $remaining if ($remaining > 0);

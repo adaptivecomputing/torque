@@ -16,7 +16,7 @@ ok(defined $qstat, 'Client Tools') or
 
 # version - TORQUE version
 my $version = `qstat --version 2>&1`;
-   $version =~ /^version:\s*([\d.]+)\s*$/i;
+   $version =~ /Version:\s+(\d+\.\d+\.\d+)/;
    $version = $1 || undef;
 ok(defined $version, 'TORQUE Version') or
   BAIL_OUT('Cannot determine TORQUE version');
