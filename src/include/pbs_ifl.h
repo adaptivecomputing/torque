@@ -87,6 +87,10 @@
 #define _PBS_IFL_DEF
 #include <sys/socket.h>
 
+#ifdef __cplusplus
+#include <stdbool.h>
+#endif /* __cplusplus */
+
 /* Attribute Names used by user commands */
 
 #define ATTR_a "Execution_Time"
