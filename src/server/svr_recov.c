@@ -336,82 +336,78 @@ int svr_recov_xml(
       
       else if (parent == "attributes")
         {
-      
         for (xmlNodePtr attr_children = current_node->xmlChildrenNode;
              attr_children != NULL;
              attr_children = attr_children->next)
-        {
-        std::string attr_parent((char*)attr_children->name);
-        if (attr_parent != "text")
           {
-          xmlChar *attr_content = xmlNodeGetContent(attr_children);
-          char *attr_child = (char *)attr_content;
-          if (attr_parent == ATTR_rescavail)
+          std::string attr_parent((char*)attr_children->name);
+          if (attr_parent != "text")
             {
-            for (xmlNodePtr res_child_node = attr_children->xmlChildrenNode;
-                 res_child_node != NULL;
-                 res_child_node = res_child_node->next)
+            xmlChar *attr_content = xmlNodeGetContent(attr_children);
+            char *attr_child = (char *)attr_content;
+            if ((attr_parent == ATTR_rescavail) || (attr_parent == ATTR_rescassn))
               {
-              std::string res_parent =((char*)res_child_node->name);
-              if (res_parent != "text")
+              for (xmlNodePtr res_child_node = attr_children->xmlChildrenNode;
+                   res_child_node != NULL;
+                   res_child_node = res_child_node->next)
                 {
-                xmlChar *res_child_content = xmlNodeGetContent(res_child_node);
-                std::string res_child((char*)res_child_content);
-                xmlFree(res_child_content);
-
-                res_parent.insert(0,"<");
-                res_parent.insert(res_parent.end(),'>');
-                res_child.insert(0,res_parent);
-                res_parent.insert(1,"/");
-                res_child.insert(res_child.end(),res_parent.begin(),res_parent.end());
-
-                if ((rc = str_to_attr(attr_parent.c_str(), res_child.c_str(),
-                        server.sv_attr,svr_attr_def,SRV_ATR_LAST)))
+                std::string res_parent =((char*)res_child_node->name);
+                if (res_parent != "text")
                   {
-                  /* ERROR */
-                  errorCount++;
-                  snprintf(log_buf,sizeof(log_buf),
-                      "Error creating resource attribute %s",
-                      attr_parent.c_str());
-                  log_err(rc, __func__, log_buf);
+                  xmlChar *res_child_content = xmlNodeGetContent(res_child_node);
+                  std::string res_child((char*)res_child_content);
+                  xmlFree(res_child_content);
+
+                  res_parent.insert(0,"<");
+                  res_parent.insert(res_parent.end(),'>');
+                  res_child.insert(0,res_parent);
+                  res_parent.insert(1,"/");
+                  res_child.insert(res_child.end(),res_parent.begin(),res_parent.end());
+
+                  if ((rc = str_to_attr(attr_parent.c_str(), res_child.c_str(),
+                          server.sv_attr,svr_attr_def,SRV_ATR_LAST)))
+                    {
+                    /* ERROR */
+                    errorCount++;
+                    snprintf(log_buf,sizeof(log_buf),
+                        "Error creating resource attribute %s",
+                        attr_parent.c_str());
+                    log_err(rc, __func__, log_buf);
   
-                  xmlFree(attr_content);
-                  xmlFree(content);
-                 break;
-                 }
-               }
-             }
-           }//end attr_parent == ATTR_rescavail
+                    xmlFree(attr_content);
+                    xmlFree(content);
+                    break;
+                    }
+                  }
+                }
+              }
+            else if ((rc = str_to_attr(attr_parent.c_str(),attr_child,server.sv_attr,svr_attr_def,SRV_ATR_LAST)))
+              {
+              /* ERROR */
+              errorCount++;
+              snprintf(log_buf,sizeof(log_buf),
+                "Error creating attribute %s",
+                attr_parent.c_str());
 
-
-           
-        else if ((rc = str_to_attr(attr_parent.c_str(),attr_child,server.sv_attr,svr_attr_def,SRV_ATR_LAST)))
-          {
-          /* ERROR */
-          errorCount++;
-          snprintf(log_buf,sizeof(log_buf),
-            "Error creating attribute %s",
-            attr_parent.c_str());
-
-          log_err(rc, __func__, log_buf);
+              log_err(rc, __func__, log_buf);
           
-          xmlFree(attr_content);
-          xmlFree(content);
+              xmlFree(attr_content);
+              xmlFree(content);
 
-          break;
+              break;
+              }
+
+            if (!strcmp(attr_parent.c_str(), ATTR_tcptimeout))
+              pbs_tcp_timeout = strtol(attr_child, NULL, 10);
+            else if (!strcmp(attr_parent.c_str(), ATTR_tcpincomingtimeout))
+              pbs_incoming_tcp_timeout = strtol(attr_child, NULL, 10);
+            }
           }
+        }//parent == attributes
+      }//parent != text
+    }//node for loop
 
-        if (!strcmp(attr_parent.c_str(), ATTR_tcptimeout))
-          pbs_tcp_timeout = strtol(attr_child, NULL, 10);
-        else if (!strcmp(attr_parent.c_str(), ATTR_tcpincomingtimeout))
-          pbs_incoming_tcp_timeout = strtol(attr_child, NULL, 10);
-        }
-      }
-    }//parent == attributes
-  }//parent != text
-}//node for loop
-
-xmlFreeDoc(doc);
+  xmlFreeDoc(doc);
 
   if (errorCount)
     return -1;
