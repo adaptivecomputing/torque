@@ -4425,9 +4425,9 @@ batch_request *get_std_file_info(
   // if files are to be kept, don't copy since they are already at their destination
   if (pjob->get_str_attr(JOB_ATR_keep) != NULL)
     {
-    if (pjob->get_str_attr(JOB_ATR_keep), "o")
+    if (strstr(pjob->get_str_attr(JOB_ATR_keep), "o"))
       copy_stdout = false;
-    if (pjob->get_str_attr(JOB_ATR_keep), "e")
+    if (strstr(pjob->get_str_attr(JOB_ATR_keep), "e"))
       copy_stderr = false;
     }
 
