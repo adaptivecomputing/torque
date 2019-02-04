@@ -879,6 +879,8 @@ The
 is a comma separated list of strings of the form
 .Ty variable
 or
+.Ty variable=
+or
 .Ty variable=value .
 These variables and their values are passed to the job.
 .if !\n(Pb .ig Ig
@@ -888,6 +890,11 @@ attribute is appended with the variables in
 .Ar user_list 
 and their values.
 .Ig
+Example: "-v V1,V2=,V3=myval" causes environment variables V1 and V2 to be
+set within the job to the value taken from the submitting shell's environment.
+V3 is set within the job to the specified value myval. If V1 and V2 are undefined
+in the submitting shell's environment, they will be defined within the job but
+have no value.
 .IP "\-V" 8
 Declares that all environment variables in the qsub
 command's environment are to be exported to the batch job.

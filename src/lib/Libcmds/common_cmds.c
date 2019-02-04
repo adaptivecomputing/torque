@@ -282,12 +282,12 @@ int parse_variable_list(
       return(3);
       }
 
-    /* If delim is ','or NULL we have no value. Get the environment variable in s */ 
-    /* If delim is '=' and delim+1 is ',' or NULL we also need to get 
+    /* If delim is ',' or NULL we have no value. Get the environment variable in s */ 
+    /* If delim is '=' and delim+1 is ',' or '\0' we also need to get 
        the environment variable in s */
-    if (delim == NULL || *delim == ',' ||
+    if ((delim == NULL) || (*delim == ',') ||
        ((*delim == '=') && (*(delim + 1) == ',')) ||
-       ((*delim == '=') && ((delim + 1) == NULL)))
+       ((*delim == '=') && (*(delim + 1) == '\0')))
       {
       if (delim == NULL)
         alloc_size = strlen(s);
@@ -308,10 +308,15 @@ int parse_variable_list(
           s = NULL;
         else
           {
-          job_env += ",";
-          s = delim + 1;
-          if (*s == ',') /* This ended in '='. Move one more */
-            s++;
+          if (*(delim + 1) != '\0')
+            {
+            job_env += ",";
+            s = delim + 1;
+            if (*s == ',') /* This ended in '='. Move one more */
+              s++;
+            }
+          else if (*delim == '=')
+            s = NULL;
           }
         }
       else
@@ -320,7 +325,7 @@ int parse_variable_list(
         if (delim == NULL)
           {
           snprintf(name, sizeof(name), "%s", s);
-          job_env += "name";
+          job_env += name;
           job_env += "=";
           s = NULL;
           }
@@ -330,7 +335,9 @@ int parse_variable_list(
           name[delim - s] = '\0';
           job_env += name;
           job_env += "=,";
-          s = ++delim + 1;
+          s = delim + 1;
+          if (*s == ',') /* This ended in '='. Move one more */
+            s++;
           }
         }
       }

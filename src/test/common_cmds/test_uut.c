@@ -13,6 +13,7 @@ extern int env_add_call;
 extern int env_del_call;
 extern int env_find_call;
 extern int tc_num;
+extern std::string test_string;
 
 void add_env_value_to_string(std::string &val, const char *env_val_to_add);
 
@@ -120,6 +121,8 @@ START_TEST(test_parse_variable_list)
   job_data *item = NULL;
   int var_type = ENV_DATA;
   int op_type = SET;
+
+  // old tests
   char list[] = "hi=there,help=me,me=";
   tc_num = 2;
   hash_add_or_exit(&src_map, "me", "notme", var_type);
@@ -131,6 +134,174 @@ START_TEST(test_parse_variable_list)
   hash_find(&dest_map, "me", &item);
   fail_unless(item != NULL, "me was not found in the map");
   fail_unless(strcmp(item->value.c_str(), "notme") == 0, "value of me was wrong \"notme\"!=\"%s\"", item->value.c_str());
+
+  // new tests
+
+  char *vlist;
+  job_data_container dest_hash;
+
+  tc_num = 3;
+
+  // single variable cases
+
+  // assign V1 from env (empty)
+  fail_unless(0 == unsetenv("V1"));
+  fail_unless(NULL != (vlist = strdup("V1")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=" == test_string);
+  test_string.erase();
+
+  // assign V1 from env (no trailing =)
+  fail_unless(0 == setenv("V1", "v1", 1));
+  fail_unless(NULL != (vlist = strdup("V1")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1" == test_string);
+  test_string.erase();
+
+  // assign V1 from env (trailing =)
+  fail_unless(0 == setenv("V1", "v1", 1));
+  fail_unless(NULL != (vlist = strdup("V1=")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1" == test_string);
+  test_string.erase();
+
+  // assign V1 from specified value
+  fail_unless(0 == unsetenv("V1"));
+  fail_unless(NULL != (vlist = strdup("V1=v1")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1" == test_string);
+  test_string.erase();
+
+  // multiple variable cases
+
+  // assign V1 and V2 from env (both empty)
+  fail_unless(0 == unsetenv("V1"));
+  fail_unless(0 == unsetenv("V2"));
+  fail_unless(NULL != (vlist = strdup("V1,V2")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=,V2=" == test_string);
+  test_string.erase();
+
+  // assign V1 from env (empty), assign V2 from env (non empty)
+  fail_unless(0 == unsetenv("V1"));
+  fail_unless(0 == setenv("V2", "v2", 1));
+  fail_unless(NULL != (vlist = strdup("V1,V2")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=,V2=v2" == test_string);
+  test_string.erase();
+
+  // assign V1 from env (empty), assign V2 from env (non empty)
+  fail_unless(0 == unsetenv("V1"));
+  fail_unless(0 == setenv("V2", "v2", 1));
+  fail_unless(NULL != (vlist = strdup("V1,V2=")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=,V2=v2" == test_string);
+  test_string.erase();
+
+  // assign V1 from env (empty), assign V2 from specified value
+  fail_unless(0 == unsetenv("V1"));
+  fail_unless(0 == unsetenv("V2"));
+  fail_unless(NULL != (vlist = strdup("V1,V2=v2")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=,V2=v2" == test_string);
+  test_string.erase();
+
+  // assign V1 from env (non empty), assign V2 from env (empty)
+  fail_unless(0 == setenv("V1", "v1", 1));
+  fail_unless(0 == unsetenv("V2"));
+  fail_unless(NULL != (vlist = strdup("V1,V2")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1,V2=" == test_string);
+  test_string.erase();
+
+  // assign V1 from env (non empty), assign V2 from env (non empty)
+  fail_unless(0 == setenv("V1", "v1", 1));
+  fail_unless(0 == setenv("V2", "v2", 1));
+  fail_unless(NULL != (vlist = strdup("V1,V2")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1,V2=v2" == test_string);
+  test_string.erase();
+
+  // assign V1 from env (non empty), assign V2 from env (non empty)
+  fail_unless(0 == setenv("V1", "v1", 1));
+  fail_unless(0 == setenv("V2", "v2", 1));
+  fail_unless(NULL != (vlist = strdup("V1,V2=")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1,V2=v2" == test_string);
+  test_string.erase();
+
+  // assign V1 from env (non empty), assign V2 from specified value
+  fail_unless(0 == setenv("V1", "v1", 1));
+  fail_unless(0 == unsetenv("V2"));
+  fail_unless(NULL != (vlist = strdup("V1,V2=v2")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1,V2=v2" == test_string);
+  test_string.erase();
+
+  // assign V1 from env (non empty), assign V2 from env (empty)
+  fail_unless(0 == setenv("V1", "v1", 1));
+  fail_unless(0 == unsetenv("V2"));
+  fail_unless(NULL != (vlist = strdup("V1=,V2")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1,V2=" == test_string);
+  test_string.erase();
+
+  // assign V1 from env (non empty), assign V2 from env (non empty)
+  fail_unless(0 == setenv("V1", "v1", 1));
+  fail_unless(0 == setenv("V2", "v2", 1));
+  fail_unless(NULL != (vlist = strdup("V1=,V2")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1,V2=v2" == test_string);
+  test_string.erase();
+
+  // assign V1 from env (non empty), assign V2 from env (non empty)
+  fail_unless(0 == setenv("V1", "v1", 1));
+  fail_unless(0 == setenv("V2", "v2", 1));
+  fail_unless(NULL != (vlist = strdup("V1=,V2=")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1,V2=v2" == test_string);
+  test_string.erase();
+
+  // assign V1 from env (non empty), assign V2 from specified value
+  fail_unless(0 == setenv("V1", "v1", 1));
+  fail_unless(0 == unsetenv("V2"));
+  fail_unless(NULL != (vlist = strdup("V1=,V2=v2")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1,V2=v2" == test_string);
+  test_string.erase();
+
+  // assign V1 from specified value, assign V2 from env (empty)
+  fail_unless(0 == unsetenv("V1"));
+  fail_unless(0 == unsetenv("V2"));
+  fail_unless(NULL != (vlist = strdup("V1=v1,V2")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1,V2=" == test_string);
+  test_string.erase();
+
+  // assign V1 from specified value, assign V2 from env (non empty)
+  fail_unless(0 == unsetenv("V1"));
+  fail_unless(0 == setenv("V2", "v2", 1));
+  fail_unless(NULL != (vlist = strdup("V1=v1,V2")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1,V2=v2" == test_string);
+  test_string.erase();
+
+  // assign V1 from specified value, assign V2 from env (non empty)
+  fail_unless(0 == unsetenv("V1"));
+  fail_unless(0 == setenv("V2", "v2", 1));
+  fail_unless(NULL != (vlist = strdup("V1=v1,V2=")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1,V2=v2" == test_string);
+  test_string.erase();
+
+  // assign V1 from specified value, assign V2 from specified value
+  fail_unless(0 == unsetenv("V1"));
+  fail_unless(0 == unsetenv("V2"));
+  fail_unless(NULL != (vlist = strdup("V1=v1,V2=v2")));
+  fail_unless(0 == parse_variable_list(&dest_hash, &src_map, var_type, op_type, vlist));
+  fail_unless("V1=v1,V2=v2" == test_string);
+  test_string.erase();
+
   }
 END_TEST
 
