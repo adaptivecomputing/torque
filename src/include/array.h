@@ -210,7 +210,7 @@ typedef container::item_container<job_array *>::item_iterator all_arrays_iterato
 #define TOKEN_TAG                "token"
 #define RANGE_TAG                "range"
 
-int  is_array(char *id);
+int  is_id_array(char *id);
 int  array_delete(const char *array_id);
 int  array_save(job_array *pa);
 int  array_save(job_array *pa);

@@ -49,7 +49,7 @@ void process_config_file(
 
 
 
-bool is_array(
+bool is_job_array(
 
   char *job_id)
 
@@ -66,7 +66,7 @@ bool is_array(
     }
     
   return(false);
-  } /* END is_array() */
+  } /* END is_job_array() */
 
 
 
@@ -289,7 +289,7 @@ int qdel_main(
     snprintf(job_id, sizeof(job_id), "%s", argv[optind]);
    
     if ((dash_t == true) && 
-        (is_array(job_id) == false))
+        (is_job_array(job_id) == false))
       {
       fprintf(stderr, "qdel: Error: job id '%s' isn't a job array but -t was specified.\n",
         job_id);

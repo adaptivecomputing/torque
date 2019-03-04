@@ -118,7 +118,7 @@ int parse_ded_file(const char *filename)
 
   i = 0;
 
-  memset(conf.ded_time, 0, MAX_DEDTIME_SIZE);
+  memset(conf.ded_time, 0, sizeof(struct timegap) * MAX_DEDTIME_SIZE);
 
   while (fgets(line, 256, fp) != NULL)
     {

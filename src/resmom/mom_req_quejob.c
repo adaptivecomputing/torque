@@ -741,11 +741,15 @@ void req_mvjobfile(
 
   if (pj == NULL)
     {
-    snprintf(log_buffer, 1024, "cannot find job %s for move of %s file",
-      preq->rq_ind.rq_jobfile.rq_jobid,
-      TJobFileType[jft]);
+    std::string err_msg;
 
-    log_err(-1, __func__, log_buffer);
+    err_msg = "cannot find job ";
+    err_msg += preq->rq_ind.rq_jobfile.rq_jobid;
+    err_msg += " for move of ";
+    err_msg += TJobFileType[jft];
+    err_msg += " file";
+
+    log_err(-1, __func__, err_msg.c_str());
 
     req_reject(PBSE_UNKJOBID, 0, preq, NULL, NULL);
 

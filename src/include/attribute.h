@@ -513,7 +513,7 @@ int to_size(const char *val, struct size_value *psize);
 void from_size(struct size_value *psize, char *cvnbuf);
 void create_size_string(char *buf, struct size_value values);
 
-#define NULL_FUNC '\0'
+#define NULL_FUNC NULL
 
 /* other associated funtions */
 

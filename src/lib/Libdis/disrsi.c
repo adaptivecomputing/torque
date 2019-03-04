@@ -141,6 +141,8 @@ int disrsi(
         *retval = locret;
         }
 
+    // fall through
+
     case DIS_OVERFLOW:
 
       value = negate ? INT_MIN : INT_MAX;

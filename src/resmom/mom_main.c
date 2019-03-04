@@ -1067,7 +1067,7 @@ char *conf_res(
     goto done;
     }
 
-  name[i] = '\0';
+  name[i] = NULL;
 
   for (d = ret_string, resline++;*resline;)
     {

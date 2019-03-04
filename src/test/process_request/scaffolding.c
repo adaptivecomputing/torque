@@ -373,9 +373,9 @@ int req_modify_node(struct batch_request *preq)
   }
 
 
-int is_array(char *id)
+int is_id_array(char *id)
   {
-  fprintf(stderr, "The call to is_array needs to be mocked!!\n");
+  fprintf(stderr, "The call to is_id_array needs to be mocked!!\n");
   exit(1);
   }
 

@@ -2385,14 +2385,14 @@ void reset_config_vars()
   mom_host[0] = '\0';
   hostname_specified = 0;
   MOMConfigRReconfig = 0;
-  TNoSpoolDirList[0] = '\0';
+  TNoSpoolDirList[0] = NULL;
   is_reporter_mom = FALSE;
   is_login_node = FALSE;
   job_exit_wait_time = DEFAULT_JOB_EXIT_WAIT_TIME;
   jobstarter_exe_name[0] = '\0';
   jobstarter_set = 0;
   server_alias = NULL;
-  TRemChkptDirList[0] = '\0';
+  TRemChkptDirList[0] = NULL;
   tmpdir_basename[0] = '\0';  /* for $TMPDIR */
   rcp_path[0] = '\0';
   rcp_args[0] = '\0';

@@ -5053,7 +5053,6 @@ const char *idletime(
   DIR         *dp;
 
   struct dirent *de;
-  char          ttyname[50];
   time_t         curtm;
 
   if (attrib)
@@ -5082,16 +5081,18 @@ const char *idletime(
 
   while ((de = readdir(dp)) != NULL)
     {
+    std::string ttyname;
+
     if (maxtm >= curtm)
       break;
 
     if (strncmp(de->d_name, "tty", 3))
       continue;
 
-    sprintf(ttyname, "/dev/%s",
-            de->d_name);
+    ttyname = "/dev/";
+    ttyname += de->d_name;
 
-    setmax(ttyname);
+    setmax(ttyname.c_str());
     }
 
   closedir(dp);

@@ -324,7 +324,7 @@ void sum_select_mem_request(
       tmp = atoi(current);
       
       /* advance past the digits to the units */
-      while ((current != '\0') &&
+      while ((*current != '\0') &&
              (isdigit(*current)))
         current++;
 

@@ -4,7 +4,7 @@
 
   included functions:
 
-  is_array() determine if jobnum is actually an array identifyer
+  is_id_array() determine if jobnum is actually an array identifyer
   get_array() return array struct for given "parent id"
   array_save() save array struct to disk
   array_get_parent_id() return id of parent job if job belongs to a job array
@@ -90,7 +90,7 @@ void        force_purge_work(svr_job *pjob);
 
 /* search job array list to determine if id is a job array */
 
-int is_array(
+int is_id_array(
     
   char *id)
 
@@ -154,7 +154,7 @@ int is_array(
   allarrays.unlock();
 
   return(rc);
-  } /* END is_array() */
+  } /* END is_id_array() */
 
 
 

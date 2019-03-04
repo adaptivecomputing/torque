@@ -219,7 +219,11 @@ static int       stackDepth_g = 0;  // see readValue()
 
 namespace Json {
 
+#if __cplusplus >= 201103L
+typedef std::unique_ptr<CharReader>   CharReaderPtr;
+#else
 typedef std::auto_ptr<CharReader>   CharReaderPtr;
+#endif
 
 // Implementation of class Features
 // ////////////////////////////////
@@ -1276,6 +1280,7 @@ bool OurReader::readToken(Token& token) {
     ok = readStringSingleQuote();
     break;
     } // else continue
+    // fall through
   case '/':
     token.type_ = tokenComment;
     ok = readComment();
@@ -3778,7 +3783,11 @@ Value& Path::make(Value& root) const {
 
 namespace Json {
 
+#if __cplusplus >= 201103L
+typedef std::unique_ptr<StreamWriter>   StreamWriterPtr;
+#else
 typedef std::auto_ptr<StreamWriter>   StreamWriterPtr;
+#endif
 
 static bool containsControlCharacter(const char* str) {
   while (*str) {

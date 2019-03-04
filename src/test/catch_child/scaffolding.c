@@ -1006,6 +1006,8 @@ int DIS_reply_read(struct tcp_chan *chan, struct batch_reply *preply)
         {
       case 1:
           rc = 1;
+
+	  // fall through
       case 2:
           preply->brp_code = PBSE_NONE;
           LOGLEVEL = 4;

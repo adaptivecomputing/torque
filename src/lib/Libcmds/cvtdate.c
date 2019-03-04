@@ -167,7 +167,7 @@ time_t cvtdate(
       year   = atoi(buf) * 100;
       datestr += 2;
 
-      /* no break, fall into next case */
+      // fall through
 
     case 10:  /* YYMMDDhhmm */
       buf[0] = datestr[0];
@@ -187,7 +187,7 @@ time_t cvtdate(
 
       datestr += 2;
 
-      /* no break, fall into next case */
+      // fall through
 
     case 8:  /* MMDDhhmm */
       buf[0] = datestr[0];
@@ -209,7 +209,7 @@ time_t cvtdate(
 
       datestr += 2;
 
-      /* no break, fall into next case */
+      // fall through
 
     case 6:  /* DDhhmm */
       buf[0] = datestr[0];
@@ -229,7 +229,7 @@ time_t cvtdate(
 
       datestr += 2;
 
-      /* no break, fall into next case */
+      // fall through
 
     case 4:  /* hhmm */
       buf[0] = datestr[0];

@@ -476,13 +476,13 @@ void Chip::initialize_allocations(
   std::vector<std::string> &valid_ids)
   
   {
-  if(layout.size() == 0)
+  if (layout.size() == 0)
     return;
 
-    for (int i = 0; i < layout.size();i++)
-      {
-      initialize_allocation(layout[i][ALLOCATION], valid_ids);
-      }
+  for (int i = 0; i < layout.size();i++)
+    {
+    initialize_allocation(layout[i][ALLOCATION], valid_ids);
+    }
   } // END initialize_allocations()
 
 

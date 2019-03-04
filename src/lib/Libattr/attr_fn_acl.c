@@ -503,6 +503,8 @@ int set_allacl(
 
       /* No break, "Set" falls into "Incr" to add strings */
 
+      // fall through
+
     case INCR_OLD:
     case INCR:
 
