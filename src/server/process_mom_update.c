@@ -858,7 +858,7 @@ int process_status_info(
     }
 
   /* loop over each string */
-  for (unsigned int i = 0; i != status_info.size(); i++)
+  for (unsigned int i = 0; i < status_info.size(); i++)
     {
     const char *str = status_info[i].c_str();
 
