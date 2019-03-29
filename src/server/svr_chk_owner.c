@@ -418,9 +418,8 @@ int authenticate_user(
 
   {
   int    rc;
-  char   uath[PBS_MAXUSER + PBS_MAXHOSTNAME + 1];
   time_t time_now = time(NULL);
-  char   error_msg[1024];
+  std::string error_msg;
   bool   acl_enabled = false;
 
 #ifdef MUNGE_AUTH
@@ -437,9 +436,14 @@ int authenticate_user(
     if ((acl_check_my_array_string(my_acl, uh, ACL_User_Host)) == 0)
       {
       *autherr = strdup("User not in authorized user list.");
-      sprintf(error_msg, "%s Requested user %s: requested from host %s",
-                     *autherr, preq->rq_user, preq->rq_host);
-      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, error_msg);
+
+      error_msg = *autherr;
+      error_msg += " Requested user ";
+      error_msg += preq->rq_user;
+      error_msg += ": requested from host ";
+      error_msg += preq->rq_host;
+  
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, error_msg.c_str());
       return(PBSE_BADCRED);
       }
     }
@@ -447,9 +451,16 @@ int authenticate_user(
   if (strncmp(preq->rq_user, pcred->username, PBS_MAXUSER))
     {
     *autherr = strdup("Users do not match");
-    sprintf(error_msg, "%s: Requested user %s: credential user %s: requested from host %s",
-                   *autherr, preq->rq_user, pcred->username, preq->rq_host);
-    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, error_msg);
+
+    error_msg = *autherr;
+    error_msg += " Requested user ";
+    error_msg += preq->rq_user;
+    error_msg += ": credential user ";
+    error_msg += pcred->username;
+    error_msg += ": requested from host ";
+    error_msg += preq->rq_host;
+
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, error_msg.c_str());
     return(PBSE_BADCRED);
     }
 #endif
@@ -481,10 +492,14 @@ int authenticate_user(
         (memcmp(sai1, sai2, sizeof(struct sockaddr_in))))
       {
       *autherr = strdup("Hosts do not match");
-      
-      sprintf(error_msg, "%s: Requested host %s: credential host: %s",
-        *autherr, preq->rq_host, pcred->hostname);
-      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, error_msg);
+     
+      error_msg = *autherr; 
+      error_msg += ": Requested host ";
+      error_msg += preq->rq_host;
+      error_msg += ": credential host: ";
+      error_msg += pcred->hostname;
+
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, error_msg.c_str());
     
       return(PBSE_BADCRED);
       }
@@ -520,10 +535,14 @@ int authenticate_user(
   if (acl_enabled)
     {
     struct array_strings *acl_users = NULL;
-    snprintf(uath, sizeof(uath), "%s@%s", preq->rq_user, preq->rq_host);
+    std::string uath;
+
+    uath = preq->rq_user;
+    uath += "@";
+    uath = preq->rq_host;
     
     get_svr_attr_arst(SRV_ATR_AclUsers, &acl_users);
-    if (acl_check_my_array_string(acl_users, uath, ACL_User) == 0)
+    if (acl_check_my_array_string(acl_users, uath.c_str(), ACL_User) == 0)
       {
       int       my_err;
       pbs_net_t connect_addr = get_hostaddr(&my_err, preq->rq_host);

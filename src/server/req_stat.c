@@ -241,7 +241,7 @@ int req_stat_job(
     {
     /* status a single job */
 
-    if (is_array(name))
+    if (is_id_array(name))
       {
       if (type != tjstSummarizeArraysServer)
         {

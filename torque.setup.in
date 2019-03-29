@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # torque.setup - create pbs_server database and default queue
 # 

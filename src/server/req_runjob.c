@@ -1676,8 +1676,14 @@ job *chk_job_torun(
 
   if ((pjob->ji_qs.ji_state != JOB_STATE_QUEUED) && (pjob->ji_qs.ji_state != JOB_STATE_HELD))
     {
-    sprintf(EMsg, "job %s state %s", pjob->ji_qs.ji_jobid, PJobState[pjob->ji_qs.ji_state]);
-    req_reject(PBSE_BADSTATE, 0, preq, NULL, EMsg);
+    std::string err_msg;
+
+    err_msg = "job ";
+    err_msg += pjob->ji_qs.ji_jobid;
+    err_msg += " state ";
+    err_msg += PJobState[pjob->ji_qs.ji_state];
+
+    req_reject(PBSE_BADSTATE, 0, preq, NULL, err_msg.c_str());
     return(NULL);
     }
 

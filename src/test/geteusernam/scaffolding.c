@@ -64,7 +64,7 @@ void get_jobowner(char *from, char *to)
   exit(1);
   }
 
-int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
+int acl_check_my_array_string(struct array_strings *pas, const char *name, int type)
   {
   return(0);
   }

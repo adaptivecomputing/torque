@@ -1490,16 +1490,16 @@ void req_modifyjob(
   int            rc;
   unsigned int   momport = 0;
 
-  char           tmpLine[1024];
+  std::string    tmpLine;
 
   pjob = mom_find_job(preq->rq_ind.rq_modify.rq_objname);
 
   if (pjob == NULL)
     {
-    sprintf(tmpLine, "modify job failed, unknown job %s",
-            preq->rq_ind.rq_modify.rq_objname);
+    tmpLine = "modify job failed, unknown job ";
+    tmpLine += preq->rq_ind.rq_modify.rq_objname;
 
-    req_reject(PBSE_UNKJOBID, 0, preq, mom_host, tmpLine);
+    req_reject(PBSE_UNKJOBID, 0, preq, mom_host, tmpLine.c_str());
 
     return;
     }

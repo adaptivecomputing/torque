@@ -284,11 +284,11 @@ END_TEST
 START_TEST(test_kill_job_on_mom)
   {
   struct pbsnode  pnode;
-  char            job_id[20];
+  char            *job_id;
   int             rc;
   unsigned long   addr = 4567;
 
-  strcpy(job_id, "33.torque-devtest-03");
+  job_id = strdup("33.torque-devtest-03");
 
   pnode.change_name("numa3.ac");
   pnode.nd_mom_port = 1234;

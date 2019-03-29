@@ -221,9 +221,9 @@ int svr_connect(pbs_net_t hostaddr, unsigned int port, int *err, struct pbsnode 
   exit(1);
   }
 
-int is_array(char *id)
+int is_id_array(char *id)
   {
-  fprintf(stderr, "The call to is_array to be mocked!!\n");
+  fprintf(stderr, "The call to is_id_array to be mocked!!\n");
   exit(1);
   }
 

@@ -373,9 +373,9 @@ int req_modify_node(struct batch_request *preq)
   }
 
 
-int is_array(char *id)
+int is_id_array(char *id)
   {
-  fprintf(stderr, "The call to is_array needs to be mocked!!\n");
+  fprintf(stderr, "The call to is_id_array needs to be mocked!!\n");
   exit(1);
   }
 
@@ -489,7 +489,7 @@ int get_svr_attr_b(int index, bool *b)
   return(0);
   }
 
-int acl_check_my_array_string(struct array_strings *pas, char *name, int type)
+int acl_check_my_array_string(struct array_strings *pas, const char *name, int type)
   {
   return(0);
   }

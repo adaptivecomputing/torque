@@ -37,8 +37,7 @@ DIR *opendir(const char *name)
 
 int closedir(DIR *dirp)
   {
-  if (dirp != NULL)
-    free(dirp);
+  free(dirp);
   return(0);
   }
 

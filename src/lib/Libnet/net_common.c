@@ -405,6 +405,7 @@ int socket_connect_addr(
           }
 
         /* essentially, only fall through for a transient failure */
+        // fall through
 
       /* socket not ready for writing after 5 timeout */
       case EINVAL:    /* Invalid argument */

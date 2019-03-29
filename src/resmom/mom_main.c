@@ -1067,7 +1067,7 @@ char *conf_res(
     goto done;
     }
 
-  name[i] = '\0';
+  name[i] = NULL;
 
   for (d = ret_string, resline++;*resline;)
     {
@@ -6519,17 +6519,17 @@ void prepare_child_tasks_for_delete()
     for (unsigned int i = 0; i < pJob->ji_tasks->size(); i++)
       {
       task *pTask = pJob->ji_tasks->at(i);
-
-      char buf[128];
+      std::ostringstream sbuf;
+      std::string buf;
 
       extern int exiting_tasks;
 
-      sprintf(buf, "preparing exited session %d for task %d in job %s for deletion",
-              pTask->ti_qs.ti_sid,
-              pTask->ti_qs.ti_task,
-              pJob->ji_qs.ji_jobid);
+      sbuf << "preparing exited session " << pTask->ti_qs.ti_sid <<
+        " for task " << pTask->ti_qs.ti_task << " in job " <<
+        pJob->ji_qs.ji_jobid << " for deletion";
+      buf = sbuf.str();
 
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf.c_str());
 
       pTask->ti_qs.ti_exitstat = 0;  /* actually unknown */
       pTask->ti_qs.ti_status = TI_STATE_EXITED;

@@ -3363,14 +3363,14 @@ void process_opts(
         if (add_verify_resources(ji->res_attr, optarg, data_type) != 0)
           print_qsub_usage_exit("qsub: illegal -l value");
 
-          //If cpuclock gets set we need to set the node exclusive flag
+        //If cpuclock gets set we need to set the node exclusive flag
+        {
+        job_data *pData = NULL;
+        if (hash_find(ji->res_attr,"cpuclock",&pData))
           {
-          job_data *pData = NULL;
-          if (hash_find(ji->res_attr,"cpuclock",&pData))
-            {
-            hash_add_or_exit(ji->job_attr, ATTR_node_exclusive, "TRUE", data_type);
-            }
+          hash_add_or_exit(ji->job_attr, ATTR_node_exclusive, "TRUE", data_type);
           }
+        }
 
         break;
 

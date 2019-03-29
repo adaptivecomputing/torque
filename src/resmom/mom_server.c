@@ -1900,7 +1900,6 @@ void mom_server_diag(
   std::stringstream &output)
 
   {
-  char tmpLine[1024];
   time_t Now;
 
   if (pms->pbs_servername[0] == '\0')
@@ -1910,22 +1909,18 @@ void mom_server_diag(
 
   time(&Now);
 
-  sprintf(tmpLine, "Server[%d]: %s (%s)\n",
-          sindex,
-          pms->pbs_servername,
-          netaddr(&(pms->sock_addr)));
-
-  output << tmpLine;
+  output << "Server[" << sindex << "]: " << pms->pbs_servername <<
+    " (" << netaddr(&(pms->sock_addr)) << ")\n";
 
   if (pms->MOMSendStatFailure[0] != '\0')
     {
-    sprintf(tmpLine, "  WARNING:  could not open connection to server, %s%s\n",
-            pms->MOMSendStatFailure,
-            (strstr(pms->MOMSendStatFailure, "cname") != NULL) ?
-            " (check name resolution - /etc/hosts?)" :
-            "");
+    output << "  WARNING:  could not open connection to server, " <<
+      pms->MOMSendStatFailure;
 
-    output << tmpLine;
+    if (strstr(pms->MOMSendStatFailure, "cname") != NULL)
+      output << " (check name resolution - /etc/hosts?)";
+
+    output << "\n";
     }
 
   if (TMOMRejectConn[0] != '\0')
@@ -1935,29 +1930,25 @@ void mom_server_diag(
 
   if (pms->MOMLastRecvFromServerTime > 0)
     {
-    sprintf(tmpLine, "  Last Msg From Server:   %ld seconds (%s)\n",
-            (long)Now - pms->MOMLastRecvFromServerTime,
-            (pms->MOMLastRecvFromServerCmd[0] != '\0') ?
-            pms->MOMLastRecvFromServerCmd : "N/A");
+    output << "  Last Msg From Server:   " <<
+      ((long)Now - pms->MOMLastRecvFromServerTime) << " seconds (" <<
+      ((pms->MOMLastRecvFromServerCmd[0] != '\0') ?
+        pms->MOMLastRecvFromServerCmd : "N/A") << "\n";
     }
   else
     {
-    sprintf(tmpLine, "  WARNING:  no messages received from server\n");
+    output << "  WARNING:  no messages received from server\n";
     }
-
-  output << tmpLine;
 
   if (pms->MOMLastSendToServerTime > 0)
     {
-    sprintf(tmpLine, "  Last Msg To Server:     %ld seconds\n",
-            (long)Now - pms->MOMLastSendToServerTime);
+    output << "  Last Msg To Server:     " <<
+      ((long)Now - pms->MOMLastSendToServerTime) << " seconds\n";
     }
   else
     {
-    sprintf(tmpLine, "  WARNING:  no messages sent to server\n");
+    output << "  WARNING:  no messages sent to server\n";
     }
-
-  output << tmpLine;
 
   return;
   }  /* END mom_server_diag() */

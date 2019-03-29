@@ -3,6 +3,7 @@
 #include "lib_mom.h" /* header */
 
 #include <string>
+#include <sstream>
 #include <vector>
 #include <assert.h>
 #include <limits.h>
@@ -1221,6 +1222,7 @@ unsigned long cput_sum(
   int          fd;
   int          rc;
   char         buf[LOCAL_BUF_SIZE];
+  std::string  err_msg;
 
   pbs_attribute *pattr;
   pattr = &pjob->ji_wattr[JOB_ATR_req_information];
@@ -1234,8 +1236,11 @@ unsigned long cput_sum(
     rc = cr->get_req_index_for_host(mom_alias, req_index);
     if (rc != PBSE_NONE)
       {
-      sprintf(buf, "Could not find req for host %s, job_id %s", mom_alias, pjob->ji_qs.ji_jobid);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+      err_msg = "Could not find req for host ";
+      err_msg += mom_alias;
+      err_msg += ", job_id ";
+      err_msg += pjob->ji_qs.ji_jobid;
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, err_msg.c_str());
       return(cputime);
       }
 
@@ -1272,8 +1277,11 @@ unsigned long cput_sum(
       {
       if (pjob->ji_cgroups_created == true)
         {
-        sprintf(buf, "failed to open %s: %s", full_cgroup_path.c_str(), strerror(errno));
-        log_err(-1, __func__, buf);
+        err_msg = "failed to open ";
+        err_msg += full_cgroup_path;
+        err_msg += ": ";
+        err_msg += strerror(errno);
+        log_err(-1, __func__, err_msg.c_str());
         }
       return(0);
       }
@@ -1281,8 +1289,11 @@ unsigned long cput_sum(
     rc = read(fd, buf, LOCAL_BUF_SIZE);
     if (rc == -1)
       {
-      sprintf(buf, "failed to read %s: %s", full_cgroup_path.c_str(), strerror(errno));
-      log_err(-1, __func__, buf);
+      err_msg = "failed to read ";
+      err_msg += full_cgroup_path;
+      err_msg += ": ";
+      err_msg += strerror(errno);
+      log_err(-1, __func__, err_msg.c_str());
       close(fd);
       return(0);
       }
@@ -1567,6 +1578,7 @@ unsigned long long resi_sum(
   char         buf[LOCAL_BUF_SIZE];
   int          fd;
   int          rc;
+  std::string  err_msg;
 
   pbs_attribute *pattr;
   pattr = &pjob->ji_wattr[JOB_ATR_req_information];
@@ -1579,8 +1591,11 @@ unsigned long long resi_sum(
     rc = cr->get_req_index_for_host(mom_alias, req_index);
     if (rc != PBSE_NONE)
       {
-      sprintf(buf, "Could not find req for host %s, job_id %s", mom_alias, pjob->ji_qs.ji_jobid);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+      err_msg = "Could not find req for host ";
+      err_msg += mom_alias;
+      err_msg += ", job_id ";
+      err_msg += pjob->ji_qs.ji_jobid;
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, err_msg.c_str());
       return(resisize);
       }
 
@@ -1614,8 +1629,11 @@ unsigned long long resi_sum(
     {
     if (pjob->ji_cgroups_created == true)
       {
-      sprintf(buf, "failed to open %s: %s", full_cgroup_path.c_str(), strerror(errno));
-      log_err(-1, __func__, buf);
+      err_msg = "failed to open ";
+      err_msg += full_cgroup_path;
+      err_msg += ": ";
+      err_msg += strerror(errno);
+      log_err(-1, __func__, err_msg.c_str());
       }
 
     return(0);
@@ -1624,8 +1642,11 @@ unsigned long long resi_sum(
   rc = read(fd, buf, LOCAL_BUF_SIZE);
   if (rc == -1)
     {
-    sprintf(buf, "failed to read %s: %s", full_cgroup_path.c_str(), strerror(errno));
-    log_err(-1, __func__, buf);
+    err_msg = "failed to read ";
+    err_msg += full_cgroup_path;
+    err_msg += ": ";
+    err_msg += strerror(errno);
+    log_err(-1, __func__, err_msg.c_str());
     close(fd);
     return(0);
     }
@@ -1637,8 +1658,9 @@ unsigned long long resi_sum(
     buf2 = strstr(buf, "\nrss ");
     if (buf2 == NULL)
       {
-      sprintf(buf, "read failed finding rss %s", full_cgroup_path.c_str());
-      log_err(errno, __func__, buf);
+      err_msg = "read failed finding rss ";
+      err_msg += full_cgroup_path;
+      log_err(errno, __func__, err_msg.c_str());
       close(fd);
       return(0);
       }
@@ -4983,16 +5005,17 @@ void scan_non_child_tasks(void)
 
       if (!found)
         {
-        char buf[MAXLINE];
+        std::ostringstream sbuf;
+        std::string buf;
 
         extern int exiting_tasks;
 
-        sprintf(buf, "found exited session %d for task %d in job %s",
-            pTask->ti_qs.ti_sid,
-            pTask->ti_qs.ti_task,
-            pJob->ji_qs.ji_jobid);
+        sbuf << "found exited session " << pTask->ti_qs.ti_sid <<
+          " for task " << pTask->ti_qs.ti_task << " in job " <<
+          pJob->ji_qs.ji_jobid;
+        buf = sbuf.str();
 
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, buf.c_str());
 
         pTask->ti_qs.ti_exitstat = 0;  /* actually unknown */
         pTask->ti_qs.ti_status = TI_STATE_EXITED;
@@ -5006,10 +5029,11 @@ void scan_non_child_tasks(void)
 
           if (LOGLEVEL >= 7)
             {
-            sprintf(buf, "marking job as MOM_JOB_RECOVERY for task %d",
-                pTask->ti_qs.ti_task);
+            sbuf << "marking job as MOM_JOB_RECOVERY for task " <<
+              pTask->ti_qs.ti_task);
+            buf = sbuf.str();
 
-            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, buf);
+            log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, buf.c_str());
             }
           }
 #endif    /* USESAVEDRESOURCES */
@@ -5075,7 +5099,6 @@ const char *idletime(
   DIR         *dp;
 
   struct dirent *de;
-  char          ttyname[50];
   time_t         curtm;
 
   if (attrib)
@@ -5104,16 +5127,18 @@ const char *idletime(
 
   while ((de = readdir(dp)) != NULL)
     {
+    std::string ttyname;
+
     if (maxtm >= curtm)
       break;
 
     if (strncmp(de->d_name, "tty", 3))
       continue;
 
-    sprintf(ttyname, "/dev/%s",
-            de->d_name);
+    ttyname = "/dev/";
+    ttyname += de->d_name;
 
-    setmax(ttyname);
+    setmax(ttyname.c_str());
     }
 
   closedir(dp);

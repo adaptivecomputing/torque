@@ -51,6 +51,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
+#include <sstream>
 #include <unistd.h>
 #include <assert.h>
 #include <dirent.h>
@@ -950,6 +952,7 @@ int blcr_checkpoint_job(
   char             sid[20];
   char            *arg[20];
   char             buf[1024];
+  std::string      err_msg;
   int              len;
   char           **ap;
   FILE            *fs;
@@ -1107,9 +1110,10 @@ int blcr_checkpoint_job(
 
     /* remove checkpoint directory that was created for this checkpoint attempt */
 
-    sprintf(buf, "Checkpoint failed for job %s, removing checkpoint directory\n",
-        pjob->ji_qs.ji_jobid);
-    log_ext(-1, __func__, buf, LOG_DEBUG);
+    err_msg = "Checkpoint failed for job ";
+    err_msg += pjob->ji_qs.ji_jobid;
+    err_msg += ", removing checkpoint directory\n";
+    log_ext(-1, __func__, err_msg.c_str(), LOG_DEBUG);
 
     delete_blcr_checkpoint_files(pjob);
 
@@ -1123,9 +1127,12 @@ int blcr_checkpoint_job(
 
       if (err != 0)
         {
-        sprintf(buf, "pbs_alterjob requested on job %s failed (%d-%s)\n",
-            pjob->ji_qs.ji_jobid, err, pbs_strerror(err));
-        log_err(-1, __func__, buf);
+        std::ostringstream buf_s;
+
+        buf_s << "pbs_alterjob requested on job " << pjob->ji_qs.ji_jobid <<
+          " failed (" << err << "-" << pbs_strerror(err) << ")\n";
+        err_msg = buf_s.str();
+        log_err(-1, __func__, err_msg.c_str());
         if (err == PBSE_UNKJOBID)
           {
           /* TODO: GB - can the job exit while waiting for the checkpoint
@@ -1190,9 +1197,12 @@ int blcr_checkpoint_job(
 
       if (err != 0)
         {
-        sprintf(buf, "pbs_alterjob requested on job %s failed (%d-%s)\n",
-            pjob->ji_qs.ji_jobid, err, pbs_strerror(err));
-        log_err(-1, __func__, buf);
+        std::ostringstream buf_s;
+
+        buf_s << "pbs_alterjob requested on job " << pjob->ji_qs.ji_jobid <<
+          " failed (" << err << "-" << pbs_strerror(err) << ")\n";
+        err_msg = buf_s.str();
+        log_err(-1, __func__, err_msg.c_str());
         if (err == PBSE_UNKJOBID)
           {
           /* TODO: GB - can the job exit while waiting for the checkpoint
@@ -1527,6 +1537,8 @@ int start_checkpoint(
   pid_t     pid;
   int       rc = PBSE_NONE;
   char      name_buffer[MAXPATHLEN + 1];
+  std::ostringstream buf_s;
+  std::string buf;
   time_t    time_now;
 
   time_now = time((time_t *)0);
@@ -1548,11 +1560,10 @@ int start_checkpoint(
        * to the pbs_server until the checkpoint has completed successfully.
        */
 
-      sprintf(name_buffer,"ckpt.%s.%d",
-        pjob->ji_qs.ji_jobid,
-        (int)time_now);
+      buf_s << "ckpt." << pjob->ji_qs.ji_jobid << "." << time_now;
+      buf = buf_s.str();
 
-      decode_str(&pjob->ji_wattr[JOB_ATR_checkpoint_name], NULL, NULL, name_buffer, 0);
+      decode_str(&pjob->ji_wattr[JOB_ATR_checkpoint_name], NULL, NULL, buf.c_str(), 0);
 
       pjob->ji_wattr[JOB_ATR_checkpoint_name].at_flags =
         ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
@@ -1760,8 +1771,8 @@ int blcr_restart_job(
   int            pid;
   char           sid[20];
   char          *arg[20];
+  std::string    err_msg;
   extern char    restart_script_name[MAXPATHLEN + 1];
-  char           buf[1024];
   char           namebuf[MAXPATHLEN + 1];
   char           restartfile[MAXPATHLEN + 1];
   char           script_buf[MAXPATHLEN + 1];
@@ -1886,14 +1897,18 @@ int blcr_restart_job(
     arg[6] = SET_ARG(pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
     arg[7] = NULL;
 
-    snprintf(buf, sizeof(buf), "restart args: %s %s %s %s %s %s %s",
-      restart_script_name, sid, pjob->ji_qs.ji_jobid,
-      SET_ARG(pjob->ji_wattr[JOB_ATR_euser].at_val.at_str),
-      SET_ARG(pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str),
-      namebuf,
-      SET_ARG(pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str));
+    err_msg = "restart args: ";
+    err_msg += restart_script_name;
+    err_msg += " ";
+    err_msg += SET_ARG(pjob->ji_wattr[JOB_ATR_euser].at_val.at_str);
+    err_msg += " ";
+    err_msg += SET_ARG(pjob->ji_wattr[JOB_ATR_egroup].at_val.at_str);
+    err_msg += " ";
+    err_msg += namebuf;
+    err_msg += " ";
+    err_msg += SET_ARG(pjob->ji_wattr[JOB_ATR_checkpoint_name].at_val.at_str);
 
-    log_ext(-1, __func__, buf, LOG_DEBUG);
+    log_ext(-1, __func__, err_msg.c_str(), LOG_DEBUG);
 
     log_close(0);
 

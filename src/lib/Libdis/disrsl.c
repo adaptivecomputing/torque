@@ -139,6 +139,8 @@ long disrsl(
       else
         locret = DIS_OVERFLOW;
 
+      // fall through
+
     case DIS_OVERFLOW:
       value = negate ? LONG_MIN : LONG_MAX;
     }

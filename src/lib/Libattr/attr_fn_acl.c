@@ -232,7 +232,7 @@ fptr_int get_my_match_func(
 int acl_check_my_array_string(
 
   struct array_strings *pas,
-  char                 *name,
+  const char           *name,
   int                   type)
 
   {
@@ -502,6 +502,8 @@ int set_allacl(
       pas->as_next = pas->as_buf;
 
       /* No break, "Set" falls into "Incr" to add strings */
+
+      // fall through
 
     case INCR_OLD:
     case INCR:

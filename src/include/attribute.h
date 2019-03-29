@@ -512,12 +512,12 @@ int to_size(const char *val, struct size_value *psize);
 void from_size(struct size_value *psize, char *cvnbuf);
 void create_size_string(char *buf, struct size_value values);
 
-#define NULL_FUNC '\0'
+#define NULL_FUNC NULL
 
 /* other associated funtions */
 
 int   acl_check(pbs_attribute *, char *canidate, int type);
-int   acl_check_my_array_string(struct array_strings *, char *, int);
+int   acl_check_my_array_string(struct array_strings *, const char *, int);
 char *arst_string(const char *str, pbs_attribute *pattr);
 void  attrl_fixlink(tlist_head *svrattrl);
 void  recov_acl(pbs_attribute *, attribute_def *, const char *, const char *);

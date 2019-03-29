@@ -339,7 +339,7 @@ bool is_user_allowed_to_submit_jobs(
   bool            HostAllowed = false;
   std::string     short_host;
 
-  char            log_buf[256];
+  char            log_buf[LOCAL_LOG_BUF_SIZE];
 
 #ifdef MUNGE_AUTH
   char            uh[PBS_MAXUSER + PBS_MAXHOSTNAME + 2];

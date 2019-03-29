@@ -2387,22 +2387,36 @@ int fix_cray_exec_hosts(
 
 
 
+// change job id from x.y to x-0.y
 
 int change_external_job_name(
 
   job *pjob)
 
   {
-  char  tmp_jobid[PBS_MAXSVRJOBID + 1];
-  char *dot = strchr(pjob->ji_qs.ji_jobid, '.');
+  std::string jobid_new;
+  size_t pos;
 
-  if (dot != NULL)
-    *dot = '\0';
+  // null job pointer
+  if (pjob == NULL)
+    return(-1);
 
-  snprintf(tmp_jobid, sizeof(tmp_jobid), "%s-0.%s",
-    pjob->ji_qs.ji_jobid, dot + 1);
+  // copy original job id
+  jobid_new = pjob->ji_qs.ji_jobid;
 
-  strcpy(pjob->ji_qs.ji_jobid, tmp_jobid);
+  // make sure job id has a .
+  if ((pos = jobid_new.find('.', 0)) == std::string::npos)
+    return(-1);
+
+  // change "." to "-0."
+  jobid_new.replace(pos, 1, "-0.");
+
+  // confirm new string will fit
+  if (jobid_new.length() > PBS_MAXSVRJOBID)
+    return(-1);
+
+  // update original
+  strncpy(pjob->ji_qs.ji_jobid, jobid_new.c_str(), PBS_MAXSVRJOBID);
 
   return(PBSE_NONE);
   } /* END change_external_job_name() */

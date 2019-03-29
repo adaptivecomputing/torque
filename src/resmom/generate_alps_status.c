@@ -87,6 +87,7 @@
 #include "alps_constants.h"
 #include "alps_functions.h"
 #include <string>
+#include <sstream>
 #include <vector>
 #include <set>
 #include <time.h>
@@ -586,9 +587,9 @@ int process_node(
     ani.features += features.c_str();
     }
 
-  char node_index_buf[MAXLINE];
-  snprintf(node_index_buf, sizeof(node_index_buf), "node_index=%lu", alps_nodes.size());
-  ani.node_index = node_index_buf;
+  std::ostringstream ostr;
+  ostr << "node_index=" << alps_nodes.size();
+  ani.node_index = ostr.str();
 
   alps_nodes[nid] = ani;
 

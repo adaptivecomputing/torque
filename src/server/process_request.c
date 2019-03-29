@@ -465,10 +465,10 @@ int read_request_from_socket(
     /* See if the request is in the limited acl list */
     if (limited_acls.is_authorized(request.rq_host, request.rq_user) == false)
       {
-      char tmpLine[MAXLINE];
-      snprintf(tmpLine, sizeof(tmpLine), "request not authorized from host %s",
-        request.rq_host);
-      req_reject(PBSE_BADHOST, 0, &request, NULL, tmpLine);
+      std::string tmpLine = "request not authorized from host ";
+      tmpLine += request.rq_host;
+
+      req_reject(PBSE_BADHOST, 0, &request, NULL, tmpLine.c_str());
       return(-1);
       }
     }
@@ -795,7 +795,7 @@ int dispatch_request(
        * req_deletejob() function.
       */
 
-      if (is_array(request->rq_ind.rq_delete.rq_objname))
+      if (is_id_array(request->rq_ind.rq_delete.rq_objname))
         rc = req_deletearray(request);
       else
         rc = req_deletejob(request);
@@ -803,7 +803,7 @@ int dispatch_request(
       break;
 
     case PBS_BATCH_HoldJob:
-      if (is_array(request->rq_ind.rq_hold.rq_orig.rq_objname))
+      if (is_id_array(request->rq_ind.rq_hold.rq_orig.rq_objname))
         rc = req_holdarray(request);
       else
         rc = req_holdjob(request);
@@ -843,7 +843,7 @@ int dispatch_request(
     case PBS_BATCH_AsyModifyJob:
 
     case PBS_BATCH_ModifyJob:
-      if (is_array(request->rq_ind.rq_delete.rq_objname))
+      if (is_id_array(request->rq_ind.rq_delete.rq_objname))
         rc = req_modifyarray(request);
       else
         req_modifyjob(request);
@@ -888,7 +888,7 @@ int dispatch_request(
 
     case PBS_BATCH_ReleaseJob:
 
-      if (is_array(request->rq_ind.rq_delete.rq_objname))
+      if (is_id_array(request->rq_ind.rq_delete.rq_objname))
         rc = req_releasearray(request);
       else
         rc = req_releasejob(request);
@@ -972,7 +972,7 @@ int dispatch_request(
 
     case PBS_BATCH_RegistDep:
 
-      if (is_array(request->rq_ind.rq_register.rq_parent))
+      if (is_id_array(request->rq_ind.rq_register.rq_parent))
         {
         rc = req_registerarray(request);
         }
