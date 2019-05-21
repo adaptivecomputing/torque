@@ -2276,9 +2276,7 @@ static int check_queue_group_ACL(
       {
       /* check group acl against all accessible groups */
 
-      struct group *grp;
       int i = 0;
-      int j = 0;
 
       char uname[PBS_MAXUSER + 1];
 
@@ -2287,27 +2285,14 @@ static int check_queue_group_ACL(
       /* fetch the groups in the ACL and look for matching user membership */
 
       pas = pque->qu_attr[QA_ATR_AclGroup].at_val.at_arst;
-
+      rc = 0;
       for (i = 0; pas != NULL && i < pas->as_usedptr;i++)
         {
-        char *buf = NULL;
-        if ((grp = getgrnam_ext(&buf, pas->as_string[i])) == NULL)
-          continue;
-
-        for (j = 0;grp->gr_mem[j] != NULL;j++)
+          if (is_group_member(uname, pas->as_string[i]) == true)
           {
-          if (!strcmp(grp->gr_mem[j], uname))
-            {
             rc = 1;
-
             break;
-            }
           }
-
-        free_grname(grp, buf);
-
-        if (rc == 1)
-          break;
         }
       }    /* END if (rc == 0) && slpygrp && ...) */
 
