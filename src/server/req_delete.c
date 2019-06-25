@@ -396,10 +396,16 @@ void force_purge_work(
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
-    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
+	int rc;
+    boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  throw rc;
+	  }
+
     if (pque->qu_qs.qu_type == QTYPE_Execution)
       {
-      pque_mutex.unlock();
+      pque_mutex->unlock();
       set_resc_assigned(pjob, DECR);
       }
     }
@@ -579,7 +585,16 @@ int execute_job_delete(
     return(-1);
     }
 
-  removeBeforeAnyDependencies(&pjob);
+  try
+ 	{
+	removeBeforeAnyDependencies(&pjob);
+	}
+	catch (int rc)
+	{
+	reply_ack(preq);
+	return(rc);
+	}
+	
 
   // The job disappeared unexpectedly
   if (pjob == NULL)
@@ -588,7 +603,11 @@ int execute_job_delete(
     return(PBSE_NONE);
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	return rc;
+	}
 
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_QUEUE, __func__, pjob->ji_qs.ji_jobid);
@@ -765,7 +784,7 @@ jump:
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
       }
     else
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
 
     return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
@@ -792,7 +811,7 @@ jump:
   if (perform_job_delete_array_bookkeeping(pjob, status_cancel_queue) != PBSE_NONE)
     {
     // The job disappeared while updating the array
-    job_mutex.set_unlock_on_exit(false);
+    job_mutex->set_unlock_on_exit(false);
     return -1;
     }
 
@@ -825,16 +844,16 @@ jump:
       job_abt(&pjob, Msg);
 
       if (pjob == NULL)
-        job_mutex.set_unlock_on_exit(false);
+        job_mutex->set_unlock_on_exit(false);
       }
     else
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
     }
 
   delete_inactive_job(&pjob, Msg);
 
   if (pjob == NULL)
-    job_mutex.set_unlock_on_exit(false);
+    job_mutex->set_unlock_on_exit(false);
 
   return(PBSE_NONE);
   } /* END execute_job_delete() */
@@ -900,18 +919,22 @@ int delete_all_work(
       }
     
     // use mutex manager to make sure job mutex locks are properly handled at exit
-    mutex_mgr job_mutex(pjob->ji_mutex, true);
+    boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  return rc;
+	  }
  
     if ((rc = forced_jobpurge(pjob, &preq_dup)) == PURGE_SUCCESS)
       {
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
 
       continue;
       }
 
     if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
       {
-      job_mutex.unlock();
+      job_mutex->unlock();
       
       continue;
       }
@@ -924,7 +947,7 @@ int delete_all_work(
       if ((rc = execute_job_delete(pjob, Msg, &preq_dup)) == PBSE_NONE)
         {
         // execute_job_delete() handles mutex so don't unlock on exit
-        job_mutex.set_unlock_on_exit(false);
+        job_mutex->set_unlock_on_exit(false);
         }
        
       }
@@ -1344,7 +1367,7 @@ void post_delete_mom1(
     return;
 
 
-  rc          = preq_sig->rq_reply.brp_code;
+  rc = preq_sig->rq_reply.brp_code;
 
   if (preq_sig->rq_extend != NULL)
     {
@@ -1365,7 +1388,13 @@ void post_delete_mom1(
     return;
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+    req_reject(rc, 0, preq_clt, NULL, NULL);
+
+    return;
+    }
 
   if (rc)
     {
@@ -1386,7 +1415,7 @@ void post_delete_mom1(
 
       set_resc_assigned(pjob, DECR);
 
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
 
       svr_job_purge(pjob);
 
@@ -1420,7 +1449,14 @@ void post_delete_mom1(
     {
     if ((pque = get_jobs_queue(&pjob)) != NULL)
       {
-      mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
+      boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+  	  if (rc != PBSE_NONE)
+		{
+        req_reject(rc, 0, preq_clt, NULL, NULL);
+
+    	return;
+    	}
+
       pthread_mutex_lock(server.sv_attr_mutex);
       delay = attr_ifelse_long(&pque->qu_attr[QE_ATR_KillDelay],
                              &server.sv_attr[SRV_ATR_KillDelay],
@@ -1429,7 +1465,7 @@ void post_delete_mom1(
       }
     else if (pjob == NULL)
       {
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
       return;
       }
     }
@@ -1470,7 +1506,12 @@ void post_delete_mom2(
 
   if (pjob != NULL)
     {
-    mutex_mgr job_mutex(pjob->ji_mutex, true);
+	int rc;
+    boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  {
+	  log_err(rc, __func__, "failed to allocate job_mutex");
+	  return;
+	  }
 
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
@@ -1484,7 +1525,7 @@ void post_delete_mom2(
       }
     
     if (pjob == NULL)
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
     }
   }  /* END post_delete_mom2() */
 
@@ -1651,7 +1692,13 @@ void job_delete_nanny(
       
       if (pjob != NULL)
         {
-        mutex_mgr job_mutex(pjob->ji_mutex, true);
+		int rc;
+        boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+		if (rc != PBSE_NONE)
+		  {
+		  log_err(rc, __func__, "Failed to allocate job mutex");
+		  return;
+		  }
 
         sprintf(log_buf, "exiting job '%s' still exists, sending a SIGKILL", pjob->ji_qs.ji_jobid);
         log_err(-1, "job nanny", log_buf);
@@ -1668,7 +1715,7 @@ void job_delete_nanny(
         if (pjob != NULL)
           apply_job_delete_nanny(pjob, time_now + 60);
         else
-          job_mutex.set_unlock_on_exit(false);
+          job_mutex->set_unlock_on_exit(false);
         }
       }
     else
@@ -1730,7 +1777,12 @@ void post_job_delete_nanny(
     return;
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	log_err(rc, __func__, "Failed to allocate Job Mutex");
+	return;
+	}
   
   if (rc == PBSE_UNKJOBID)
     {
@@ -1742,7 +1794,7 @@ void post_job_delete_nanny(
 
     set_resc_assigned(pjob, DECR);
  
-    job_mutex.set_unlock_on_exit(false);
+    job_mutex->set_unlock_on_exit(false);
 
     svr_job_purge(pjob);
 

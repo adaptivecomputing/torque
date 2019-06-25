@@ -3168,7 +3168,7 @@ void process_opts(
    * to count which iteration has been removed
    */
 
-#ifdef linux
+#ifdef __linux__
     optind = 0;  /* prime getopt's starting point */
 #else
     optind = 1;  /* prime getopt's starting point */
@@ -4621,7 +4621,7 @@ void main_func(
 
   /* NOTE:  load config before processing opts since config may modify how opts are handled */
 
-#ifdef linux
+#ifdef __linux__
   optind = 0;  /* prime getopt's starting point */
 #else
   optind = 1;  /* prime getopt's starting point */

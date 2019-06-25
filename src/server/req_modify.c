@@ -191,7 +191,14 @@ void post_modify_req(
         }
       else
         {
-        mutex_mgr job_mutex(pjob->ji_mutex, true);
+		int rc;
+        boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+		if (rc != PBSE_NONE)
+		  {
+		  sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+		  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		  req_reject(rc, 0, preq, NULL, NULL);
+		  }
 
         if (LOGLEVEL >= 0)
           {
@@ -1055,7 +1062,14 @@ int modify_job_attr(
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
-    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
+    boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  sprintf(log_buf, "failed to allocate mutex for queue %s", pque->qu_qs.qu_name);
+	  log_err(rc, __func__, log_buf);
+	  return(rc);
+	  }
+
     if (pque->qu_qs.qu_type != QTYPE_Execution)
       allow_unkn = JOB_ATR_UNKN;
     }
@@ -1140,7 +1154,14 @@ int modify_job_attr(
         {
         if ((pque = get_jobs_queue(&pjob)) != NULL)
           {
-          mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
+          boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+		  if (rc != PBSE_NONE)
+			{
+			sprintf(log_buf, "Failed to allocate queue mutex for queue %s", pque->qu_qs.qu_name);
+			log_err(rc, __func__, log_buf);
+			return(rc);
+			}
+
           rc = chk_resc_limits( &newattr[JOB_ATR_resource], pque, NULL);
           }
         else if (pjob == NULL)
@@ -1337,7 +1358,15 @@ void post_modify_arrayreq(
         }
       else
         {
-        mutex_mgr job_mutex = mutex_mgr(pjob->ji_mutex, true);
+		int rc;
+        boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+		if (rc != PBSE_NONE)
+		  {
+		  sprintf(log_buf, "Failed to allocated job mutex");
+		  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		  free_br(preq);
+		  return;
+		  }
 
         if (LOGLEVEL >= 0)
           {

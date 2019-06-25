@@ -227,7 +227,12 @@ int gpu_has_job(
     
     if ((pjob = get_job_from_job_usage_info(&jui, pnode)) != NULL)
       {
-      mutex_mgr job_mutex(pjob->ji_mutex, true);
+	  int rc;
+      boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		return rc;
+		}
 
       /* Does this job have this gpuid assigned? */
       if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
@@ -457,7 +462,12 @@ void *svr_is_request(
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,__func__,log_buf);
     }
 
-  mutex_mgr node_mutex(&node->nd_mutex, true);
+  int rc;
+  boost::shared_ptr<mutex_mgr> node_mutex = create_managed_mutex(&node->nd_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	return(NULL);
+	}
 
   switch (command)
     {
@@ -510,7 +520,7 @@ void *svr_is_request(
         log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
         }
 
-      node_mutex.unlock();
+      node_mutex->unlock();
 
       ret = is_stat_get(node_name.c_str(), chan);
 
@@ -519,7 +529,7 @@ void *svr_is_request(
       if (node != NULL)
         {
         node->nd_stream = -1;
-        node_mutex.mark_as_locked();
+        node_mutex->mark_as_locked();
 
         if (ret == SEND_HELLO)
           {

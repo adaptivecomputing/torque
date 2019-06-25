@@ -135,7 +135,13 @@ int req_movejob(
     return(PBSE_NONE);
     }
 
-  mutex_mgr job_mutex(jobp->ji_mutex, true);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(jobp->ji_mutex, true, local_errno);
+  if (local_errno != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocate job mutex for job %s", jobp->ji_qs.ji_jobid);
+	log_err(local_errno, __func__, log_buf);
+	return local_errno;
+	}
 
   if (LOGLEVEL >= 7)
     {
@@ -251,15 +257,30 @@ int req_orderjob(
     return(PBSE_NONE);
     }
 
-  mutex_mgr job1_mutex(pjob1->ji_mutex, true);
+  boost::shared_ptr<mutex_mgr> job1_mutex = create_managed_mutex(pjob1->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  sprintf(log_buf, "failed to allocate mutex for pjob1: %s", pjob1->ji_qs.ji_jobid);
+	  log_err(rc, __func__, log_buf);
+      req_reject(rc, 0, req, NULL, log_buf);
+	  return(rc);
+	  }
+	
 
   if ((pjob2 = chk_job_request(req->rq_ind.rq_move.rq_destin, req)) == NULL)
     {
     return(PBSE_NONE);
     }
 
-  mutex_mgr job2_mutex(pjob2->ji_mutex, true);
-
+  boost::shared_ptr<mutex_mgr> job2_mutex = create_managed_mutex(pjob2->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	 {
+	 sprintf(log_buf, "failed to allocate mutex for pjob2: %s", pjob1->ji_qs.ji_jobid);
+	 log_err(rc, __func__, log_buf);
+     req_reject(rc, 0, req, NULL, log_buf);
+	 return(rc);
+	 }
+	
   if (((pjob = pjob1)->ji_qs.ji_state == JOB_STATE_RUNNING) ||
       ((pjob = pjob2)->ji_qs.ji_state == JOB_STATE_RUNNING))
     {
@@ -295,25 +316,39 @@ int req_orderjob(
       {
       rc = PBSE_BADSTATE;
       if (pjob2 == NULL)
-        job2_mutex.set_unlock_on_exit(false);
+        job2_mutex->set_unlock_on_exit(false);
       }
     else
       {
-      mutex_mgr pque2_mutex = mutex_mgr(pque2->qu_mutex, true);
+      boost::shared_ptr<mutex_mgr> pque2_mutex = create_managed_mutex(pque2->qu_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		sprintf(log_buf, "failed to allocate mutex for queue %s", pque2->qu_qs.qu_name);
+		log_err(rc, __func__, log_buf);
+		return rc;
+		}
+
       if ((rc = svr_chkque(pjob1, pque2, get_variable(pjob1, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
         {
         reservation1 = have_reservation(pjob1, pque2);
-        pque2_mutex.unlock();
+        pque2_mutex->unlock();
 
         if ((pque1 = get_jobs_queue(&pjob1)) == NULL)
           {
           rc = PBSE_BADSTATE;
           if (pjob1 == NULL)
-            job1_mutex.set_unlock_on_exit(false);
+            job1_mutex->set_unlock_on_exit(false);
           }
         else if (pjob1 != NULL)
           {
-          mutex_mgr pque1_mutex = mutex_mgr(pque1->qu_mutex, true);
+          boost::shared_ptr<mutex_mgr> pque1_mutex = create_managed_mutex(pque1->qu_mutex, true, rc);
+		  if (rc != PBSE_NONE)
+			{
+			sprintf(log_buf, "failed to allocate mutex for queue %s", pque1->qu_qs.qu_name);
+			log_err(rc, __func__, log_buf);
+			return rc;
+			}
+
           if ((rc = svr_chkque(pjob2, pque1, get_variable(pjob2, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
             {
             reservation2 = have_reservation(pjob2, pque1);
@@ -351,20 +386,26 @@ int req_orderjob(
     if (svr_enquejob(pjob1, FALSE, NULL, reservation1, false) == PBSE_JOB_RECYCLED)
       {
       pjob1 = NULL;
-      job1_mutex.set_unlock_on_exit(false);
+      job1_mutex->set_unlock_on_exit(false);
       }
 
     if (svr_enquejob(pjob2, FALSE, NULL, reservation2, false) == PBSE_JOB_RECYCLED)
       {
       pjob2 = NULL;
-      job2_mutex.set_unlock_on_exit(false);
+      job2_mutex->set_unlock_on_exit(false);
       }
     }
   else
     {
     if ((pque1 = get_jobs_queue(&pjob1)) != NULL)
       {
-      mutex_mgr pque1_mutex = mutex_mgr(pque1->qu_mutex, true);
+      boost::shared_ptr<mutex_mgr> pque1_mutex = create_managed_mutex(pque1->qu_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		sprintf(log_buf, "failed to allocate mutex for queue %s", pque1->qu_qs.qu_name);
+		log_err(rc, __func__, log_buf);
+		}
+
       swap_jobs(pque1->qu_jobs,pjob1,pjob2);
       swap_jobs(NULL,pjob1,pjob2);
       }

@@ -1330,7 +1330,14 @@ int load_node_usages()
       {
       if ((pnode = find_nodebyname(pdirent->d_name)) != NULL)
         {
-        mutex_mgr nd_mutex(&pnode->nd_mutex, true);
+		int rc;
+        boost::shared_ptr<mutex_mgr> nd_mutex = create_managed_mutex(&pnode->nd_mutex, true, rc);
+		if (rc != PBSE_NONE)
+		{
+		log_err(rc, __func__, "failed to allocate node mutex");
+		return(rc);
+		}
+
         load_node_usage(pnode, pdirent->d_name);
         }
       }
@@ -1996,7 +2003,15 @@ int cleanup_recovered_arrays()
      
     if ((pjob = svr_find_job(pa->ai_qs.parent_id, FALSE)) != NULL)
       {
-      mutex_mgr job_mgr(pjob->ji_mutex,true);
+	  int rc;
+      boost::shared_ptr<mutex_mgr> job_mgr = create_managed_mutex(pjob->ji_mutex,true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		sprintf(log_buf, "Faled to allocate job mutex");
+		log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		continue;
+		}
+
       job_template_exists = TRUE;
       }
 
@@ -3117,7 +3132,15 @@ void resume_net_move(
     if ((pjob = svr_find_job(jobid, FALSE)) == NULL)
       return;
 
-    mutex_mgr job_mgr(pjob->ji_mutex,true);
+	int rc;
+    boost::shared_ptr<mutex_mgr> job_mgr = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  char log_buf[LOCAL_LOG_BUF_SIZE];
+	  sprintf(log_buf, "Failed to allocate job mutex: %d", rc);
+	  log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	  return;
+	  }
   
     net_move(pjob, 0);
 

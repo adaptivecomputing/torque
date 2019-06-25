@@ -425,9 +425,18 @@ void update_job_data(
         {
         int bad;
         svrattrl tA;
-        mutex_mgr job_mutex(pjob->ji_mutex, true);
-        
-        /* job exists, so get the attributes and update them */
+		int rc;
+        boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+		if (rc != PBSE_NONE)
+      	  {
+      	  char log_buf[LOCAL_LOG_BUF_SIZE];
+
+     	  sprintf(log_buf, "Failed to allocate job mutex: error %d", rc);
+      	  log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      	  throw std::runtime_error(log_buf);
+      	  }
+
+     /* job exists, so get the attributes and update them */
         attr_name = threadsafe_tokenizer(&jobdata_ptr, "=");
         
         while (attr_name != NULL)
@@ -1023,7 +1032,14 @@ int process_status_info(
                (!strncmp(str, "jobdata=", 8)))
         {
         /* update job attributes based on what the MOM gives us */      
-        update_job_data(current, str + strlen("jobdata="));
+		try
+		  {
+          update_job_data(current, str + strlen("jobdata="));
+		  }
+		catch(std::runtime_error &e)
+		  {
+		  return(PBSE_SYSTEM);
+		  }
         }
       else if ((auto_np) &&
                (!(strncmp(str, "ncpus=", 6))))
