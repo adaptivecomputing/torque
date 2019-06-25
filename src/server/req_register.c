@@ -234,7 +234,15 @@ int check_dependency_job(
     return(rc);
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "Failed to allocate job mutex");
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+    req_reject(rc, 0, preq, NULL, NULL);
+	return(rc);
+	}
+
 
   type = preq->rq_ind.rq_register.rq_dependtype;
 
@@ -255,7 +263,7 @@ int check_dependency_job(
     return(rc);
     }
 
-  job_mutex.set_unlock_on_exit(false);
+  job_mutex->set_unlock_on_exit(false);
   *job_ptr = pjob;
 
   return(PBSE_NONE);
@@ -1192,7 +1200,14 @@ bool set_array_depend_holds(
 
       if (pjob != NULL)
         {
-        mutex_mgr job_mutex(pjob->ji_mutex, true);
+		int rc;
+        std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+		if (rc != PBSE_NONE)
+		  {
+		  sprintf(log_buf, "failed to create job mutex: %d", rc);
+		  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		  return(false);
+		  }
 
         if (((compare_number < pdj->dc_num) &&
              (pdep->dp_type < JOB_DEPEND_TYPE_BEFORESTARTARRAY)) ||
@@ -1217,7 +1232,7 @@ bool set_array_depend_holds(
               /* pjob freed and set to NULL */
               job_abt(&pjob, log_buf, true);
               if (pjob == NULL)
-                job_mutex.set_unlock_on_exit(false);
+                job_mutex->set_unlock_on_exit(false);
               }
             }
           else
@@ -1256,7 +1271,7 @@ bool set_array_depend_holds(
             }
           catch (int err)
             {
-            job_mutex.set_unlock_on_exit(false);
+            job_mutex->set_unlock_on_exit(false);
             }
           }
         }
@@ -1308,7 +1323,16 @@ void post_doq(
 
     if (pjob != NULL)
       {
-      mutex_mgr job_mutex(pjob->ji_mutex, true);
+	  int rc;
+      std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		sprintf(log_buf, "Failed to create job mutex: %d", rc);
+		log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, jobid, log_buf);
+        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, log_buf);
+		return;
+		}
+		
 
       safe_strncat(log_buf,
         "\nJob held for unknown job dep, use 'qrls' to release",
@@ -1339,7 +1363,7 @@ void post_doq(
           }
         catch (int err)
           {
-          job_mutex.set_unlock_on_exit(false);
+          job_mutex->set_unlock_on_exit(false);
           }
         }
       }
@@ -1537,7 +1561,15 @@ void post_doe(
 
   if (pjob != NULL)
     {
-    mutex_mgr job_mutex(pjob->ji_mutex, true);
+	int rc;
+    std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+  	  {
+	  char log_buf[LOCAL_LOG_BUF_SIZE];
+	  sprintf(log_buf, "Failed to allocate job mutex: %d", rc);
+	  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	  return;
+	  }
     
     pattr = &pjob->ji_wattr[JOB_ATR_depend];
     pdep  = find_depend(JOB_DEPEND_TYPE_BEFORESTART, pattr);
@@ -3347,7 +3379,16 @@ void removeAfterAnyDependency(
   if (pLockedJob == NULL)
     return;
   
-  mutex_mgr job_mutex(pLockedJob->ji_mutex,true);
+  int rc;
+  std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pLockedJob->ji_mutex,true, rc);
+  if (rc != PBSE_NONE)
+	{
+	char log_buf[LOCAL_LOG_BUF_SIZE];
+	sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pLockedJob->ji_qs.ji_jobid, log_buf);
+	return;
+	}
+
   pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
   struct depend *pDep = find_depend(JOB_DEPEND_TYPE_AFTERANY,pattr);
   
@@ -3371,7 +3412,7 @@ void removeAfterAnyDependency(
 
       catch (int e)
         {
-        job_mutex.set_unlock_on_exit(false);
+        job_mutex->set_unlock_on_exit(false);
         }
       }
     }
@@ -3391,8 +3432,17 @@ void removeBeforeAnyDependencies(
   job        *pLockedJob = *pjob_ptr;
   std::string jobid(pLockedJob->ji_qs.ji_jobid);
 
-  mutex_mgr job_mutex(pLockedJob->ji_mutex, true);
-  job_mutex.set_unlock_on_exit(false);
+  int rc;
+  std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pLockedJob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+ 	{
+	char log_buf[LOCAL_LOG_BUF_SIZE];
+	sprintf(log_buf, "Failed to allocate job mutex: %d", rc);
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pLockedJob->ji_qs.ji_jobid, log_buf);
+	throw rc;
+	}
+	
+  job_mutex->set_unlock_on_exit(false);
   
   pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
 
@@ -3405,7 +3455,7 @@ void removeBeforeAnyDependencies(
       {
       depend_job *pDepJob = pDep->dp_jobs[i];
       std::string depID(pDepJob->dc_child);
-      job_mutex.unlock();
+      job_mutex->unlock();
       removeAfterAnyDependency(depID.c_str(), jobid.c_str());
       pLockedJob = svr_find_job(jobid.c_str(), FALSE);
       if (pLockedJob == NULL)
@@ -3414,7 +3464,7 @@ void removeBeforeAnyDependencies(
         break;
         }
 
-      job_mutex.mark_as_locked();
+      job_mutex->mark_as_locked();
       }
     }
 

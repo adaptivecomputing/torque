@@ -185,7 +185,11 @@ int req_holdjob(
     return(PBSE_NONE);
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	return rc;
+	}
 
   /* cannot do anything until we decode the holds to be set */
   if ((rc = get_hold(&preq->rq_ind.rq_hold.rq_orig.rq_attr, (const char **)&pset,
@@ -244,7 +248,7 @@ int req_holdjob(
       req_reject(rc, 0, preq, NULL, "relay to mom failed");
 
       if (pjob == NULL)
-        job_mutex.set_unlock_on_exit(false);
+        job_mutex->set_unlock_on_exit(false);
       }
     else
       {
@@ -263,7 +267,7 @@ int req_holdjob(
         reply_ack(preq);
         }
       else
-        job_mutex.set_unlock_on_exit(false);
+        job_mutex->set_unlock_on_exit(false);
 
       process_hold_reply(&dup_req);
       }
@@ -327,7 +331,11 @@ void *req_checkpointjob(
     return(NULL);
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	return(NULL);
+	}
 
   pattr = &pjob->ji_wattr[JOB_ATR_checkpoint];
 
@@ -346,7 +354,7 @@ void *req_checkpointjob(
       req_reject(rc, 0, preq, NULL, NULL);
 
       if (pjob == NULL)
-        job_mutex.set_unlock_on_exit(false);
+        job_mutex->set_unlock_on_exit(false);
       }
     else
       {
@@ -360,7 +368,7 @@ void *req_checkpointjob(
         pjob = NULL;
         }
       else
-        job_mutex.set_unlock_on_exit(false);
+        job_mutex->set_unlock_on_exit(false);
 
       process_checkpoint_reply(&dup_req);
       }
@@ -491,7 +499,12 @@ int req_releasejob(
     return(PBSE_NONE);
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	log_err(rc, __func__, "failed to allocate job mutex");
+	return rc;
+	}
 
   if ((rc = release_job(preq, pjob, NULL)) != 0)
     {
@@ -529,7 +542,12 @@ int release_whole_array(
       }
     else
       {
-      mutex_mgr job_mutex(pjob->ji_mutex, true);
+      std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		log_err(rc, __func__, "Failed to allocate job mutex");
+		return(rc);
+		}
 
       if ((rc = release_job(preq, pjob, pa)) != 0)
         return(rc);
@@ -560,7 +578,13 @@ int req_releasearray(
     return(PBSE_NONE);
     }
 
-  mutex_mgr pa_mutex = mutex_mgr(pa->ai_mutex, true);
+  std::shared_ptr<mutex_mgr> pa_mutex = create_managed_mutex(pa->ai_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+    req_reject(rc ,0, preq, NULL, "Failed to allocate job_array mutex");
+	return(rc);
+	}
+	
 
   while (TRUE)
     {
@@ -579,15 +603,20 @@ int req_releasearray(
       break;
     }
 
-  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
-
+  std::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+    req_reject(rc ,0, preq, NULL, "Failed to allocate job_array mutex");
+	return(rc);
+	}
+	
   if (svr_authorize_jobreq(preq, pjob) == -1)
     {
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
     return(PBSE_NONE);
     }
 
-  pjob_mutex.unlock();
+  pjob_mutex->unlock();
 
   range = preq->rq_extend;
   if ((range != NULL) &&
@@ -719,7 +748,14 @@ void process_hold_reply(
     }
   else
     {
-    mutex_mgr job_mutex(pjob->ji_mutex, true);
+    std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  char message[LOCAL_LOG_BUF_SIZE];
+	  sprintf(message, "Faled to allocate job_mutex: %d", rc);
+	  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, message);
+	  req_reject(rc, 0, preq, NULL, message);
+	  }
 
     if (preq->rq_reply.brp_code != 0)
       {
@@ -807,7 +843,15 @@ void process_checkpoint_reply(
     }
   else
     {
-    mutex_mgr job_mutex = mutex_mgr(pjob->ji_mutex, true);
+	int rc;
+    std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  char message[LOCAL_LOG_BUF_SIZE];
+	  sprintf(message, "Failed to allocate job mutex: %d", rc);
+	  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, message);
+	  req_reject(rc, 0, preq, NULL, message);
+	  }
 
     /* record that MOM has a checkpoint file */
     account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed"); /* note in accounting file */

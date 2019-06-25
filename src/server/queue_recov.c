@@ -250,7 +250,14 @@ pbs_queue *que_recov_xml(
     {
     log_err(errno, __func__, "open error");
 
-    que_free(pq, TRUE);
+	try
+	  {
+      que_free(pq, TRUE);
+	  }
+	catch(...)
+	  {
+	  return(NULL);
+	  }
 
     return(NULL);
     }
@@ -264,8 +271,16 @@ pbs_queue *que_recov_xml(
     log_err(errno, __func__, log_buf);
     
     close(fds);
-    
-    que_free(pq, TRUE);
+
+   	try
+	  {
+      que_free(pq, TRUE);
+	  }
+	catch(...)
+	  {
+	  return(NULL);
+	  }
+
 
     return(NULL);
     }
@@ -280,8 +295,15 @@ pbs_queue *que_recov_xml(
       PBS_EVENTCLASS_SERVER,
       __func__,
       "Cannot find a queue tag, attempting to load legacy format");
-    que_free(pq, TRUE);
-    
+   	try
+	  {
+      que_free(pq, TRUE);
+	  }
+	catch(...)
+	  {
+	  return(NULL);
+	  }
+
     close(fds);
 
     return(que_recov(filename));
@@ -292,7 +314,15 @@ pbs_queue *que_recov_xml(
   if (end == NULL)
     {
     log_err(-1, __func__, "No queue tag found in the queue file???");
-    que_free(pq, TRUE);
+   	try
+	  {
+      que_free(pq, TRUE);
+	  }
+	catch(...)
+	  {
+	  return(NULL);
+	  }
+
     close(fds);
     return(NULL);
     }
@@ -312,7 +342,15 @@ pbs_queue *que_recov_xml(
         current);
       log_err(-1, __func__, log_buf);
 
-      que_free(pq, TRUE);
+	  try
+		{
+      	que_free(pq, TRUE);
+	  	}
+	  catch(...)
+	    {
+	    return(NULL);
+	    }
+
       close(fds);
       return(NULL);
       }
@@ -342,8 +380,15 @@ pbs_queue *que_recov_xml(
             "Bad XML in the queue file at: %s",
             current);
           log_err(-1, __func__, log_buf);
-          
-          que_free(pq, TRUE);
+		  try
+			{
+			que_free(pq, TRUE);
+			} 
+		  catch(...)
+			{
+			return(NULL);
+			}
+
           close(fds);
           return(NULL);
           }
@@ -356,7 +401,15 @@ pbs_queue *que_recov_xml(
             child_parent);
           log_err(rc, __func__, log_buf);
 
-          que_free(pq, TRUE);
+		  try
+			{
+			que_free(pq, TRUE);
+			} 
+		  catch(...)
+			{
+			return(NULL);
+			}
+
           close(fds);
           return(NULL);
           }
@@ -425,7 +478,14 @@ pbs_queue *que_recov(
     {
     log_err(errno, __func__, "open error");
 
-    que_free(pq, TRUE);
+	try
+  	  {
+	  que_free(pq, TRUE);
+	  } 
+	catch(...)
+	  {
+	  return(NULL);
+	  }
 
     return(NULL);
     }
@@ -436,7 +496,15 @@ pbs_queue *que_recov(
       sizeof(queuefix))
     {
     log_err(errno, __func__, "read error");
-    que_free(pq, TRUE);
+	try
+  	  {
+	  que_free(pq, TRUE);
+	  } 
+	catch(...)
+	  {
+	  return(NULL);
+	  }
+
     close(fds);
     return ((pbs_queue *)0);
     }
@@ -447,7 +515,15 @@ pbs_queue *que_recov(
 	               QA_ATR_LAST, 0, TRUE) != 0)
     {
     log_err(-1, __func__, "recov_attr[common] failed");
-    que_free(pq, TRUE);
+	try
+  	  {
+	  que_free(pq, TRUE);
+	  } 
+	catch(...)
+	  {
+	  return(NULL);
+	  }
+
     close(fds);
     return ((pbs_queue *)0);
     }

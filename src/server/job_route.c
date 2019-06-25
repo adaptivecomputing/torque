@@ -347,7 +347,13 @@ int job_route(
     return(PBSE_BADSTATE);
     }
 
-  mutex_mgr qp_mutex = mutex_mgr(qp->qu_mutex, true);
+  int rc;
+  std::shared_ptr<mutex_mgr> qp_mutex = create_managed_mutex(qp->qu_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	log_err(rc, __func__, "Failed to allocate queue mutex");
+	return rc;
+	}	
 
   /* see if the job is able to be routed */
   switch (jobp->ji_qs.ji_state)
@@ -458,11 +464,11 @@ int job_route(
      be unlocked. */
   if (qp->qu_attr[QR_ATR_AltRouter].at_val.at_long == 0)
     {
-    qp_mutex.unlock();
+    qp_mutex->unlock();
     return(default_router(jobp, qp, retry_time));
     }
 
-  qp_mutex.unlock();
+  qp_mutex->unlock();
   return(site_alt_router(jobp, qp, retry_time));
   }  /* END job_route() */
 
@@ -591,7 +597,17 @@ void *queue_route(
       return(NULL);
       }
 
-    mutex_mgr que_mutex(pque->qu_mutex, true);
+	int rc;
+    std::shared_ptr<mutex_mgr> que_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+	if (rc != PBSE_NONE)
+      {
+      sprintf(log_buf, "Could not allocate queue mutex for %s", queue_name);
+      log_err(-1, __func__, log_buf);
+      free(queue_name);
+      pthread_mutex_unlock(reroute_job_mutex);
+      return(NULL);
+      }
+
 
     pque->qu_jobs->lock();
     iter = pque->qu_jobs->get_iterator();
@@ -640,7 +656,7 @@ void *queue_route(
 
     /* we come out of the while loop with the queue locked.
        We don't want it locked while we sleep */
-    que_mutex.unlock();
+    que_mutex->unlock();
     pthread_mutex_unlock(reroute_job_mutex);
     delete iter;
     sleep(route_retry_interval);

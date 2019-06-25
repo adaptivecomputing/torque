@@ -144,7 +144,13 @@ int req_locatejob(
     }
   else
     {
-    mutex_mgr track_mgr(server.sv_track_mutex, false);
+    std::shared_ptr<mutex_mgr> track_mgr = create_managed_mutex(server.sv_track_mutex, false, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  log_err(rc, __func__, "Failed to allocate server mutex");
+	  return(rc);
+	  }
+
     for (i = 0; i < server.sv_tracksize; i++)
       {
       if ((server.sv_track + i)->tk_mtime &&

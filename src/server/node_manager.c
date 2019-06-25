@@ -712,7 +712,17 @@ bool job_should_be_killed(
        * to this node double check the job struct because we
        * could be in the middle of moving the job around because
        * of data staging, suspend, or rerun */            
-      mutex_mgr job_mgr(pjob->ji_mutex,true);
+	  int rc;
+      std::shared_ptr<mutex_mgr> job_mgr = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+	 	{
+		char log_buf[LOCAL_LOG_BUF_SIZE];
+
+		sprintf(log_buf, "failed to allocate job mutex");
+		log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		return false;
+		}
+
       if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str == NULL)
         {
         should_be_on_node = false;
@@ -754,8 +764,16 @@ void *finish_job(
 
     return(NULL);
     }
-  mutex_mgr job_mgr(pjob->ji_mutex,true);
-  job_mgr.set_unlock_on_exit(false);
+
+  int rc;
+  std::shared_ptr<mutex_mgr> job_mgr = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+ 	{
+	log_err(rc, __func__, "failed to allocate job mutex");
+	return NULL;
+	}
+
+  job_mgr->set_unlock_on_exit(false);
 
   free(jobid);
 
@@ -845,7 +863,15 @@ void process_job_attribute_information(
 
   if ((pjob = svr_find_job(job_id.c_str(), TRUE)) != NULL)
     {
-    mutex_mgr job_mutex(pjob->ji_mutex, true);
+	int rc;
+    std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  std::string message("Failed to allocate mutex for job ");
+	  message += pjob->ji_qs.ji_jobid;
+	  log_err(rc, __func__, message.c_str());
+	  throw std::runtime_error(message);
+	  }
 
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
@@ -917,7 +943,17 @@ void process_legacy_job_attribute_information(
 
   if ((pjob = svr_find_job(job_id.c_str(), TRUE)) != NULL)
     {
-    mutex_mgr job_mutex(pjob->ji_mutex, true);
+	int rc;
+    std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  char log_buf[LOCAL_LOG_BUF_SIZE];
+
+	  sprintf(log_buf, "Failed to allocate job mutex: error %d", rc);
+	  log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	  throw std::runtime_error(log_buf);
+ 	  }
+
     char *attr_val = threadsafe_tokenizer(&attr_work, ",");
     
     while (attr_val != NULL)

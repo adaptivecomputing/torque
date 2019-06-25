@@ -736,15 +736,15 @@ if test "$DEBUG_SYMBOLS" = 'yes'; then
       ;;
     *)
       if test "$CFLAGS" = ''; then
-        CFLAGS="-g"
+        CFLAGS="-g -std=c++11"
       else
-        CFLAGS="-g $CFLAGS"
+        CFLAGS="-g -std=c++11 $CFLAGS"
       fi
 
       if test "$CXXFLAGS" = ''; then
-        CXXFLAGS="-g"
+        CXXFLAGS="-g -std=c++11"
       else
-        CXXFLAGS="-g $CXXFLAGS"
+        CXXFLAGS="-g -std=c++11 $CXXFLAGS"
       fi
       ;;
   esac
@@ -758,9 +758,9 @@ if test "$DEBUG_SYMBOLS" = 'yes'; then
       ;;
     *)
       if test "$CXXFLAGS" = ''; then
-        CXXFLAGS="-g"
+        CXXFLAGS="-g -std=c++11"
       else
-        CXXFLAGS="-g $CXXFLAGS"
+        CXXFLAGS="-g  -std=c++11 $CXXFLAGS"
       fi
       ;;
   esac
@@ -1174,8 +1174,6 @@ else
   for your version of boost.
   ])])
 fi
-
-
 
 dnl add an option to specify a different path where TORQUE should look for HWLOC
 dnl lib and include files
@@ -2608,8 +2606,8 @@ drmaadocdir=$datadir/doc/$PACKAGE-drmaa
 AC_SUBST(drmaadocdir)
 
 if test "x$gccwarnings" = "xyes" ;then
-  AX_CFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
-  AX_CXXFLAGS_GCC_OPTION([-W -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
+  AX_CFLAGS_GCC_OPTION([-W -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
+  AX_CXXFLAGS_GCC_OPTION([-W -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-long-long -Wpedantic -Werror -Wno-sign-compare])
 fi
 
 

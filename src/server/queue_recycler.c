@@ -46,7 +46,14 @@ void *remove_some_recycle_queues(
   q_recycler.queues.lock();
   iter = q_recycler.queues.get_iterator();
   q_recycler.queues.unlock();
-  mutex_mgr q_recycler_mutex = mutex_mgr(q_recycler.mutex, false);
+
+  int rc;
+  std::shared_ptr<mutex_mgr> q_recycler_mutex = create_managed_mutex(q_recycler.mutex, false, rc);
+  if (rc != PBSE_NONE)
+	{
+	log_err(rc, __func__, "Failed to allocate q_recycler_mutex");
+	return NULL;
+	}
 
   pq = next_queue_from_recycler(&q_recycler.queues,iter);
 

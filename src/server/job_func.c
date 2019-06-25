@@ -506,7 +506,12 @@ int job_abt(
     return(rc);
     }
 
-  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+  std::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	log_err(rc, __func__, "failed to allocate job mutex");
+	return(rc);
+	}
 
   long KeepSeconds = 0;
   int rc2 = get_svr_attr_l(SRV_ATR_KeepCompleted, &KeepSeconds);
@@ -566,7 +571,7 @@ int job_abt(
           if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
             {
             pjob = NULL;
-            pjob_mutex.set_unlock_on_exit(false);
+            pjob_mutex->set_unlock_on_exit(false);
             }
           }
         
@@ -580,7 +585,7 @@ int job_abt(
           if (pjob != NULL)
             {
             job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-            pjob_mutex.unlock();
+            pjob_mutex->unlock();
              
             if (pa)
               {
@@ -590,7 +595,7 @@ int job_abt(
               }
 
             if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
-              pjob_mutex.mark_as_locked();
+              pjob_mutex->mark_as_locked();
             }
           }
       
@@ -626,7 +631,7 @@ int job_abt(
       if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
         {
         pjob = NULL;
-        pjob_mutex.set_unlock_on_exit(false);
+        pjob_mutex->set_unlock_on_exit(false);
         }
       /* pjob_mutex managed mutex already points to pjob->ji_mutex. Nothing to do */
       }
@@ -641,7 +646,7 @@ int job_abt(
       if (pjob != NULL)
         {
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-        pjob_mutex.unlock();
+        pjob_mutex->unlock();
         if (pa)
           {
           pa->update_array_values(old_state, aeTerminate, job_id, job_exit_status);
@@ -650,7 +655,7 @@ int job_abt(
           }
         
         if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
-          pjob_mutex.mark_as_locked();
+          pjob_mutex->mark_as_locked();
         }
       }
 
@@ -659,7 +664,7 @@ int job_abt(
     }
 
   if (pjob == NULL)
-    pjob_mutex.set_unlock_on_exit(false);
+    pjob_mutex->set_unlock_on_exit(false);
 
   return(rc);
   }  /* END job_abt() */
@@ -1133,9 +1138,9 @@ job *job_clone(
 int create_and_queue_array_subjob(
     
   job_array   *pa,
-  mutex_mgr   &array_mgr,
+  std::shared_ptr<mutex_mgr>   &array_mgr,
   job         *template_job,
-  mutex_mgr   &template_job_mgr,
+  std::shared_ptr<mutex_mgr>   &template_job_mgr,
   int          index,
   std::string &prev_job_id,
   bool         place_hold)
@@ -1150,9 +1155,9 @@ int create_and_queue_array_subjob(
   
   pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
 
-  template_job_mgr.lock();
+  template_job_mgr->lock();
   pjobclone = job_clone(template_job, pa, index, place_hold);
-  template_job_mgr.unlock();
+  template_job_mgr->unlock();
 
   if (pjobclone == NULL)
     {
@@ -1167,7 +1172,12 @@ int create_and_queue_array_subjob(
     return(PBSE_NONE);
     }
 
-  mutex_mgr clone_mgr(pjobclone->ji_mutex, true);
+  std::shared_ptr<mutex_mgr> clone_mgr = create_managed_mutex(pjobclone->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	log_err(rc, __func__, "failed to allocate job mutex");
+	return(rc);
+	}
 
   svr_evaljobstate(*pjobclone, newstate, newsub, 1);
 
@@ -1184,12 +1194,12 @@ int create_and_queue_array_subjob(
   // Clear this so that the jobs get a queued entry in the accounting file
   pjobclone->ji_wattr[JOB_ATR_qtime].at_flags &= ~ATR_VFLAG_SET;
 
-  array_mgr.unlock();
+  array_mgr->unlock();
 
   if ((rc = svr_enquejob(pjobclone, FALSE, prev_job_id.c_str(), false, false)))
     {
     /* XXX need more robust error handling */
-    clone_mgr.set_unlock_on_exit(false);
+    clone_mgr->set_unlock_on_exit(false);
 
     if (rc != PBSE_JOB_RECYCLED)
       {
@@ -1202,7 +1212,7 @@ int create_and_queue_array_subjob(
       return(FATAL_ERROR);
       }
 
-    array_mgr.mark_as_locked();
+    array_mgr->mark_as_locked();
     pthread_setcancelstate(old_state, NULL);
 
     return(NONFATAL_ERROR);
@@ -1213,19 +1223,19 @@ int create_and_queue_array_subjob(
     if (pjobclone == NULL)
       {
       /* pjobclone has been released. No mutex left to unlock */
-      clone_mgr.set_unlock_on_exit(false);
+      clone_mgr->set_unlock_on_exit(false);
       }
     pthread_setcancelstate(old_state, NULL);
 
     return(FATAL_ERROR);
     }
     
-  array_mgr.mark_as_locked();
+  array_mgr->mark_as_locked();
 
   if (job_save(pjobclone, SAVEJOB_FULL, 0) != 0)
     {
     /* XXX need more robust error handling */
-    array_mgr.unlock();
+    array_mgr->unlock();
     svr_job_purge(pjobclone);
     
     if ((pa = get_array(arrayid.c_str())) == NULL)
@@ -1233,7 +1243,7 @@ int create_and_queue_array_subjob(
       return(FATAL_ERROR);
       }
 
-    array_mgr.mark_as_locked();
+    array_mgr->mark_as_locked();
     
     return(NONFATAL_ERROR);
     }
@@ -1283,7 +1293,13 @@ int perform_array_postprocessing(
       }
     else
       {
-      mutex_mgr job_mutex(pjob->ji_mutex,true);
+      std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex,true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		log_err(rc, __func__, "failed to allocate job mutex");
+		return(rc);
+		}
+
       bool moab_compatible = false;
      
       actual_job_count++;
@@ -1323,12 +1339,20 @@ int perform_array_postprocessing(
 
      if ((pque = get_jobs_queue(&pjob)) != NULL)
        {
-       mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex,true);
+       std::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex,true, rc);
+	   if (rc != PBSE_NONE)
+	     {
+         char log_buf[LOCAL_LOG_BUF_SIZE];
+         snprintf(log_buf, sizeof(log_buf), "Failed to allocate queue mutex. Cannot route job %s", pjob->ji_qs.ji_jobid);
+         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+         svr_job_purge(pjob);
+         }
+		
        if ((pque->qu_qs.qu_type == QTYPE_RoutePush) &&
            (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
          { 
          /* job_route expects the queue to be unlocked */
-         pque_mutex.unlock();
+         pque_mutex->unlock();
          if ((rc = job_route(pjob)))
            {
            if (LOGLEVEL >= 6)
@@ -1338,7 +1362,7 @@ int perform_array_postprocessing(
              log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
              }
            svr_job_purge(pjob);
-           pque_mutex.unlock();
+           pque_mutex->unlock();
            continue;
            }
          }
@@ -1416,8 +1440,21 @@ void *job_clone_wt(
     return(NULL);
     }
 
-  mutex_mgr array_mgr(pa->ai_mutex, true);
-  mutex_mgr template_job_mgr(template_job->ji_mutex,true);
+  std::shared_ptr<mutex_mgr> array_mgr = create_managed_mutex(pa->ai_mutex, true, rc);
+  if ( rc != PBSE_NONE)
+	{
+	// @todo should throw
+	log_err(rc, __func__, "failed to allocate array_mgr mutex");
+	return NULL;
+	}
+
+  std::shared_ptr<mutex_mgr> template_job_mgr = create_managed_mutex(template_job->ji_mutex,true, rc);
+  if ( rc != PBSE_NONE)
+	{
+	// @todo should throw
+	log_err(rc, __func__, "failed to allocate template_job_mgr mutex");
+	return NULL;
+	}
 
   if (template_job->ji_routed == false)
     {
@@ -1436,7 +1473,7 @@ void *job_clone_wt(
   snprintf(namebuf, sizeof(namebuf), "%s%s%s",
     adjusted_path_jobs.c_str(), template_job->ji_qs.ji_fileprefix, ARRAY_FILE_SUFFIX);
 
-  template_job_mgr.unlock();
+  template_job_mgr->unlock();
 
   for (size_t i = 0; i < pa->uncreated_ids.size(); i++)
     {
@@ -1898,7 +1935,12 @@ int svr_job_purge(
     return(rc);
     }
 
-  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+  std::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if ( rc != PBSE_NONE )
+	{
+	log_err(rc, __func__, "failed to allocate job mutex");
+	return(rc);
+	}
  
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
@@ -1933,7 +1975,7 @@ int svr_job_purge(
       {
       /* PBSE_JOBNOTFOUND means the job is gone.
        * remove_job alreadly unlocked pjob->ji_mutex */
-      pjob_mutex.set_unlock_on_exit(false); 
+      pjob_mutex->set_unlock_on_exit(false); 
       return(PBSE_NONE);
       }
     else if (rc2 == THING_NOT_FOUND && (LOGLEVEL >= 7))
@@ -1969,7 +2011,7 @@ int svr_job_purge(
       }
     else
       {
-      pjob_mutex.set_unlock_on_exit(false);
+      pjob_mutex->set_unlock_on_exit(false);
       return(PBSE_JOBNOTFOUND);
       }
     }
@@ -1991,16 +2033,16 @@ int svr_job_purge(
           (rc != PBSE_JOB_NOT_IN_QUEUE))
         {
         job_free(pjob, TRUE);
-        pjob_mutex.set_unlock_on_exit(false);  /* job_free will release lock */
+        pjob_mutex->set_unlock_on_exit(false);  /* job_free will release lock */
         }
       else
-        pjob_mutex.unlock();
+        pjob_mutex->unlock();
       }
     }
   else
     {
     job_free(pjob, TRUE);
-    pjob_mutex.set_unlock_on_exit(false); /* job_free will release lock */
+    pjob_mutex->set_unlock_on_exit(false); /* job_free will release lock */
     }
 
   // get the adjusted path_jobs
@@ -2155,15 +2197,22 @@ job_array *get_jobs_array(
     return(NULL);
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex,true);
-  job_mutex.set_unlock_on_exit(false);
+  int rc;
+  std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex,true, rc);
+  if (rc != PBSE_NONE)
+	{
+    log_err(rc, __func__, "Failed to allocate job mutex");
+    return(NULL);
+	}
+	
+  job_mutex->set_unlock_on_exit(false);
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
 
   if (pjob->ji_arraystructid[0] != '\0')
     {
     strcpy(arrayid, pjob->ji_arraystructid);
-    job_mutex.unlock();
+    job_mutex->unlock();
   
     if (LOGLEVEL >= 7)
       {

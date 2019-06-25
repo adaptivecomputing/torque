@@ -241,7 +241,7 @@ int req_stat_job(
     {
     /* status a single job */
 
-    if (is_array(name))
+    if (is_an_array(name))
       {
       if (type != tjstSummarizeArraysServer)
         {
@@ -365,7 +365,14 @@ void handle_truncated_qstat(
   while ((pque = next_queue(&svr_queues, queue_iter)) != NULL)
     {
     long      qjcounter = 0;
-    mutex_mgr queue_mutex(pque->qu_mutex, true);
+	int rc;
+    std::shared_ptr<mutex_mgr> queue_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  sprintf(log_buf, "failed to allocate queue mutex for queue %s", pque->qu_qs.qu_name);
+	  log_err(rc, __func__, log_buf);
+	  continue;
+	  }
 
     if ((exec_only == true) &&
         (pque->qu_qs.qu_type != QTYPE_Execution))
@@ -401,7 +408,13 @@ void handle_truncated_qstat(
 
     while ((pjob = next_job(pque->qu_jobs, jobiter)) != NULL)
       {
-      mutex_mgr job_mgr(pjob->ji_mutex, true);
+      std::shared_ptr<mutex_mgr> job_mgr = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		sprintf(log_buf, "Failed to create job mutex: %d", rc);
+		log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		continue;
+	 	}
 
       if ((qjcounter >= qmaxreport) &&
           (pjob->ji_qs.ji_state == JOB_STATE_QUEUED))
@@ -558,7 +571,16 @@ bool in_execution_queue(
       (pque == NULL))
     return(false);
   
-  mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
+  int rc;
+  std::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	char log_buf[LOCAL_LOG_BUF_SIZE];
+	sprintf(log_buf, "failed to allocate queue mutex for queue %s", pque->qu_qs.qu_name);
+	log_err(rc, __func__, log_buf);
+	return false;
+	}
+
 
   return(pque->qu_qs.qu_type == QTYPE_Execution);
   } // END in_execution_queue()
@@ -657,7 +679,16 @@ void req_stat_job_step2(
          pjob != NULL;
          pjob = get_next_status_job(cntl, job_array_index, pa, iter))
       {
-      mutex_mgr job_mutex(pjob->ji_mutex, true);
+      std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		char log_buf[LOCAL_LOG_BUF_SIZE];
+		sprintf(log_buf, "failed to allocage job mutex: %d", rc);
+		log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        req_reject(rc, 0, preq, NULL, log_buf);
+        return;
+	  	}
+		
 
       /* go ahead and build the status reply for this job */
       if (pjob->ji_being_recycled == true)
@@ -745,8 +776,14 @@ int stat_to_mom(
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     return(PBSE_JOBNOTFOUND);
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
-
+  std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocage job mutex: %d", rc);
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+    return rc;
+	}
+	
   // don't continue if job no longer running
   if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
     {
@@ -764,7 +801,7 @@ int stat_to_mom(
   if ((pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0) || 
       (!pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str))
     {
-    job_mutex.unlock();
+    job_mutex->unlock();
     snprintf(log_buf, sizeof(log_buf),
       "Job %s missing MOM's information. Skipping statting on this job", pjob->ji_qs.ji_jobid);
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
@@ -774,7 +811,7 @@ int stat_to_mom(
   job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
   job_momport = pjob->ji_qs.ji_un.ji_exect.ji_momport;
   job_momname = strdup(pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str);
-  job_mutex.unlock();
+  job_mutex->unlock();
 
   if (job_momname == NULL)
     return PBSE_MEM_MALLOC;
@@ -876,8 +913,15 @@ void stat_update(
       {
       if ((pjob = svr_find_job(pstatus->brp_objname, FALSE)) != NULL)
         {
-        mutex_mgr job_mutex(pjob->ji_mutex, true);
-
+		int rc;
+        std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+		if (rc != PBSE_NONE)
+		  {
+		  sprintf(log_buf, "failed to allocage job mutex: %d", rc);
+		  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+   		  return;
+		  }
+	
         sattrl = (svrattrl *)GET_NEXT(pstatus->brp_attr);
 
         oldsid = pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long;
@@ -923,8 +967,15 @@ void stat_update(
          this can happen if a diskless node reboots and the mom_priv/jobs
          directory is cleared, set its state to queued so job_abt doesn't
          think it is still running */
-      mutex_mgr job_mutex(pjob->ji_mutex, true);
-
+	  int rc;
+      std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		sprintf(log_buf, "failed to allocage job mutex: %d", rc);
+		log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+        return;
+	  	}
+	
       if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
         {
         // don't abort if job no longer in running state
@@ -946,7 +997,7 @@ void stat_update(
         
         svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
         rel_resc(pjob);
-        job_mutex.set_unlock_on_exit(false);
+        job_mutex->set_unlock_on_exit(false);
         job_abt(&pjob, "Job does not exist on node");
 
         /* TODO, if the job is rerunnable we should set its state back to queued */
@@ -1042,7 +1093,8 @@ void poll_job_task(
     
     if (pjob != NULL)
       {
-      mutex_mgr job_mutex(pjob->ji_mutex, true);
+	  int rc;
+      std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
       int       job_state = -1;
 
       job_state = pjob->ji_qs.ji_state;
@@ -1050,7 +1102,7 @@ void poll_job_task(
       // only do things for running jobs
       if (job_state == JOB_STATE_RUNNING)
         {
-        job_mutex.unlock();
+        job_mutex->unlock();
 
         get_svr_attr_l(SRV_ATR_JobStatRate, &job_stat_rate);
 
@@ -1122,8 +1174,15 @@ int req_stat_que(
   if (type == 0)
     {
     /* get status of the named queue */
-    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
-    rc = status_que(pque, preq, &preply->brp_un.brp_status);
+    std::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+    if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocate queue mutex for queue %s", pque->qu_qs.qu_name);
+	log_err(rc, __func__, log_buf);
+	return rc;
+	}
+
+	rc = status_que(pque, preq, &preply->brp_un.brp_status);
     /* pque_qu_mutex will be unlocked in the destructor when we leave this scope */
     }
   else
@@ -1136,7 +1195,15 @@ int req_stat_que(
     /* get status of all queues */
     while ((pque = next_queue(&svr_queues,iter)) != NULL)
       {
-      mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
+      std::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+  	  if (rc != PBSE_NONE)
+		{
+		sprintf(log_buf, "failed to allocate queue mutex for queue %s", pque->qu_qs.qu_name);
+		log_err(rc, __func__, log_buf);
+		req_reject(rc, 0, preq, NULL, log_buf);
+		return rc;
+		}
+
       rc = status_que(pque, preq, &preply->brp_un.brp_status);
 
       if (rc != 0)

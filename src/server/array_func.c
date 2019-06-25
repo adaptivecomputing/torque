@@ -56,6 +56,7 @@
 #include "mutex_mgr.hpp"
 #include "batch_request.h"
 #include "alps_constants.h"
+#include "mutex_mgr.hpp"
 
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
 
@@ -90,7 +91,7 @@ void        force_purge_work(job *pjob);
 
 /* search job array list to determine if id is a job array */
 
-int is_array(
+int is_an_array(
     
   char *id)
 
@@ -1393,6 +1394,7 @@ int delete_array_range(
   bool                deleted;
   int                 running;
   long                cancel_exit_code = 0;
+  int				  rc;
 
   /* get just the numeric range specified, '=' should
    * always be there since we put it there in qdel */
@@ -1427,7 +1429,15 @@ int delete_array_range(
       }
     else
       {
-      mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+      std::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		char log_buf[LOCAL_LOG_BUF_SIZE];
+		sprintf(log_buf, "failed to allocate job mutex");
+		log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+		continue;
+		}
+
       if (pjob->ji_qs.ji_state >= JOB_STATE_EXITING)
         {
         /* invalid state for request,  skip */
@@ -1462,7 +1472,7 @@ int delete_array_range(
         deleted = attempt_delete(pjob);
       
       // Both attempt_delete and force_purge_work unlock pjob
-      pjob_mutex.set_unlock_on_exit(false);
+      pjob_mutex->set_unlock_on_exit(false);
       pthread_mutex_lock(pa->ai_mutex);
 
       if (deleted == false)
@@ -1537,6 +1547,7 @@ int delete_whole_array(
   bool deleted;
   int  running;
   long cancel_exit_code = 0;
+  int  rc;
 
   std::string array_id = pa->ai_qs.parent_id;
 
@@ -1556,7 +1567,13 @@ int delete_whole_array(
       }
     else
       {
-      mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+      std::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		log_err(rc, __func__, "Failed to allocate job mutex");
+		continue;
+		}
+
       num_jobs++;
 
       if ((pjob->ji_qs.ji_state >= JOB_STATE_EXITING) &&
@@ -1595,7 +1612,7 @@ int delete_whole_array(
         deleted = attempt_delete(pjob);
 
       /* we come out of attempt_delete unlocked */
-      pjob_mutex.set_unlock_on_exit(false);
+      pjob_mutex->set_unlock_on_exit(false);
 
       if (deleted == false)
         {
@@ -1735,7 +1752,16 @@ int release_array_range(
       }
     else
       {
-      mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+      std::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		char log_buf[LOCAL_LOG_BUF_SIZE];
+	
+		sprintf(log_buf, "Failed to create job mutex");
+		log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		return rc;
+		}
+
       if ((rc = release_job(preq, pjob, pa)))
         {
         return(rc);
@@ -1789,7 +1815,17 @@ int modify_array_range(
         {
         batch_request array_req(*preq);
         array_req.update_object_id(index);
-        mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+        std::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+ 	    if (rc != PBSE_NONE)
+		  {
+		  char log_buf[LOCAL_LOG_BUF_SIZE];
+	
+		  sprintf(log_buf, "Failed to create job mutex");
+		  log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		  return rc;
+		  }
+
+
         pthread_mutex_unlock(pa->ai_mutex);
         array_req.rq_noreply = true;
         modify_job((void **)&pjob, plist, &array_req, checkpoint_req, NO_MOM_RELAY);
@@ -1800,13 +1836,13 @@ int modify_array_range(
           array_gone = true;
 
           if (pjob == NULL)
-            pjob_mutex.set_unlock_on_exit(false);
+            pjob_mutex->set_unlock_on_exit(false);
           break;
           }
         
         if (pjob == NULL)
           {
-          pjob_mutex.set_unlock_on_exit(false);
+          pjob_mutex->set_unlock_on_exit(false);
           pa->job_ids[i] = NULL;
           }
         }
@@ -1965,11 +2001,16 @@ int check_array_slot_limits(
   else
     pa = pa_held;
 
-  mutex_mgr array_mgr(pa->ai_mutex, true);
+  int rc;
+  std::shared_ptr<mutex_mgr> array_mgr = create_managed_mutex(pa->ai_mutex, true, rc);
+	{
+	log_err(rc, __func__, "failed to allocate array_mgr mutex");
+	return rc;
+	}
 
   // Don't unlock the array if we held it coming in
   if (pa_held != NULL)
-    array_mgr.set_unlock_on_exit(false);
+    array_mgr->set_unlock_on_exit(false);
 
   if (pa->ai_qs.slot_limit != NO_SLOT_LIMIT)
     {
@@ -2003,7 +2044,16 @@ int check_array_slot_limits(
           }
         else
           {
-          mutex_mgr pj_mutex = mutex_mgr(pj->ji_mutex, true);
+          std::shared_ptr<mutex_mgr> pj_mutex = create_managed_mutex(pj->ji_mutex, true, rc);
+   	      if (rc != PBSE_NONE)
+		 	{
+		    char log_buf[LOCAL_LOG_BUF_SIZE];
+	
+		    sprintf(log_buf, "Failed to create job mutex");
+		    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
+		    continue;
+  			}
+
 
           if (pj->ji_qs.ji_state == JOB_STATE_RUNNING)
             {
@@ -2119,8 +2169,18 @@ void update_array_statuses()
     
     if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
       {
-      mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
-      if (running > 0)
+	  int rc;
+      std::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+      if (rc != PBSE_NONE)
+	 	{
+	    char log_buf[LOCAL_LOG_BUF_SIZE];
+	
+	    sprintf(log_buf, "Failed to create job mutex");
+	    log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	    continue;
+  		}
+
+     if (running > 0)
         {
         svr_setjobstate(pjob, JOB_STATE_RUNNING, pjob->ji_qs.ji_substate, FALSE);
         }

@@ -528,7 +528,17 @@ int record_reservation(
 
     if ((pjob = svr_find_job_by_id(internal_job_id)) != NULL)
       {
-      mutex_mgr job_mutex(pjob->ji_mutex, true);
+	  int rc;
+      std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+	 	{
+		char log_buf[LOCAL_LOG_BUF_SIZE];
+
+		sprintf(log_buf, "Failed to allocate job mutex: %d", rc);
+		log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		return rc;
+	  }
+
       pjob->ji_wattr[JOB_ATR_reservation_id].at_val.at_str = strdup(rsv_id);
       pjob->ji_wattr[JOB_ATR_reservation_id].at_flags = ATR_VFLAG_SET;
 
@@ -548,7 +558,7 @@ int record_reservation(
       alps_reservations.track_alps_reservation(pjob);
       found_job = true;
 
-      job_mutex.unlock(); 
+      job_mutex->unlock(); 
       pnode->lock_node(__func__, NULL, LOGLEVEL);
       break;
       }

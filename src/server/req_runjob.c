@@ -205,7 +205,14 @@ int check_and_run_job_work(
     return(rc);
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+    req_reject(rc, 0, preq, NULL, "Job unexpectedly deleted");
+	return(rc);
+	}
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
@@ -217,7 +224,7 @@ int check_and_run_job_work(
 
     if (pjob == NULL)
       {
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
       req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
       rc = PBSE_JOBNOTFOUND;
       return(rc);
@@ -225,7 +232,15 @@ int check_and_run_job_work(
    
     if (pa != NULL)
       {
-      mutex_mgr array_mutex(pa->ai_mutex, true);
+      std::shared_ptr<mutex_mgr> array_mutex = create_managed_mutex(pa->ai_mutex, true, rc);
+      if (pjob == NULL)
+ 		{
+		sprintf(log_buf, "Failed to allocate array mutex: %d", rc);
+		log_err(rc, __func__, log_buf);
+     	job_mutex->set_unlock_on_exit(false);
+		req_reject(rc, 0, preq, NULL, log_buf);
+		return(rc);
+		}
       
       if ((pa->ai_qs.slot_limit < 0) ||
           (pa->ai_qs.slot_limit > pa->ai_qs.jobs_running))
@@ -233,7 +248,7 @@ int check_and_run_job_work(
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
         job_state = pjob->ji_qs.ji_state;
 
-        job_mutex.unlock();
+        job_mutex->unlock();
 
         pa->update_array_values(job_state, aeRun, job_id, job_exit_status);
 
@@ -245,7 +260,7 @@ int check_and_run_job_work(
           return(rc);
           }
         else
-          job_mutex.mark_as_locked();
+          job_mutex->mark_as_locked();
         }
       else
         {
@@ -431,7 +446,14 @@ void post_checkpointsend(
 
   if (pjob != NULL)
     {
-    mutex_mgr job_mutex(pjob->ji_mutex, true);
+	int rc;
+    std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+	  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	  return;
+	  }
 
     if (code != 0)
       {
@@ -490,7 +512,7 @@ void post_checkpointsend(
       }
 
     if (pjob == NULL)
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
     }    /* END if (pjob != NULL) */
 
   return;
@@ -645,7 +667,16 @@ void post_stagein(
 
   if (pjob != NULL)
     {
-    mutex_mgr job_mutex(pjob->ji_mutex, true);
+	int rc;
+    std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  char log_buf[LOCAL_LOG_BUF_SIZE];
+	  sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+	  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	  return;
+	  }
+
 
     if (code != 0)
       {
@@ -711,7 +742,7 @@ void post_stagein(
       }
 
     if (pjob == NULL)
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
     }    /* END if (pjob != NULL) */
 
   return;
@@ -1433,7 +1464,15 @@ void finish_sendmom(
     return;
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  int rc;
+  std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return;
+	}
+
 
   if (LOGLEVEL >= 6)
     {
@@ -1590,7 +1629,7 @@ void finish_sendmom(
           pjob->ji_momstat = 0;
           
           /* update mom-based job status */
-          job_mutex.unlock();
+          job_mutex->unlock();
           stat_mom_job(job_id);
           }
         else
@@ -1639,6 +1678,7 @@ job *chk_job_torun(
   char              FailHost[1024];
   char             *exec_host;
   char             *ptr;
+  char				log_buf[LOCAL_LOG_BUF_SIZE];
 
   prun = &preq->rq_ind.rq_run;
 
@@ -1649,7 +1689,15 @@ job *chk_job_torun(
     return(NULL);
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return NULL;
+	}
+
+
 
   if ((pjob->ji_qs.ji_state == JOB_STATE_TRANSIT) ||
       (pjob->ji_qs.ji_state == JOB_STATE_EXITING) ||
@@ -1692,7 +1740,15 @@ job *chk_job_torun(
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
-    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
+    std::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  sprintf(log_buf, "failed to allocate queue mutex for queue %s", pque->qu_qs.qu_name);
+	  log_err(rc, __func__, log_buf);
+	  req_reject(rc, 0, preq, NULL, NULL);
+	  return(NULL);
+	  }
+
     if (pque->qu_qs.qu_type != QTYPE_Execution ||
          pque->qu_attr[QA_ATR_Started].at_val.at_long == 0)
       {
@@ -1710,7 +1766,7 @@ job *chk_job_torun(
     }
   else if (pjob == NULL)
     {
-    job_mutex.set_unlock_on_exit(false);
+    job_mutex->set_unlock_on_exit(false);
     req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "job vanished while trying to lock queue.");
     return(NULL);
     }
@@ -1854,7 +1910,7 @@ job *chk_job_torun(
 #endif /* TDEV */
     }    /* END if (setnn == 1) */
 
-  job_mutex.set_unlock_on_exit(false);
+  job_mutex->set_unlock_on_exit(false);
 
   return(pjob);
   }  /* END chk_job_torun() */

@@ -80,6 +80,7 @@
 */
 
 #include <pthread.h>
+#include <memory>
 
 /* mutex_mgr 
  * This class is used to manage pthread mutexes.
@@ -101,8 +102,8 @@ class mutex_mgr
 
   public:
     mutex_mgr& operator= (const mutex_mgr &newMutexMgr);
-    mutex_mgr(const mutex_mgr& newMutexMgr);
-    mutex_mgr(pthread_mutex_t *mutex, bool is_locked = false);
+    mutex_mgr(const std::shared_ptr<mutex_mgr>& newMutexMgr);
+    mutex_mgr(pthread_mutex_t* mutex, bool is_locked = false);
     ~mutex_mgr();
     int unlock();
     int lock();
@@ -111,5 +112,8 @@ class mutex_mgr
 	  void mark_as_locked();
     bool is_valid();
   };
+
+/* mutex_mgr utility functions */
+std::shared_ptr<mutex_mgr> create_managed_mutex(pthread_mutex_t *mutex, bool is_locked, int &rc);
 
 #endif

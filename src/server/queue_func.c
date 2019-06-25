@@ -292,7 +292,17 @@ void que_free(
   pbs_attribute *pattr;
   attribute_def *pdef;
 
-  mutex_mgr pq_mutex(pq->qu_mutex, true);
+  int rc;
+  std::shared_ptr<mutex_mgr> pq_mutex = create_managed_mutex(pq->qu_mutex, true, rc);
+  if (rc != PBSE_NONE)
+    {
+    char log_buf[LOCAL_LOG_BUF_SIZE];
+
+    sprintf(log_buf, "Failed to allocate queue mutex for %s", pq->qu_qs.qu_name);
+	log_err(rc, __func__, log_buf);
+    throw std::runtime_error(log_buf);
+    }
+
 
   /* remove any calloc working pbs_attribute space */
   for (i = 0;i < QA_ATR_LAST;i++)
@@ -359,7 +369,14 @@ int que_purge(
     log_err(errno, "queue_purge", log_buf);
     }
 
-  que_free(pque, FALSE);
+  try
+	{
+	que_free(pque, FALSE);
+	}
+  catch(...)
+	{
+	return(PBSE_SYSTEM);
+	}
 
   return(0);
   }

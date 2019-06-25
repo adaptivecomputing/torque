@@ -320,10 +320,21 @@ int insert_into_alljobs_by_rank(
 
   while ((pjcur = iter->get_next_item()) != NULL)
     {
-    mutex_mgr pjcur_mgr(pjcur->ji_mutex, false);
+  	int rc;
+    std::shared_ptr<mutex_mgr> pjcur_mgr = create_managed_mutex(pjcur->ji_mutex, false, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  char log_buf[LOCAL_LOG_BUF_SIZE];
+	  sprintf(log_buf, "Failed to allocate job mutex: %d", rc);
+	  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjcur->ji_qs.ji_jobid, log_buf);
+	  delete iter;
+	  aj->unlock();
+	  return rc;
+	  }
+	  
     if (job_qrank > pjcur->ji_wattr[JOB_ATR_qrank].at_val.at_long)
       {
-      pjcur_mgr.set_unlock_on_exit(false);
+      pjcur_mgr->set_unlock_on_exit(false);
       break;
       }
     
@@ -437,7 +448,13 @@ int svr_enquejob(
     return(PBSE_UNKQUE);
     }
 
-  mutex_mgr que_mgr(pque->qu_mutex, true);
+  std::shared_ptr<mutex_mgr> que_mgr = create_managed_mutex(pque->qu_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocate mutex for queue %s", pque->qu_qs.qu_name);
+	log_err(rc, __func__, log_buf);
+	return rc;
+	} 
 
   if ((pque->qu_attr[QA_ATR_GhostQueue].at_val.at_long == TRUE) &&
       (being_recovered == false))
@@ -653,7 +670,7 @@ int svr_enquejob(
       &pque->qu_attr[QE_ATR_checkpoint_min]);
 
     /* do anything needed doing regarding job dependencies */
-    que_mgr.unlock();
+    que_mgr->unlock();
 
     /* set eligible time */
     if (((pjob->ji_wattr[JOB_ATR_etime].at_flags & ATR_VFLAG_SET) == 0) &&
@@ -677,7 +694,7 @@ int svr_enquejob(
     pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_ROUTE;
     pjob->ji_qs.ji_un.ji_routet.ji_quetime = time_now;
     
-    que_mgr.unlock();
+    que_mgr->unlock();
     }
   
   if ((pjob->ji_qs.ji_state != JOB_STATE_COMPLETE) && 
@@ -3058,7 +3075,15 @@ void job_wait_over(
 
   if (pjob != NULL)
     {
-    mutex_mgr job_mutex(pjob->ji_mutex, true);
+	int rc;
+    std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+    if (rc != PBSE_NONE)
+	  {
+	  sprintf(log_buf, "failed to allocate job mutex %d", rc);
+	  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	  return;
+	  } 
+
 
 #ifndef NDEBUG
       {
@@ -3943,7 +3968,15 @@ static void correct_ct()
 
   while ((pque = next_queue(&svr_queues,queue_iter)) != NULL)
     {
-    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
+    int rc;
+    std::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  sprintf(log_buf, "Failed to allocate mutex for queue %s", pque->qu_qs.qu_name);
+	  log_err(rc, __func__, log_buf);
+	  return;
+	  }
+	
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "checking queue %s", pque->qu_qs.qu_name);
     log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_SERVER, msg_daemonname, log_buf);
     pque->qu_numjobs = 0;

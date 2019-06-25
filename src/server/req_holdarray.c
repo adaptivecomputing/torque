@@ -103,7 +103,12 @@ int req_holdarray(
     return(PBSE_NONE);
     }
 
-  mutex_mgr array_mutex(pa->ai_mutex, true);
+  std::shared_ptr<mutex_mgr> array_mutex = create_managed_mutex(pa->ai_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	req_reject(rc, 0, preq, NULL, NULL);
+	return rc;
+	}
 
   get_jobowner(pa->ai_qs.owner, owner);
 
@@ -161,7 +166,13 @@ int req_holdarray(
         }
       else
         {
-        mutex_mgr job_mutex(pjob->ji_mutex, true);
+        std::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+ 	    if (rc != PBSE_NONE)
+		  {
+		  req_reject(rc, 0, preq, NULL, NULL);
+		  return rc;
+		  }
+
         hold_job(&temphold, pjob);
         }
       }

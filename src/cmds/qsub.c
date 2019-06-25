@@ -13,6 +13,7 @@ int main(
   char **envp)  /* I */
 
   {
+  printf("argc = %d", argc);
   main_func(argc, argv, envp);
 
   return(0);

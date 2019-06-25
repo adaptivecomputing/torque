@@ -801,7 +801,7 @@ ssize_t    send_unix_creds(int sd)
   uptr = (struct ucred *)CMSG_DATA(cmsg);
   SPC_PEER_UID(uptr) = getuid();
   SPC_PEER_GID(uptr) = getgid();
-#ifdef linux
+#ifdef __linux__
   uptr->pid = getpid();
 #endif
   msg.msg_controllen = cmsg->cmsg_len;

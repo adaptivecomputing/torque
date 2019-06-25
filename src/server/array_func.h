@@ -8,7 +8,7 @@
 #include "batch_request.h" /* batch_request */
 
 
-int is_array(char *id);
+int is_an_array(char *id);
 
 int array_save(job_array *pa);
 

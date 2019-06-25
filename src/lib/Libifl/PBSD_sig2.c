@@ -111,7 +111,11 @@ int PBSD_sig_put(
     return(PBSE_IVALREQ);
     }
 
-  mutex_mgr ch_mutex = mutex_mgr(connection[c].ch_mutex, false);
+  std::shared_ptr<mutex_mgr> ch_mutex = create_managed_mutex(connection[c].ch_mutex, false, rc);
+  if ( rc != PBSE_NONE )
+    {
+    return(rc);
+    }
 
   sock = connection[c].ch_socket;
   if ((chan = DIS_tcp_setup(sock)) == NULL)
@@ -134,7 +138,7 @@ int PBSD_sig_put(
     rc = PBSE_PROTOCOL;
     }
 
-  ch_mutex.unlock();
+  ch_mutex->unlock();
   DIS_tcp_cleanup(chan);
 
   return rc;
