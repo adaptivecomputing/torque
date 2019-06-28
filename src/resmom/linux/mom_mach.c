@@ -5029,8 +5029,7 @@ void scan_non_child_tasks(void)
 
           if (LOGLEVEL >= 7)
             {
-            sbuf << "marking job as MOM_JOB_RECOVERY for task " <<
-              pTask->ti_qs.ti_task);
+            sbuf << "marking job as MOM_JOB_RECOVERY for task " << pTask->ti_qs.ti_task;
             buf = sbuf.str();
 
             log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, pJob->ji_qs.ji_jobid, buf.c_str());
