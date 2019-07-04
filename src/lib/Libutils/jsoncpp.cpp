@@ -190,8 +190,6 @@ static inline void fixNumericLocale(char* begin, char* end) {
 // recognized in your jurisdiction.
 // See file LICENSE for detail or copy at http://jsoncpp.sourceforge.net/LICENSE
 
-#include <memory>
-
 #if !defined(JSON_IS_AMALGAMATION)
 #include <json/assertions.h>
 #include <json/reader.h>
@@ -221,7 +219,7 @@ static int       stackDepth_g = 0;  // see readValue()
 
 namespace Json {
 
-typedef std::unique_ptr<CharReader>   CharReaderPtr;
+typedef std::auto_ptr<CharReader>   CharReaderPtr;
 
 // Implementation of class Features
 // ////////////////////////////////
@@ -3780,7 +3778,7 @@ Value& Path::make(Value& root) const {
 
 namespace Json {
 
-typedef std::unique_ptr<StreamWriter>   StreamWriterPtr;
+typedef std::auto_ptr<StreamWriter>   StreamWriterPtr;
 
 static bool containsControlCharacter(const char* str) {
   while (*str) {
