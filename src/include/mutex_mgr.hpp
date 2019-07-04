@@ -82,7 +82,7 @@
 #include <pthread.h>
 #include <boost/shared_ptr.hpp>
 
-class mutex_mgr
+class mutex_mgr;
 typedef boost::shared_ptr<mutex_mgr> mutexPtr;
 /* mutex_mgr 
  * This class is used to manage pthread mutexes.

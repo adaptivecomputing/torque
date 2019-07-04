@@ -261,6 +261,8 @@ using namespace std;
  * mutex_mgr utilities
  */
 
+mutexPtr nullPtr;
+
 boost::shared_ptr<mutex_mgr> create_managed_mutex(pthread_mutex_t* p_mutex, bool is_locked, int& rc)
   {
   
