@@ -1508,6 +1508,7 @@ void post_delete_mom2(
     {
 	int rc;
     boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
 	  {
 	  log_err(rc, __func__, "failed to allocate job_mutex");
 	  return;
