@@ -1697,7 +1697,7 @@ void mgr_queue_unset(
     {
       {
       boost::shared_ptr<mutex_mgr> que_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
-	  if (rc == PBSE_NONE)
+	  if (rc != PBSE_NONE)
 		{
 		sprintf(log_buf, "Failed to create mutex for queue %s", pque->qu_qs.qu_name);
 		log_err(rc, __func__, log_buf);

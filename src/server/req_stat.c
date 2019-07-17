@@ -1094,8 +1094,15 @@ void poll_job_task(
     if (pjob != NULL)
       {
 	  int rc;
-      boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
       int       job_state = -1;
+      boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+	 	{
+  		  char log_buf[LOCAL_LOG_BUF_SIZE];
+		  sprintf(log_buf, "failed to allocage job mutex: %d", rc);
+		  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+   		  return;
+		}
 
       job_state = pjob->ji_qs.ji_state;
 

@@ -233,7 +233,13 @@ int check_and_run_job_work(
     if (pa != NULL)
       {
       boost::shared_ptr<mutex_mgr> array_mutex = create_managed_mutex(pa->ai_mutex, true, rc);
-      if (pjob == NULL)
+      if (rc != PBSE_NONE)
+     	{
+    	sprintf(log_buf, "failed to allocate job array mutex: %d", rc);
+	    return(rc);
+	    }
+
+     if (pjob == NULL)
  		{
 		sprintf(log_buf, "Failed to allocate array mutex: %d", rc);
 		log_err(rc, __func__, log_buf);

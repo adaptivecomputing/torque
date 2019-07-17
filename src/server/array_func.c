@@ -2003,6 +2003,7 @@ int check_array_slot_limits(
 
   int rc;
   boost::shared_ptr<mutex_mgr> array_mgr = create_managed_mutex(pa->ai_mutex, true, rc);
+  if (rc != PBSE_NONE)
 	{
 	log_err(rc, __func__, "failed to allocate array_mgr mutex");
 	return rc;

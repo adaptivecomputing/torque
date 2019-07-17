@@ -860,13 +860,13 @@ static int build_selist(
             return (PBSE_UNKQUE);
           
           boost::shared_ptr<mutex_mgr> que_mgr = create_managed_mutex((*pque)->qu_mutex, true, rc);
-	  if (rc != PBSE_NONE)
-	    {
-	    char  log_buf[LOCAL_LOG_BUF_SIZE];
-	    sprintf(log_buf, "failed to allocate mutex for queue %s", (*pque)->qu_qs.qu_name);
-	    log_err(rc, __func__, log_buf);
-	    return rc;
-	    }
+		  if (rc != PBSE_NONE)
+	        {
+	        char  log_buf[LOCAL_LOG_BUF_SIZE];
+	        sprintf(log_buf, "failed to allocate mutex for queue %s", (*pque)->qu_qs.qu_name);
+	        log_err(rc, __func__, log_buf);
+	        return rc;
+	        }
           }
         }
       }
