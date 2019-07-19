@@ -94,6 +94,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include "server_limits.h"
 #include "list_link.h"

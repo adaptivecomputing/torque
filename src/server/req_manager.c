@@ -1030,7 +1030,14 @@ void mgr_queue_create(
 
   pque = que_alloc(preq->rq_ind.rq_manager.rq_objname, FALSE);
 
-  mutex_mgr que_mgr(pque->qu_mutex, true);
+  boost::shared_ptr<mutex_mgr> que_mgr = create_managed_mutex(pque->qu_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf,"failed to allocate mutex for queue %s", pque->qu_qs.qu_name);
+	log_err(rc, __func__, log_buf);
+	req_reject(rc, 0, preq, NULL, NULL);
+	return;
+	}
 
   /* set the queue attributes */
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
@@ -1050,7 +1057,7 @@ void mgr_queue_create(
     reply_badattr(rc, bad, plist, preq);
 
     que_free(pque, FALSE);
-    que_mgr.set_unlock_on_exit(false);
+    que_mgr->set_unlock_on_exit(false);
     }
   else
     {
@@ -1116,16 +1123,22 @@ void mgr_queue_delete(
 
     return;
     }
-  mutex_mgr pque_mutex(pque->qu_mutex, true);
+  boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocate mutex for queue %s", pque->qu_qs.qu_name);
+	req_reject(rc, 0, preq, NULL, NULL);
+	return;
+	}
 
   if ((rc = que_purge(pque)) != PBSE_NONE)
     {
     /* FAILURE */
-    pque_mutex.unlock();
+    pque_mutex->unlock();
     req_reject(rc, 0, preq, NULL, NULL);
     return;
     }
-  pque_mutex.set_unlock_on_exit(false);
+  pque_mutex->set_unlock_on_exit(false);
 
   svr_save(&server, SVR_SAVE_QUICK);
 
@@ -1521,7 +1534,14 @@ void mgr_queue_set(
   while (pque != NULL)
     {
       {
-      mutex_mgr que_mutex(pque->qu_mutex, true);
+	  boost::shared_ptr<mutex_mgr> que_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+  	  if (rc != PBSE_NONE)
+		{
+		sprintf(log_buf, "failed to allocate mutex for queue %s", pque->qu_qs.qu_name);
+		req_reject(rc, 0, preq, NULL, NULL);
+		return;
+		}
+
 
       rc = mgr_set_attr(
              pque->qu_attr,
@@ -1535,7 +1555,7 @@ void mgr_queue_set(
 
       if (rc != 0)
         {
-        que_mutex.unlock();
+        que_mutex->unlock();
         reply_badattr(rc, bad, plist, preq);
 
         if (iter != NULL)
@@ -1550,7 +1570,7 @@ void mgr_queue_set(
 
       if (allques == FALSE)
         {
-        que_mutex.set_unlock_on_exit(false);
+        que_mutex->set_unlock_on_exit(false);
         break;
         }
 
@@ -1577,11 +1597,20 @@ void mgr_queue_set(
   while (pque != NULL)
     {
       {
-      mutex_mgr que_mutex(pque->qu_mutex, true);
+	  boost::shared_ptr<mutex_mgr> que_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+  	  if (rc != PBSE_NONE)
+		{
+		sprintf(log_buf, "failed to allocate mutex for queue %s", pque->qu_qs.qu_name);
+		reply_text(preq, rc, log_buf);
+		delete iter;
+		return;
+		}
+
+
       if ((badattr = check_que_attr(pque)) != NULL)
         {
         sprintf(log_buf, msg_attrtype, pque->qu_qs.qu_name, badattr);
-        que_mutex.unlock();
+        que_mutex->unlock();
         reply_text(preq, PBSE_ATTRTYPE, log_buf);
         delete iter;
         return;
@@ -1667,13 +1696,20 @@ void mgr_queue_unset(
   while (pque != NULL)
     {
       {
-      mutex_mgr que_mutex(pque->qu_mutex, true);
+      boost::shared_ptr<mutex_mgr> que_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		sprintf(log_buf, "Failed to create mutex for queue %s", pque->qu_qs.qu_name);
+		log_err(rc, __func__, log_buf);
+		req_reject(rc, 0, preq, NULL, NULL);
+		return;
+		}
 
       rc = mgr_unset_attr(pque->qu_attr, que_attr_def, QA_ATR_LAST, plist, preq->rq_perm, &bad_attr);
 
       if (rc != 0)
         {
-        que_mutex.unlock();
+        que_mutex->unlock();
         reply_badattr(rc, bad_attr, plist, preq);
         delete iter;
         return;

@@ -364,6 +364,7 @@ static void sel_step3(
   struct brp_select   **pselx;
   struct svrattrl      *pal;
 
+  char  log_buf[LOCAL_LOG_BUF_SIZE];
   int        rc = 0;
   int        exec_only = 0;
   pbs_queue           *pque = NULL;
@@ -469,7 +470,13 @@ static void sel_step3(
         else
           {
           pque = find_queuebyname(pjob->ji_qs.ji_queue);
-          mutex_mgr que_mgr(pque->qu_mutex, true);
+          boost::shared_ptr<mutex_mgr> que_mgr = create_managed_mutex(pque->qu_mutex, true, rc);
+		  if (rc != PBSE_NONE)
+			{
+			sprintf(log_buf, "failed to allocate queue mutex for queue %s", pque->qu_qs.qu_name);
+			log_err(rc, __func__, log_buf);
+			goto nextjob;
+			}
           
           if (pque->qu_qs.qu_type != QTYPE_Execution)
             {
@@ -852,7 +859,14 @@ static int build_selist(
           if (*pque == (pbs_queue *)0)
             return (PBSE_UNKQUE);
           
-          mutex_mgr que_mgr((*pque)->qu_mutex, true);
+          boost::shared_ptr<mutex_mgr> que_mgr = create_managed_mutex((*pque)->qu_mutex, true, rc);
+		  if (rc != PBSE_NONE)
+	        {
+	        char  log_buf[LOCAL_LOG_BUF_SIZE];
+	        sprintf(log_buf, "failed to allocate mutex for queue %s", (*pque)->qu_qs.qu_name);
+	        log_err(rc, __func__, log_buf);
+	        return rc;
+	        }
           }
         }
       }

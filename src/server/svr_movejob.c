@@ -347,7 +347,14 @@ int local_move(
     return(-1);
     }
 
-  mutex_mgr dest_que_mutex = mutex_mgr(dest_que->qu_mutex, true);
+  boost::shared_ptr<mutex_mgr> dest_que_mutex = create_managed_mutex(dest_que->qu_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocate mutex for queue %s", dest_que->qu_qs.qu_name);
+	log_err(rc, __func__, log_buf);
+	return(rc);
+	}
+
   if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
     {
     /* job disappeared while locking queue */
@@ -364,7 +371,7 @@ int local_move(
   reservation = have_reservation(pjob, dest_que);
   /* dequeue job from present queue, update destination and */
   /* queue_rank for new queue and enqueue into destination  */
-  dest_que_mutex.unlock();
+  dest_que_mutex->unlock();
   rc = svr_dequejob(pjob, FALSE); 
   if (rc)
     return(rc);
@@ -576,7 +583,14 @@ void finish_move_process(
     }
   else
     {
-    mutex_mgr job_mutex(pjob->ji_mutex, true);
+	int rc;
+    boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+	  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+      req_reject(rc, 0, preq, node_name, log_buf);
+	  }
 
     switch (type)
       {
@@ -592,7 +606,7 @@ void finish_move_process(
         
       case MOVE_TYPE_Exec:
 
-        job_mutex.unlock();
+        job_mutex->unlock();
         finish_sendmom(job_id, preq, time, node_name, status, mom_err);
         
         break;
@@ -727,8 +741,17 @@ int update_substate_if_needed(
 
     if (pjob != NULL)
       {
-      mutex_mgr job_mutex(pjob->ji_mutex, true);
-      pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUT;
+	  int rc;
+      boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+ 	  if (rc != PBSE_NONE)
+		{
+		char  log_buf[LOCAL_LOG_BUF_SIZE+1];
+		sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+		log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		return rc;	
+	  	}
+
+     pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUT;
       job_save(pjob, SAVEJOB_QUICK, 0);
       }
     else
@@ -1029,14 +1052,31 @@ int get_mom_node_version(
   if (pjob == NULL)
     return(PBSE_UNKJOBID);
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  int rc;
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+    char log_buf[LOCAL_LOG_BUF_SIZE];
+	sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return rc;	
+  	}
+
 
   pnode = find_nodebyname(pjob->ji_qs.ji_destin);
   if (pnode == NULL)
     return(PBSE_UNKNODE);
 
-  mutex_mgr node_mutex(&pnode->nd_mutex, true);
-  version = pnode->get_version();
+  boost::shared_ptr<mutex_mgr> node_mutex = create_managed_mutex(&pnode->nd_mutex, true, rc);
+  	  if (rc != PBSE_NONE)
+		{
+  		char log_buf[LOCAL_LOG_BUF_SIZE];
+		sprintf(log_buf, "failed to allocate node mutex: %s", pnode->get_name());
+		log_err(rc, __func__, log_buf);
+		return rc;
+	  	}
+
+ version = pnode->get_version();
 
   return(PBSE_NONE);
   }
@@ -1282,7 +1322,14 @@ int send_job_work(
     return(PBSE_JOBNOTFOUND);
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return rc;	
+  	}
+
 
   if (strlen(pjob->ji_qs.ji_destin) != 0)
     strcpy(job_destin, pjob->ji_qs.ji_destin);
@@ -1334,7 +1381,7 @@ int send_job_work(
     ret = svr_dequejob(pjob, FALSE);
     if (ret)
       {
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
       return(ret);
       }
     }
@@ -1346,7 +1393,7 @@ int send_job_work(
   if (rc != PBSE_NONE)
     {
     if (rc == PBSE_JOB_RECYCLED)
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
   
     free_server_attrs(&attrl);
 
@@ -1359,7 +1406,7 @@ int send_job_work(
         (get_job_file_path(pjob, StdErr, stderr_path, sizeof(stderr_path)) != 0) ||
         (get_job_file_path(pjob, Checkpoint, chkpt_path, sizeof(chkpt_path)) != 0))
       {
-      job_mutex.unlock();
+      job_mutex->unlock();
       goto send_job_work_end;
       }
     }
@@ -1375,7 +1422,7 @@ int send_job_work(
       change_substate_on_attempt_to_queue = true;
     }
   
-  job_mutex.unlock();
+  job_mutex->unlock();
   
   rc = send_job_over_network_with_retries(job_id,
                                           job_destin,

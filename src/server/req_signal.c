@@ -142,7 +142,13 @@ int req_signaljob(
     return(PBSE_NONE);
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "Failed to allocate job mutex: %d", rc);
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return(rc);
+	}
 
   /* the job must be running */
 
@@ -210,9 +216,9 @@ int req_signaljob(
   rc = relay_to_mom(&pjob, &dup_req, NULL);
     
   if (pjob != NULL)
-    job_mutex.unlock();
+    job_mutex->unlock();
   else
-    job_mutex.set_unlock_on_exit(false);
+    job_mutex->set_unlock_on_exit(false);
 
   if (rc != PBSE_NONE)
     {
@@ -397,7 +403,15 @@ void post_signal_req(
 
     if ((pjob = svr_find_job(jobid, FALSE)) != NULL)
       {
-      mutex_mgr job_mutex(pjob->ji_mutex, true);
+	  int rc;
+      boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  	  if (rc != PBSE_NONE)
+		{
+		sprintf(log_buf, "Failed to allocate job mutex: %d", rc);
+		log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		return;
+		}
+
 
       if (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_SUSPEND) == 0)
         {

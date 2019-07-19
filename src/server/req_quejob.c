@@ -133,6 +133,7 @@
 #include "mutex_mgr.hpp"
 #include "id_map.hpp"
 #include "policy_values.h"
+#include "../lib/Libutils/lib_utils.h"
 
 
 /* External Functions Called: */
@@ -701,7 +702,7 @@ int decode_attributes_into_job(
   job           *pj,
   int            resc_access_perm,
   batch_request *preq,
-  mutex_mgr     &job_mutex,
+  boost::shared_ptr<mutex_mgr> job_mutex,
   pbs_queue     *pque,
   std::string   &cpuClock)
 
@@ -759,7 +760,7 @@ int decode_attributes_into_job(
       /* FAILURE */
       rc = PBSE_ATTRRO;
       svr_job_purge(pj);
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
       reply_badattr(rc, 1, psatl, preq);
       return(rc);
       }
@@ -795,7 +796,7 @@ int decode_attributes_into_job(
           /* FAILURE */
           /* any other error is fatal */
           svr_job_purge(pj);
-          job_mutex.set_unlock_on_exit(false);
+          job_mutex->set_unlock_on_exit(false);
           reply_badattr(rc, 1, psatl, preq);
           return(rc);
           }
@@ -817,7 +818,7 @@ int decode_attributes_into_job(
       /* FAILURE */
       /* any other error is fatal */
       svr_job_purge(pj);
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
       reply_badattr(rc, 1, psatl, preq);
       return(rc);
       }    /* END if (rc != 0) */
@@ -838,7 +839,7 @@ int perform_attribute_post_actions(
 
   job *pj,
   batch_request *preq,
-  mutex_mgr     &job_mutex)
+  boost::shared_ptr<mutex_mgr>  job_mutex)
 
   {
   attribute_def *pdef;
@@ -856,7 +857,7 @@ int perform_attribute_post_actions(
       if (rc)
         {
         svr_job_purge(pj);
-        job_mutex.set_unlock_on_exit(false);
+        job_mutex->set_unlock_on_exit(false);
         req_reject(rc, i, preq, NULL, "cannot execute attribute action");
         return(rc);
         }
@@ -923,7 +924,7 @@ int check_attribute_settings(
   batch_request *preq,
   int            resc_access_perm,
   pbs_queue     *pque,
-  mutex_mgr     &que_mgr,
+  boost::shared_ptr<mutex_mgr>     que_mgr,
   std::string   &cpuClock)
 
   {
@@ -1180,9 +1181,9 @@ int check_attribute_settings(
      * set any "unspecified" checkpoint with queue default values, if any
      */
 
-    que_mgr.lock();
+    que_mgr->lock();
     set_chkpt_deflt(pj, pque);
-    que_mgr.unlock();
+    que_mgr->unlock();
 
     /* If queue has checkpoint directory name specified, propagate it to the job. */
 
@@ -1523,15 +1524,23 @@ int perform_commit_work(
 
   if ((pque = get_jobs_queue(&pj)) != NULL)
     {
-    mutex_mgr pque_mutex(pque->qu_mutex,true);
-    std::string queue_name(pque->qu_qs.qu_name);
+    boost::shared_ptr<mutex_mgr> pque_mutex  = create_managed_mutex(pque->qu_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Failed to create job mutex: %d", rc);
+	  log_err(rc, __func__, log_buf);
+	  req_reject(rc, 0, preq, NULL, log_buf);
+	  return(rc);
+	  }
+
+	std::string queue_name(pque->qu_qs.qu_name);
 
     if ((preq->rq_fromsvr == 0) &&
         (pque->qu_qs.qu_type == QTYPE_RoutePush) &&
         (pque->qu_attr[QA_ATR_Started].at_val.at_long != 0))
       {
       /* job_route expects the queue to be unlocked */
-      pque_mutex.unlock();
+      pque_mutex->unlock();
       if ((rc = job_route(pj)))
         {
         if (LOGLEVEL >= 6)
@@ -1558,7 +1567,7 @@ int perform_commit_work(
     if (job_save(pj, SAVEJOB_FULL, 0) != 0)
       {
       // unlock the queue so it can be purged
-      pque_mutex.unlock();
+      pque_mutex->unlock();
 #ifdef UT_REQ_QUEJOB
       // req_quejob unit test
       rc = pque_mutex.unlock();
@@ -1739,13 +1748,21 @@ int req_quejob(
     return rc;
     }
 
-  mutex_mgr que_mgr(pque->qu_mutex, true);
+    boost::shared_ptr<mutex_mgr> que_mgr  = create_managed_mutex(pque->qu_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Failed to create job mutex: %d", rc);
+	  log_err(rc, __func__, log_buf);
+	  req_reject(rc, 0, preq, NULL, log_buf);
+	  return(rc);
+	  }
+
 
   /* unlock the queue. We validated that it was there, now let someone else
      use it until we need it */
   sprintf(log_buf, "Just validated queue");
 
-  que_mgr.unlock();
+  que_mgr->unlock();
 
   if ((pj = create_and_initialize_job_structure(created_here, jobid)) == NULL)
     {
@@ -1753,8 +1770,16 @@ int req_quejob(
     return(PBSE_MEM_MALLOC);
     }
 
-  mutex_mgr job_mutex(pj->ji_mutex, true);
-  std::string  cpuClock = "";
+  boost::shared_ptr<mutex_mgr> job_mutex  = create_managed_mutex(pj->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Failed to create job mutex: %d", rc);
+	log_err(rc, __func__, log_buf);
+	req_reject(rc, 0, preq, NULL, log_buf);
+	return(rc);
+	}
+
+ std::string  cpuClock = "";
   rc = decode_attributes_into_job(pj, resc_access_perm, preq, job_mutex, pque, cpuClock);
 
   if (rc != PBSE_NONE)
@@ -1772,7 +1797,7 @@ int req_quejob(
 
   if ((rc = perform_attribute_post_actions(pj, preq, job_mutex)) != PBSE_NONE)
     {
-    job_mutex.set_unlock_on_exit(false);
+    job_mutex->set_unlock_on_exit(false);
     return(rc);
     }
 
@@ -1781,7 +1806,7 @@ int req_quejob(
   rc = check_attribute_settings(pj, preq, resc_access_perm, pque, que_mgr, cpuClock);
   if (rc != PBSE_NONE)
     {
-    job_mutex.set_unlock_on_exit(false);
+    job_mutex->set_unlock_on_exit(false);
     return(rc);
     }
 
@@ -1790,7 +1815,7 @@ int req_quejob(
   if ((rc = determine_job_file_name(preq, jobid, filename)) != PBSE_NONE)
     {
     svr_job_purge(pj);
-    job_mutex.set_unlock_on_exit(false);
+    job_mutex->set_unlock_on_exit(false);
     return(rc);
     }
   snprintf(pj->ji_qs.ji_fileprefix, sizeof(pj->ji_qs.ji_fileprefix), "%s", filename.c_str());
@@ -1807,7 +1832,7 @@ int req_quejob(
       max_queuable);
 
     svr_job_purge(pj);
-    job_mutex.set_unlock_on_exit(false);
+    job_mutex->set_unlock_on_exit(false);
 
     req_reject(PBSE_MAXQUED, 0, preq, NULL, log_buf);
     
@@ -1850,7 +1875,7 @@ int req_quejob(
     free(oldid);    
     }
 
-  que_mgr.lock();
+  que_mgr->lock();
   try
     {
     rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg);
@@ -1860,11 +1885,11 @@ int req_quejob(
     rc = e;
     }
 
-  que_mgr.unlock();
+  que_mgr->unlock();
   if (rc != PBSE_NONE)
     {
     svr_job_purge(pj);
-    job_mutex.set_unlock_on_exit(false);
+    job_mutex->set_unlock_on_exit(false);
     req_reject(rc, 0, preq, NULL, EMsg);
     return(rc);
     }
@@ -1924,7 +1949,7 @@ int req_quejob(
       }
     
     svr_job_purge(pj);
-    job_mutex.set_unlock_on_exit(false);
+    job_mutex->set_unlock_on_exit(false);
     return(rc);
     }
 
@@ -2094,7 +2119,17 @@ int req_jobscript(
     // so.
     if ((pj = svr_find_job(preq->rq_ind.rq_jobfile.rq_jobid, TRUE)) != NULL)
       {
-      mutex_mgr job_mutex(pj->ji_mutex, true);
+      boost::shared_ptr<mutex_mgr> job_mutex  = create_managed_mutex(pj->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Failed to create job mutex: %d", rc);
+		log_err(rc, __func__, log_buf);
+		req_reject(rc, 0, preq, NULL, log_buf);
+		return(rc);
+		}
+
+	  
+
       rc = write_job_file(preq, pj, errbuf, true);
 
       // Appended the job script
@@ -2117,7 +2152,15 @@ int req_jobscript(
     return(rc);
     }
 
-  mutex_mgr job_mutex(pj->ji_mutex, true);
+    boost::shared_ptr<mutex_mgr> job_mutex  = create_managed_mutex(pj->ji_mutex, true, rc);
+    if (rc != PBSE_NONE)
+	  {
+	  snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Failed to create job mutex: %d", rc);
+	  log_err(rc, __func__, log_buf);
+	  req_reject(rc, 0, preq, NULL, log_buf);
+	  return(rc);
+  	  }
+
 
   /* what is the difference between JOB_SUBSTATE_TRANSIN and TRANSICM? */
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
@@ -2207,7 +2250,15 @@ int req_mvjobfile(
     return(rc);
     }
 
-  mutex_mgr job_mutex(pj->ji_mutex, true);
+    boost::shared_ptr<mutex_mgr> job_mutex  = create_managed_mutex(pj->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Failed to create job mutex: %d", rc);
+	  log_err(rc, __func__, log_buf);
+	  req_reject(rc, 0, preq, NULL, log_buf);
+	  return(rc);
+	  }
+
 
   snprintf(namebuf, sizeof(namebuf), "%s%s", path_spool, pj->ji_qs.ji_fileprefix);
 
@@ -2343,7 +2394,15 @@ int req_rdytocommit(
     return(rc);
     }
 
-  mutex_mgr job_mutex(pj->ji_mutex, true);
+    boost::shared_ptr<mutex_mgr> job_mutex  = create_managed_mutex(pj->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Failed to create job mutex: %d", rc);
+	  log_err(rc, __func__, log_buf);
+	  req_reject(rc, 0, preq, NULL, log_buf);
+	  return(rc);
+  	  }
+
 
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
     {
@@ -2391,7 +2450,7 @@ int req_rdytocommit(
   strcpy(jobid, pj->ji_qs.ji_jobid);
 
   /* unlock now to prevent a potential deadlock */
-  job_mutex.unlock();
+  job_mutex->unlock();
 
   if (reply_jobid(preq, jobid, BATCH_REPLY_CHOICE_RdytoCom) != 0)
     {
@@ -2525,7 +2584,15 @@ int req_commit2(
   if (LOGLEVEL >= 10)
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pj->ji_qs.ji_jobid);
 
-  mutex_mgr job_mutex = mutex_mgr(pj->ji_mutex, true); 
+  boost::shared_ptr<mutex_mgr> job_mutex  = create_managed_mutex(pj->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Failed to create job mutex: %d", rc);
+	log_err(rc, __func__, log_buf);
+	req_reject(rc, 0, preq, NULL, log_buf);
+	return(rc);
+	}
+
 
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_QUEUED)
     {
@@ -2535,7 +2602,7 @@ int req_commit2(
         errno, strerror(errno));
     log_err(rc, __func__, "cannot commit job in unexpected state");
     req_reject(rc, 0, preq, NULL, NULL);
-    job_mutex.unlock();
+    job_mutex->unlock();
     return(rc);
     }
 
@@ -2547,7 +2614,7 @@ int req_commit2(
     req_reject(rc, 0, preq, NULL, log_buf);
     if (LOGLEVEL >= 6)
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pj->ji_qs.ji_jobid, log_buf);
-    job_mutex.unlock();
+    job_mutex->unlock();
     return(rc);
     }
 
@@ -2598,7 +2665,7 @@ int req_commit2(
     issue_track(pj);
     }
 
-  job_mutex.unlock();
+  job_mutex->unlock();
 
   /* If we are auto running jobs with start_count = 0 then the
    * branch_request was re created. Now we run the job if any nodes

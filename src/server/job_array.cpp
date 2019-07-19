@@ -15,8 +15,8 @@
 #include "utils.h"
 #include "mutex_mgr.hpp"
 
-int create_and_queue_array_subjob(job_array *pa, mutex_mgr &array_mgr, job *template_job,
-                                  mutex_mgr &template_job_mgr, int index, std::string &prev_job_id,
+int create_and_queue_array_subjob(job_array *pa, boost::shared_ptr<mutex_mgr> &array_mgr, job *template_job,
+                                  boost::shared_ptr<mutex_mgr> &template_job_mgr, int index, std::string &prev_job_id,
                                   bool place_hold);
 
 
@@ -345,6 +345,7 @@ void job_array::create_job_if_needed()
   {
   int  uncreated_ids_index;
   int  next_index = this->get_next_index_to_create(uncreated_ids_index);
+  int  rc;
 
   if (next_index >= 0)
     {
@@ -352,8 +353,19 @@ void job_array::create_job_if_needed()
 
     if (template_job != NULL)
       {
-      mutex_mgr template_mgr(template_job->ji_mutex, true);
-      mutex_mgr array_mgr(this->ai_mutex, true);
+      boost::shared_ptr<mutex_mgr> template_mgr = create_managed_mutex (template_job->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+// @todo should throw
+		return;
+		}
+		
+      boost::shared_ptr<mutex_mgr> array_mgr = create_managed_mutex(this->ai_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+// @todo should throw
+		return;
+		}
 
       char  old_id[PBS_MAXSVRJOBID + 1];
       char  prev_job_id[PBS_MAXSVRJOBID + 1];
@@ -375,7 +387,7 @@ void job_array::create_job_if_needed()
 
       std::string prev_id(prev_job_id);
       
-      int rc = create_and_queue_array_subjob(this, array_mgr, template_job, template_mgr,
+      rc = create_and_queue_array_subjob(this, array_mgr, template_job, template_mgr,
                                              next_index, prev_id, false);
 
       if (rc == PBSE_NONE)
@@ -497,7 +509,14 @@ void job_array::update_array_values(
               }
             else
               {
-              mutex_mgr pj_mutex = mutex_mgr(pj->ji_mutex, true);
+			  int rc;
+              boost::shared_ptr<mutex_mgr> pj_mutex = create_managed_mutex(pj->ji_mutex, true, rc);
+			  if ( rc != PBSE_NONE)
+				{
+				// @todo should throw
+				return;
+				}
+			  
               if (pj->ji_wattr[JOB_ATR_hold].at_val.at_long & HOLD_l)
                 {
                 pj->ji_wattr[JOB_ATR_hold].at_val.at_long &= ~HOLD_l;

@@ -853,7 +853,16 @@ int handle_exiting_or_abort_substate(
     return(PBSE_BAD_PARAMETER);
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  int rc;
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	char message[LOCAL_LOG_BUF_SIZE];
+	sprintf(message, "failed to allocated job mutex for job %s", pjob->ji_qs.ji_jobid);
+	log_err(rc, __func__, message);
+	return(rc);
+	}
+
 
   if (LOGLEVEL >= 2)
     {
@@ -866,7 +875,7 @@ int handle_exiting_or_abort_substate(
     {
     if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
       {
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
       return(PBSE_JOBNOTFOUND);
       }
     }
@@ -899,7 +908,15 @@ int handle_returnstd(
   char           job_fileprefix[PBS_JOBBASE+1];
   unsigned long  job_momaddr;
   char          *job_momname = NULL;
-  mutex_mgr      job_mutex(pjob->ji_mutex, true);
+
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	char message[LOCAL_LOG_BUF_SIZE];
+	sprintf(message, "failed to allocate job mutex");
+	log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, message);
+	goto handle_returnstd_cleanup;
+	}
 
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
@@ -935,7 +952,16 @@ int handle_returnstd(
 
     if (pque != NULL)
       {
-      mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
+      boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		char message[LOCAL_LOG_BUF_SIZE];
+		sprintf(message, "failed to allocate queue mutex %s", pque->qu_qs.qu_name);
+		log_err(rc, __func__, message);
+		goto handle_returnstd_cleanup;
+		}
+
+
       pthread_mutex_lock(server.sv_attr_mutex);
       KeepSeconds = attr_ifelse_long(
         &pque->qu_attr[QE_ATR_KeepCompleted],
@@ -945,7 +971,7 @@ int handle_returnstd(
       }
     else if (pjob == NULL)
       {
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
       rc = PBSE_JOBNOTFOUND;
       log_err(rc, __func__, "Job lost while acquiring queue 2");
       goto handle_returnstd_cleanup;
@@ -1010,7 +1036,7 @@ int handle_returnstd(
 
       if ((handle = mom_comm(pjob, on_job_exit_task)) < 0)
         {
-        job_mutex.unlock();
+        job_mutex->unlock();
 
         rc = PBSE_CONNECT;
         log_err(rc, __func__, "Job can not make connection to mom");
@@ -1018,7 +1044,7 @@ int handle_returnstd(
         }
       else
         {
-        job_mutex.unlock();
+        job_mutex->unlock();
 
         if ((rc = issue_Drequest(handle, preq, true)) != PBSE_NONE)
           {
@@ -1036,7 +1062,7 @@ int handle_returnstd(
       }
     else
       {
-      job_mutex.unlock();
+      job_mutex->unlock();
 
       /* we don't need to return files to the server spool,
        * move on to see if we need to delete files */
@@ -1049,7 +1075,7 @@ int handle_returnstd(
       }
     }
   else
-    job_mutex.unlock();
+    job_mutex->unlock();
 
 
   /* this check is added to allow the case where no files need to be returned to function smoothly */
@@ -1083,7 +1109,7 @@ int handle_returnstd(
 
   if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
     {
-    job_mutex.mark_as_locked();
+    job_mutex->mark_as_locked();
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEOUT, FALSE);
     }
  
@@ -1123,7 +1149,14 @@ int handle_stageout(
   char          job_id[PBS_MAXSVRJOBID+1];
   char         *job_momname = NULL;
   char          job_fileprefix[PBS_JOBBASE+1];
-  mutex_mgr     job_mutex(pjob->ji_mutex, true);
+
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "Failed to allocate job mutex: %d", rc);
+	log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	goto handle_stageout_cleanup;
+	}
 
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
@@ -1178,7 +1211,7 @@ int handle_stageout(
         }
       else
         {
-        job_mutex.unlock();
+        job_mutex->unlock();
 
         if ((rc = issue_Drequest(handle, preq, true)) != PBSE_NONE)
           {
@@ -1198,7 +1231,7 @@ int handle_stageout(
       }
     else
       {
-      job_mutex.unlock();
+      job_mutex->unlock();
 
       /* no files to copy, go to next step */
 
@@ -1207,7 +1240,7 @@ int handle_stageout(
       }
     }    /* END if (ptask->wt_type != WORK_Deferred_Reply) */
   else
-    job_mutex.unlock();
+    job_mutex->unlock();
  
   /* place this check so that we just fall through when a file needs to be copied */
   if (preq != NULL)
@@ -1254,7 +1287,7 @@ int handle_stageout(
         goto handle_stageout_cleanup;
         }
       else
-        job_mutex.mark_as_locked();
+        job_mutex->mark_as_locked();
 
       svr_mailowner(pjob, MAIL_OTHER, MAIL_FORCE, log_buf);
       
@@ -1271,7 +1304,7 @@ int handle_stageout(
         ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
         &bad);
 
-      job_mutex.unlock();
+      job_mutex->unlock();
       }  /* END if (preq->rq_reply.brp_code != 0) */
 
     /*
@@ -1345,7 +1378,7 @@ int handle_stageout(
 
   if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
     {
-    job_mutex.mark_as_locked();
+    job_mutex->mark_as_locked();
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_STAGEDEL, FALSE);
     }
   else
@@ -1380,7 +1413,14 @@ int handle_stagedel(
   unsigned int  dummy;
   char          job_id[PBS_MAXSVRJOBID+1];
   char         *job_momname = NULL;
-  mutex_mgr     job_mutex(pjob->ji_mutex, true);
+
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+	log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);	
+    goto handle_stagedel_cleanup;
+	}
 
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
@@ -1419,7 +1459,7 @@ int handle_stagedel(
         }
       else
         {
-        job_mutex.unlock();
+        job_mutex->unlock();
 
         if (issue_Drequest(handle, preq, true) != PBSE_NONE)
           {
@@ -1441,10 +1481,10 @@ int handle_stagedel(
         }
       }
     else
-      job_mutex.unlock();
+      job_mutex->unlock();
     }
   else
-    job_mutex.unlock();
+    job_mutex->unlock();
 
   /* place if here so that jobs without staged files just fall through */
   if (preq != NULL)
@@ -1494,7 +1534,7 @@ int handle_stagedel(
 
   if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
     {
-    job_mutex.mark_as_locked();
+    job_mutex->mark_as_locked();
     svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITED, FALSE);
     }
 
@@ -1520,7 +1560,14 @@ int handle_exited(
   int            rc;
   int            handle = -1;
   char           job_id[PBS_MAXSVRJOBID+1];
-  mutex_mgr      job_mutex(pjob->ji_mutex, true);
+
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocate job mutex for job %s", pjob->ji_qs.ji_jobid);
+	log_err(rc, __func__, log_buf);
+	return(rc);
+	}
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
@@ -1544,7 +1591,7 @@ int handle_exited(
       }
     else
       {
-      job_mutex.unlock();
+      job_mutex->unlock();
 
       if ((rc = issue_Drequest(handle, preq, true)) != PBSE_NONE)
         {
@@ -1563,12 +1610,12 @@ int handle_exited(
     preq = NULL;
     }
   else
-    job_mutex.unlock();
+    job_mutex->unlock();
   
   if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
     return(PBSE_JOBNOTFOUND);
   else
-    job_mutex.mark_as_locked();
+    job_mutex->mark_as_locked();
 
   rel_resc(pjob); /* free any resc assigned to the job */
   
@@ -1816,7 +1863,14 @@ int handle_complete_first_time(
   
   if (pque != NULL)
     {
-    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
+    boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  sprintf(log_buf, "failed to allocate mutex for queue %s", pque->qu_qs.qu_name);
+	  log_err(rc, __func__, log_buf);
+	  return(rc);
+	  }
+
     pthread_mutex_lock(server.sv_attr_mutex);
     KeepSeconds = attr_ifelse_long(
       &pque->qu_attr[QE_ATR_KeepCompleted],
@@ -1938,7 +1992,14 @@ void handle_complete_second_time(
   if (pjob == NULL)
     return;
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  int rc;
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocated job mutex");
+	log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return;
+	}
 
   if (pjob->ji_qs.ji_state == JOB_STATE_EXITING)
     svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
@@ -1983,7 +2044,7 @@ void handle_complete_second_time(
     else
       {
       svr_job_purge(pjob);
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
       }
     }
 
@@ -2050,8 +2111,16 @@ void on_job_exit(
   
   pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
-  job_mutex.set_unlock_on_exit(false);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "Failed to create job mutex");
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	free(job_id);
+	return;
+	}
+
+  job_mutex->set_unlock_on_exit(false);
     
   sprintf(log_buf, "%s valid pjob: %s (substate=%d)",
     __func__, job_id, pjob->ji_qs.ji_substate);
@@ -2185,7 +2254,7 @@ void on_job_exit(
 
     default:
 
-      job_mutex.unlock();
+      job_mutex->unlock();
       break;
     }  /* END switch (pjob->ji_qs.ji_substate) */
 
@@ -2311,7 +2380,17 @@ void on_job_rerun(
     return;
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "Failed to allocate job mutex");
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	if (preq != NULL)
+	  {
+	  free_br(preq);
+	  }
+	return;
+	}
 
   if ((handle = mom_comm(pjob, on_job_rerun_task)) < 0)
     {
@@ -2349,7 +2428,7 @@ void on_job_rerun(
           
           preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
           job_id = strdup(pjob->ji_qs.ji_jobid); 
-          job_mutex.unlock();
+          job_mutex->unlock();
           
           if (issue_Drequest(handle, preq, false) != PBSE_NONE)
             {
@@ -2371,7 +2450,7 @@ void on_job_rerun(
             return;
             }
 
-          job_mutex.mark_as_locked();
+          job_mutex->mark_as_locked();
           
           free(job_id);
           }
@@ -2451,7 +2530,7 @@ void on_job_rerun(
           preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
           job_id = strdup(pjob->ji_qs.ji_jobid); 
-          job_mutex.unlock();
+          job_mutex->unlock();
           if (issue_Drequest(handle, preq, false) != PBSE_NONE)
             {
             /* FAILURE */
@@ -2479,7 +2558,7 @@ void on_job_rerun(
             return;
             }
 
-          job_mutex.mark_as_locked();
+          job_mutex->mark_as_locked();
 
           free(job_id);
  
@@ -2559,7 +2638,7 @@ void on_job_rerun(
           preq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
           job_id = strdup(pjob->ji_qs.ji_jobid); 
 
-          job_mutex.unlock();
+          job_mutex->unlock();
           if (issue_Drequest(handle, preq, false) != PBSE_NONE)
             {
             /* error on sending request */          
@@ -2580,7 +2659,7 @@ void on_job_rerun(
             return;
             }
 
-          job_mutex.mark_as_locked();
+          job_mutex->mark_as_locked();
 
           free(job_id);
       
@@ -2641,7 +2720,7 @@ void on_job_rerun(
         {
         strcpy(preq->rq_ind.rq_delete.rq_objname, pjob->ji_qs.ji_jobid);
         job_id = strdup(pjob->ji_qs.ji_jobid); 
-        job_mutex.unlock();
+        job_mutex->unlock();
 
         rc = issue_Drequest(handle, preq, true);
 
@@ -2670,7 +2749,7 @@ void on_job_rerun(
           return;
           }
         else
-          job_mutex.mark_as_locked();
+          job_mutex->mark_as_locked();
         
         free(job_id);
         }
@@ -3431,13 +3510,21 @@ bool is_job_finished(
 
   if (pnode != NULL)
     {
-    mutex_mgr  node_mutex(&pnode->nd_mutex, true);
+	int rc;
+    boost::shared_ptr<mutex_mgr> node_mutex = create_managed_mutex(&pnode->nd_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  char log_buf[LOCAL_LOG_BUF_SIZE];
+	  sprintf(log_buf, "failed to allocate node mutex for %s", pnode->get_name());
+	  done = false;
+	  return(done);
+	  }
 
     // Must be a version 6.1.0 node or higher for the mom to have cleaned up the job
     if (pnode->get_version() >= 610)
       {
       // unlock the node first
-      node_mutex.unlock();
+      node_mutex->unlock();
 
       /* see if job has any dependencies */
       if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
@@ -3542,7 +3629,14 @@ int req_jobobit(
 
   free(tmp);
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "Failed to allocate job mutex for job %s on mom", pjob->ji_qs.ji_jobid);
+	log_err(rc, __func__, log_buf);
+	req_reject(rc, 0, preq, NULL, NULL);
+	return(rc);
+	}	
 
   if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
     {
@@ -3756,7 +3850,7 @@ int req_jobobit(
 
     if ((rc = handle_rerunning_array_subjob(pjob)) == PBSE_UNKJOBID)
       {
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
         
       return(rc);
       }
@@ -3767,7 +3861,7 @@ int req_jobobit(
       rc = handle_rerunning_heterogeneous_jobs(pjob, pjob->ji_qs.ji_state, pjob->ji_qs.ji_substate, acct_data);
 
       /* pjob->ji_mutex is always unlocked coming out of handle_rerunning_heterogeneous_jobs */
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
         
       return(rc);
       }
@@ -3775,7 +3869,7 @@ int req_jobobit(
       {
       if ((rc = rerun_job(pjob, pjob->ji_qs.ji_state, pjob->ji_qs.ji_substate, acct_data)) != PBSE_NONE)
         {
-        job_mutex.set_unlock_on_exit(false);
+        job_mutex->set_unlock_on_exit(false);
         return(rc);
         }
       }
@@ -3802,7 +3896,7 @@ int req_jobobit(
     else
       {
       // If the job is finished, it has been either unlocked or freed at this time
-      job_mutex.set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
       }
     }
 

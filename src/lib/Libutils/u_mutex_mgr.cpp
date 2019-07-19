@@ -77,9 +77,15 @@
 * without reference to its choice of law rules.
 */
 
+#include <stdio.h>
+#include <sstream>
 #include <pthread.h>
+#include <string>
+#include <stdexcept>
+#include <exception>
 #include "mutex_mgr.hpp"
 #include "pbs_error.h"
+#include "log.h"
 
 using namespace std;
 
@@ -96,18 +102,18 @@ using namespace std;
     }
 
   /* copy constructure for mutex_mgr */
-  mutex_mgr::mutex_mgr(const mutex_mgr& newMutexMgr)
+  mutex_mgr::mutex_mgr(const boost::shared_ptr<mutex_mgr>& newMutexMgr)
     {
-    unlock_on_exit = newMutexMgr.unlock_on_exit;
-    locked = newMutexMgr.locked;
-    mutex_valid = newMutexMgr.mutex_valid;
-    managed_mutex = newMutexMgr.managed_mutex;
+    unlock_on_exit = newMutexMgr->unlock_on_exit;
+    locked = newMutexMgr->locked;
+    mutex_valid = newMutexMgr->mutex_valid;
+    managed_mutex = newMutexMgr->managed_mutex;
     }
 
   /* This constructor saves the given mutex and 
    * locks it  based on the value of is_locked
    */
-  mutex_mgr::mutex_mgr(pthread_mutex_t *mutex, bool is_locked) 
+  mutex_mgr::mutex_mgr(pthread_mutex_t* mutex, bool is_locked) 
   : unlock_on_exit(true), locked(is_locked), mutex_valid(true), managed_mutex(mutex)
     {
     int rc;
@@ -116,7 +122,12 @@ using namespace std;
     if (mutex == NULL)
       {
       mutex_valid = false;
-      return;
+
+	  string message;
+	  ostringstream error_number;
+	  error_number << PBSE_INVALID_MUTEX;
+	  message = "mutex is NULL: pbs error " + error_number.str();
+	  throw invalid_argument(message);
       }
 
     if (is_locked == false)
@@ -124,9 +135,38 @@ using namespace std;
       rc = lock();
       if ((rc != PBSE_NONE) && (rc != PBSE_MUTEX_ALREADY_LOCKED))
         {
+		string message;
+	    ostringstream error_number;
+	    error_number << rc;
         mutex_valid = false;
         unlock_on_exit = false;
-        return;
+
+		if (rc == PBSE_INVALID_MUTEX)
+  		  {
+		  message = "mutex is NULL: pbs error " + error_number.str();
+		  throw invalid_argument(message);
+		  }
+
+		if (rc == PBSE_SYSTEM)
+	      {
+		  string message;
+	      ostringstream error_number;
+	      error_number << rc;
+		  message = "lock failed: pbs error " + error_number.str(); 
+		  
+		  throw runtime_error(message);
+		  }
+
+		
+		if (rc == PBSE_SYSTEM)
+	      {
+		  string message;
+	      ostringstream error_number;
+	      error_number << rc;
+		  message = "Fatal error locking mutex: pbs error " + error_number.str();
+		  
+		  throw runtime_error(message);
+		  }
         }
       }
     }
@@ -217,3 +257,46 @@ using namespace std;
     locked = true;
     }
 
+/*****************************************************************
+ * mutex_mgr utilities
+ */
+
+mutexPtr nullPtr;
+
+boost::shared_ptr<mutex_mgr> create_managed_mutex(pthread_mutex_t* p_mutex, bool is_locked, int& rc)
+  {
+  
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+  
+  try
+    {
+    boost::shared_ptr<mutex_mgr> new_managed_mutex(new mutex_mgr(p_mutex, is_locked));
+	rc = PBSE_NONE;
+	return (new_managed_mutex);
+    }
+  catch (std::invalid_argument &e)
+	{
+	snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "%s", e.what());
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);	
+	rc = PBSE_INVALID_MUTEX;	
+	}
+  catch (std::runtime_error &e)
+	{
+	snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "%s", e.what());
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);	
+	rc = PBSE_SYSTEM;
+	}
+  catch (std::exception &e)
+	{
+	snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "%s", e.what());
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);	
+	rc = PBSE_SYSTEM;
+	}
+  catch (...)
+	{
+	snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Failed to create managed mutex");
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);	
+	rc = PBSE_SYSTEM;
+	}
+	return (nullPtr);
+  }		

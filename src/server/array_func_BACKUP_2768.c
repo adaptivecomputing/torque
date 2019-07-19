@@ -91,7 +91,11 @@ void        force_purge_work(job *pjob);
 
 /* search job array list to determine if id is a job array */
 
+<<<<<<< HEAD
 int is_id_array(
+=======
+int is_an_array(
+>>>>>>> 6.1.3.h1
     
   char *id)
 

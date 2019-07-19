@@ -170,7 +170,14 @@ void delay_and_send_sig_kill(
     return;
     }
 
-  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+  int ret;
+  boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, ret);
+  if (ret != PBSE_NONE)
+	{
+	sprintf(log_buf, "Failed to allocate job mutex: %d", ret);
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return;
+	}
 
   if (rc)
     {
@@ -199,7 +206,7 @@ void delay_and_send_sig_kill(
       }
     else
       {
-      pjob_mutex.unlock();
+      pjob_mutex->unlock();
       req_reject(rc, 0, preq_clt, NULL, NULL);
       }
 
@@ -212,8 +219,24 @@ void delay_and_send_sig_kill(
 
   if ((pque = get_jobs_queue(&pjob)) != NULL)
     {
-    mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
-    mutex_mgr server_mutex = mutex_mgr(server.sv_attr_mutex, false);
+    boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  sprintf(log_buf, "failed to allocate queue mutex for queue %s", pque->qu_qs.qu_name);
+	  log_err(rc, __func__, log_buf);
+	  req_reject(rc, 0, preq_clt, NULL, NULL);
+	  return;
+	  }
+
+    boost::shared_ptr<mutex_mgr> server_mutex = create_managed_mutex(server.sv_attr_mutex, false, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  sprintf(log_buf, "failed to allocate server mutex");
+	  log_err(rc, __func__, log_buf);
+	  req_reject(rc, 0, preq_clt, NULL, NULL);
+	  return;
+	  }
+
 
     if (delay == 0)
       {
@@ -230,7 +253,7 @@ void delay_and_send_sig_kill(
     return;
     }
 
-  pjob_mutex.unlock();
+  pjob_mutex->unlock();
   reply_ack(preq_clt);
   set_task(WORK_Timed, delay + time_now, send_sig_kill, strdup(pjob->ji_qs.ji_jobid), FALSE);
   } // END delay_and_send_sig_kill()
@@ -305,9 +328,16 @@ void post_rerun(
     sprintf(log_buf, "rerun signal reject by mom: %s - %d", preq->rq_ind.rq_signal.rq_jid, preq->rq_reply.brp_code);
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,__func__,log_buf);
 
+	int rc;
     if ((pjob = svr_find_job(preq->rq_ind.rq_signal.rq_jid, FALSE)))
       {
-      mutex_mgr job_mutex(pjob->ji_mutex, true);
+      boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+	  	{
+		sprintf(log_buf, "Failed to allocate job mutex: %d", rc);
+		log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		return;
+		}
       
       svr_evaljobstate(*pjob, newstate, newsub, 1);
       svr_setjobstate(pjob, newstate, newsub, FALSE);
@@ -372,7 +402,16 @@ int handle_requeue_all(
 
   while ((pjob = next_job(&alljobs, iter)) != NULL)
     {
-    mutex_mgr job_mutex(pjob->ji_mutex, true);
+    boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  char log_buf[LOCAL_LOG_BUF_SIZE];
+	  sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+	  log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	  req_reject(rc, 0, preq, NULL, log_buf);
+	  return rc;
+	  }
+	  
     requeue_job_without_contacting_mom(*pjob);
     }
 
@@ -422,7 +461,13 @@ int req_rerunjob(
     return rc; /* This needs to fixed to return an accurate error */
     }
 
-  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+  boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to allocate job mutex: %d", rc);
+	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return rc;
+	}
 
   /* the job must be running or completed */
 
@@ -498,8 +543,24 @@ int req_rerunjob(
 
     if ((pque = get_jobs_queue(&pjob)) != NULL)
       {
-      mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
-      mutex_mgr server_mutex = mutex_mgr(server.sv_attr_mutex, false);
+      boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		sprintf(log_buf, "Failed to allocate queue mutex for queue %s", pque->qu_qs.qu_name);
+		log_err(rc, __func__, log_buf);
+		req_reject(rc, 0, preq, NULL, log_buf);
+		return rc;
+		}
+
+      boost::shared_ptr<mutex_mgr> server_mutex = create_managed_mutex(server.sv_attr_mutex, false, rc);
+	  if (rc != PBSE_NONE)
+		{
+		sprintf(log_buf, "Failed to allocate server mutex ");
+		log_err(rc, __func__, log_buf);
+		req_reject(rc, 0, preq, NULL, log_buf);
+		return rc;
+		}
+
 
       if (delay == 0)
         {
@@ -536,7 +597,7 @@ int req_rerunjob(
         if (rc == PBSE_NORELYMOM)
           {
           dup->rq_reply.brp_code = PBSE_NORELYMOM;
-          pjob_mutex.unlock();
+          pjob_mutex->unlock();
           post_rerun(dup);
 
           pjob = svr_find_job(preq->rq_ind.rq_signal.rq_jid, FALSE);
@@ -546,7 +607,7 @@ int req_rerunjob(
             return(PBSE_NONE);
             }
 
-          pjob_mutex.set_lock_state(true);
+          pjob_mutex->set_lock_state(true);
           rc = PBSE_NONE;
           }
 
@@ -603,7 +664,7 @@ int req_rerunjob(
     }
 
   /* finalize_rerunjob will return with pjob->ji_mutex unlocked */
-  pjob_mutex.set_unlock_on_exit(false);
+  pjob_mutex->set_unlock_on_exit(false);
   return finalize_rerunjob(preq,pjob,rc);
   }
 
@@ -628,7 +689,9 @@ int finalize_rerunjob(
   if (pjob == NULL)
     return(PBSE_BAD_PARAMETER);
 
-  mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+  boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	return(rc);
 
   if (preq->rq_extend && !strncasecmp(preq->rq_extend, RERUNFORCE, strlen(RERUNFORCE)))
     Force = 1;

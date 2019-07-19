@@ -85,10 +85,12 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <boost/shared_ptr.hpp>
 #include "libpbs.h"
 #include "dis.h"
 #include "mutex_mgr.hpp"
 #include "server_limits.h"
+#include "mutex_mgr.hpp"
 
 /*
  * PBS_msg_put.c
@@ -115,7 +117,11 @@ int PBSD_msg_put(
     return(PBSE_IVALREQ);
     }
 
-  mutex_mgr ch_mutex = mutex_mgr(connection[c].ch_mutex, false);
+  boost::shared_ptr<mutex_mgr> ch_mutex = create_managed_mutex(connection[c].ch_mutex, false, rc);
+  if ( rc != PBSE_NONE )
+  {
+	return rc;
+  }
 
   sock = connection[c].ch_socket;
   if ((chan = DIS_tcp_setup(sock)) == NULL)
@@ -132,7 +138,7 @@ int PBSD_msg_put(
     return (PBSE_PROTOCOL);
     }
 
-  ch_mutex.unlock();
+  ch_mutex->unlock();
 
   if (DIS_tcp_wflush(chan))
     {

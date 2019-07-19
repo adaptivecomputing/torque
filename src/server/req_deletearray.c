@@ -73,7 +73,12 @@ bool attempt_delete(
 
   pjob = (job *)j;
 
-  mutex_mgr pjob_mutex(pjob->ji_mutex, true);
+  int rc;
+  boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	return skipped;
+	}
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
@@ -119,7 +124,7 @@ bool attempt_delete(
         }
       }
     else
-      pjob_mutex.set_unlock_on_exit(false);
+      pjob_mutex->set_unlock_on_exit(false);
     
     return(!skipped);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
@@ -127,7 +132,7 @@ bool attempt_delete(
   delete_inactive_job(&pjob, NULL);
   
   if (pjob == NULL)
-    pjob_mutex.set_unlock_on_exit(false);
+    pjob_mutex->set_unlock_on_exit(false);
 
   return(!skipped);
   } /* END attempt_delete() */
@@ -184,8 +189,15 @@ int req_deletearray(
     return(PBSE_NONE);
     }
 
-  mutex_mgr pa_mutex(pa->ai_mutex, true);
-  /* check authorization */
+  int rc;
+  boost::shared_ptr<mutex_mgr> pa_mutex = create_managed_mutex(pa->ai_mutex, true, rc);
+  if (rc != PBSE_NONE)
+    {
+    reply_ack(preq);
+    return(rc);
+    }
+
+ /* check authorization */
   get_jobowner(pa->ai_qs.owner, owner);
 
   if (svr_authorize_req(preq, owner, pa->ai_qs.submit_host) == -1)
@@ -243,7 +255,7 @@ int req_deletearray(
 
     if ((num_skipped = delete_whole_array(pa, purge)) == NO_JOBS_IN_ARRAY)
       {
-      pa_mutex.unlock();
+      pa_mutex->unlock();
       array_delete(preq->rq_ind.rq_delete.rq_objname);
       }
     }
@@ -251,10 +263,10 @@ int req_deletearray(
   // If purge is true, the array is gone at this point in time, mark the mutex manager 
   // unlocked
   if (purge == true)
-    pa_mutex.set_lock_state(false);
+    pa_mutex->set_lock_state(false);
   else if (num_skipped != NO_JOBS_IN_ARRAY)
     {
-    pa_mutex.unlock();
+    pa_mutex->unlock();
     
     /* check if the array is gone */
     if (get_array(preq->rq_ind.rq_delete.rq_objname) != NULL)
@@ -262,7 +274,7 @@ int req_deletearray(
       /* if get_array() returns non null this is the same mutex we had before */
       /* ai_mutex comes out of get_array locked so we need to
          set the locked state to true */
-      pa_mutex.set_lock_state(true);
+      pa_mutex->set_lock_state(true);
       
       /* some jobs were not deleted.  They must have been running or had
          JOB_SUBSTATE_TRANSIT */
@@ -325,7 +337,13 @@ void array_delete_wt(
     return;
     }
 
-  mutex_mgr array_mutex(pa->ai_mutex, true);
+  int rc;
+  boost::shared_ptr<mutex_mgr> array_mutex = create_managed_mutex(pa->ai_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	log_err(rc, __func__, "failed to allocate array mutex");
+	return;
+	}
 
   for (i = 0; i < pa->ai_qs.array_size; i++)
     {
@@ -339,7 +357,14 @@ void array_delete_wt(
       }
     else
       {
-      mutex_mgr job_mutex(pjob->ji_mutex, true);
+	  int rc;
+      boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  	  if (rc != PBSE_NONE)
+		{
+		log_err(rc, __func__, "failed to allocate job mutex");
+		return;
+		}
+	  
       num_jobs++;
       
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN)
@@ -374,29 +399,29 @@ void array_delete_wt(
         if (pjob != NULL)
           {
           /* job_abt() calls svr_job_purge which will try to lock the array again */
-          array_mutex.unlock();
+          array_mutex->unlock();
           job_abt(&pjob, NULL);
-          job_mutex.set_unlock_on_exit(false);
+          job_mutex->set_unlock_on_exit(false);
           pa = get_array(preq->rq_ind.rq_delete.rq_objname);
           if (pa != NULL)
-            array_mutex.mark_as_locked();
+            array_mutex->mark_as_locked();
           else
             break;
           }
         else
-          job_mutex.set_unlock_on_exit(false);
+          job_mutex->set_unlock_on_exit(false);
         }
       else
         {
         /* job_abt() calls svr_job_purge which will try to lock the array again */
-        array_mutex.unlock();
-        job_mutex.set_unlock_on_exit(false);
+        array_mutex->unlock();
+        job_mutex->set_unlock_on_exit(false);
 
         job_abt(&pjob, NULL);
         pa = get_array(preq->rq_ind.rq_delete.rq_objname);
 
         if (pa != NULL)
-          array_mutex.mark_as_locked();
+          array_mutex->mark_as_locked();
         else
           break;
         }

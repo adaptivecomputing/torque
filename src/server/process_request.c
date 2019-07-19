@@ -635,10 +635,19 @@ int process_request(
       
       if ((pjob = svr_find_job(request.rq_ind.rq_modify.rq_objname, FALSE)) != NULL)
         {
-        mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+        boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+		if (rc != PBSE_NONE)
+		{
+		  char log_buf[LOCAL_LOG_BUF_SIZE];
+
+		  sprintf(log_buf, "Failed to allocate mutex for job %s", pjob->ji_qs.ji_jobid);
+		  log_err(rc, __func__, log_buf);
+		  req_reject(rc, 0, &request, NULL, log_buf);
+		  return(rc);
+		}
+		
         if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
           {
-
           if ((pjob->ji_wattr[JOB_ATR_checkpoint].at_flags & ATR_VFLAG_SET) &&
               ((csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "s") != NULL) ||
                (csv_find_string(pjob->ji_wattr[JOB_ATR_checkpoint].at_val.at_str, "c") != NULL) ||
@@ -649,7 +658,7 @@ int process_request(
             skip = TRUE;
             }
           }
-          pjob_mutex.unlock();
+          pjob_mutex->unlock();
         }
       
       if (!skip)
@@ -1049,8 +1058,17 @@ void close_quejob(
 
   while ((pjob = next_job(&newjobs, iter)) != NULL)
     {
-    mutex_mgr pjob_mutex = mutex_mgr(pjob->ji_mutex, true);
+	int rc;
+    boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+      {
+	  char log_buf[LOCAL_LOG_BUF_SIZE];
 
+	  sprintf(log_buf, "Failed to allocate mutex for job: error %d", rc);
+	  log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	  return;
+	  }
+	
     if (pjob->ji_qs.ji_un.ji_newt.ji_fromsock == sfds)
       {
       // This job needs to be cleaned up, ignore remove job errors because it is the newjobs container
@@ -1070,12 +1088,12 @@ void close_quejob(
           if ((rc == PBSE_JOBNOTFOUND) ||
               (rc == PBSE_JOB_RECYCLED))
             {
-            pjob_mutex.set_unlock_on_exit(false);
+            pjob_mutex->set_unlock_on_exit(false);
             }
           else if (rc != PBSE_NONE)
             {
             job_abt(&pjob, msg_err_noqueue); /* pjob will be set to null in job_abt */
-            pjob_mutex.set_unlock_on_exit(false);
+            pjob_mutex->set_unlock_on_exit(false);
             }
           }
         }
@@ -1084,7 +1102,7 @@ void close_quejob(
         // Delete the job
         svr_job_purge(pjob);
        
-        pjob_mutex.set_unlock_on_exit(false);
+        pjob_mutex->set_unlock_on_exit(false);
         }
 
       break;
