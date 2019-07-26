@@ -792,7 +792,14 @@ void *modify_array_work(
     return(NULL);
     }
 
-  mutex_mgr array_mutex(pa->ai_mutex, true);
+  boost::shared_ptr<mutex_mgr> array_mutex = create_managed_mutex(pa->ai_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	char log_buf[LOCAL_LOG_BUF_SIZE];
+	sprintf(log_buf, "failed to allocate array mutex: %d", rc);
+	log_err(rc, __func__, log_buf);
+	return(NULL);
+	}
 
   /* pbs_mom sets the extend string to trigger copying of checkpoint files */
   if (preq->rq_extend != NULL)
