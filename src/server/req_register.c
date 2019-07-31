@@ -1230,9 +1230,17 @@ bool set_array_depend_holds(
               log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
               
               /* pjob freed and set to NULL */
+			  unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
               job_abt(&pjob, log_buf, true);
               if (pjob == NULL)
+				{
                 job_mutex->set_unlock_on_exit(false);
+				}
+
+			  if (pa != NULL)
+				{
+				lock_ai_mutex(pa, __func__, NULL, LOGLEVEL);
+				}
               }
             }
           else

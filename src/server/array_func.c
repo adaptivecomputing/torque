@@ -1154,12 +1154,17 @@ int setup_array_struct(
   pa->set_owner(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
   pa->set_submit_host(get_variable(pjob, pbs_o_host));
 
-  mutex_mgr pa_mutex = mutex_mgr(pa->ai_mutex);
+  boost::shared_ptr<mutex_mgr> pa_mutex = create_managed_mutex(pa->ai_mutex, true, rc);
+  if ( rc != PBSE_NONE )
+	{
+    log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "failed to allocate array_mgr mutex");
+	return(PBSE_MUTEX);
+	}
 
   if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
     {
     /* the array is deleted in svr_job_purge */
-    pa_mutex.unlock();
+    pa_mutex->unlock();
     /* Does job array need to be removed? */
 
     if (LOGLEVEL >= 6)
@@ -1173,7 +1178,7 @@ int setup_array_struct(
 
   if ((rc = pa->set_slot_limit(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str)))
     {
-    pa_mutex.unlock();
+    pa_mutex->unlock();
     array_delete(pjob->ji_qs.ji_jobid);
 
     return(rc);
@@ -1186,7 +1191,7 @@ int setup_array_struct(
 
   if ((rc = pa->set_idle_slot_limit(requested_limit)))
     {
-    pa_mutex.unlock();
+    pa_mutex->unlock();
     array_delete(pjob->ji_qs.ji_jobid);
 
     return(rc);
@@ -1194,7 +1199,7 @@ int setup_array_struct(
 
   if ((rc = pa->parse_array_request(pjob->ji_wattr[JOB_ATR_job_array_request].at_val.at_str)))
     {
-    pa_mutex.unlock();
+    pa_mutex->unlock();
     array_delete(pjob->ji_qs.ji_jobid);
     return(rc);
     }
