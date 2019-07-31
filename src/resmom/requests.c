@@ -2405,35 +2405,32 @@ void encode_used(
 
 #ifdef USE_RESOURCE_PLUGIN
 
-  if (pjob->ji_custom_usage_info != NULL)
+  Json::Value plugin_values;
+
+  for (std::map<std::string, std::string>::iterator it = pjob->ji_custom_usage_info.begin();
+       it != pjob->ji_custom_usage_info.end();
+       it++)
     {
-    Json::Value plugin_values;
+    pbs_attribute val;
 
-    for (std::map<std::string, std::string>::iterator it = pjob->ji_custom_usage_info->begin();
-         it != pjob->ji_custom_usage_info->end();
-         it++)
+    val.at_flags |= ATR_VFLAG_SET;
+
+    if (phead != NULL)
       {
-      pbs_attribute val;
-
-      val.at_flags |= ATR_VFLAG_SET;
-
-      if (phead != NULL)
-        {
-        svrattrl *pal = attrlist_create(ATTR_used, it->first.c_str(), it->second.size() + 1);
-        strcpy(pal->al_value, it->second.c_str());
-        pal->al_op = SET_PLUGIN;
-        append_link(phead, &pal->al_link, pal);
-        }
-
-      if (job_used != NULL)
-        plugin_values[it->first] = it->second;
+      svrattrl *pal = attrlist_create(ATTR_used, it->first.c_str(), it->second.size() + 1);
+      strcpy(pal->al_value, it->second.c_str());
+      pal->al_op = SET_PLUGIN;
+      append_link(phead, &pal->al_link, pal);
       }
+
+    if (job_used != NULL)
+      plugin_values[it->first] = it->second;
+    }
         
-    if ((job_used != NULL) &&
-        (pjob->ji_custom_usage_info->size() > 0))
-      {
-      (*job_used)[PLUGIN_RESC] = plugin_values;
-      }
+  if ((job_used != NULL) &&
+      (pjob->ji_custom_usage_info.size() > 0))
+    {
+    (*job_used)[PLUGIN_RESC] = plugin_values;
     }
 #endif
 

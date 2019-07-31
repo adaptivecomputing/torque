@@ -2774,7 +2774,7 @@ void add_plugin_job_resource_usage(
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_MOM, __func__, "Executing the job usage plugin");
 
   alarm(job_resource_alarm_seconds);
-  report_job_resources(jid, job_pids, *pjob->ji_custom_usage_info);
+  report_job_resources(jid, job_pids, pjob->ji_custom_usage_info);
   alarm(0);
 
   if (LOGLEVEL >= 3)
