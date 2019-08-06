@@ -914,8 +914,8 @@ int svr_dequejob(
     }
 
 #ifndef NDEBUG
-  snprintf(log_buf, sizeof(log_buf), "dequeuing from %s, state %s",
-    pque ? pque->qu_qs.qu_name : "unknown queue",
+  snprintf(log_buf, sizeof(log_buf), "dequeuing %s  from %s, state %s",
+    pjob->ji_qs.ji_jobid, pque ? pque->qu_qs.qu_name : "unknown queue",
     PJobState[pjob->ji_qs.ji_state]);
 
   log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);

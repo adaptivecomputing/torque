@@ -806,6 +806,14 @@ jump:
     // Send cancel to the waiting terminal 
     if (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
       notify_waiting_terminal(pjob);
+
+	if (pjob->ji_qs.ji_state == JOB_STATE_QUEUED)
+	  {
+	  // We are deleting a queued job. set substate to abort so
+	  // dependent jobs will also be deleted
+	  pjob->ji_qs.ji_substate = JOB_SUBSTATE_ABORT;
+	  }
+
     }
 
   if (perform_job_delete_array_bookkeeping(pjob, status_cancel_queue) != PBSE_NONE)
