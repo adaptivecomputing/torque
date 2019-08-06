@@ -455,8 +455,8 @@ void job_array::update_array_values(
       switch (old_state)
         {
         case JOB_STATE_QUEUED:
-			this->ai_qs.num_failed++;
         case JOB_STATE_HELD:
+			this->ai_qs.num_failed++;
         case JOB_STATE_WAITING:
 
           this->ai_qs.num_idle--;
