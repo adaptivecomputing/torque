@@ -1498,18 +1498,18 @@ int perform_commit_work(
 
   if ((rc = svr_enquejob(pj, FALSE, NULL, false, false)) != PBSE_NONE)
     {
-    if (rc != PBSE_JOB_RECYCLED)
-      {
-      if (LOGLEVEL >= 6)
-        {
-        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Could not queue job %s",
-          pj->ji_qs.ji_jobid);
-        
-        log_err(rc, pj->ji_qs.ji_jobid, log_buf);
-        }
-
-      svr_job_purge(pj);
-      }
+//    if (rc != PBSE_JOB_RECYCLED)
+//      {
+//      if (LOGLEVEL >= 6)
+//        {
+//        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Could not queue job %s",
+//          pj->ji_qs.ji_jobid);
+//        
+//        log_err(rc, pj->ji_qs.ji_jobid, log_buf);
+//        }
+//
+//      svr_job_purge(pj);
+//      }
 
     req_reject(rc, 0, preq, NULL, log_buf);
 
@@ -1928,7 +1928,21 @@ int req_quejob(
     {
     // On failure, perform commit work will reply to and free the request
     if ((rc = perform_commit_work(preq, pj, version)) != PBSE_NONE)
-      return(rc);
+	  {
+      if (rc != PBSE_JOB_RECYCLED)      
+		{
+		if (LOGLEVEL >= 6)
+          {
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Could not queue job %s",
+            pj->ji_qs.ji_jobid);
+        
+          log_err(rc, pj->ji_qs.ji_jobid, log_buf);
+          }
+
+		svr_job_purge(pj);
+        }
+        return(rc);
+	  }
     }
 
   /* acknowledge the request with the job id */
@@ -2200,7 +2214,21 @@ int req_jobscript(
     {
     // On error, preq has been replied to and freed
     if ((rc = perform_commit_work(preq, pj, 2)) != PBSE_NONE)
+	  {
+	   if (rc != PBSE_JOB_RECYCLED)      
+		{
+		if (LOGLEVEL >= 6)
+          {
+          snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Could not queue job %s",
+            pj->ji_qs.ji_jobid);
+        
+          log_err(rc, pj->ji_qs.ji_jobid, log_buf);
+          }
+
+		svr_job_purge(pj);
+        }
       return(rc);
+	  }
     }
     
   reply_ack(preq);
