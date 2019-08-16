@@ -1862,25 +1862,43 @@ int record_jobinfo(
     // get the adjusted path_jobs path  
     adjusted_path_jobs = get_path_jobdata(pjob->ji_qs.ji_jobid, path_jobs);
 
-    snprintf(namebuf, sizeof(namebuf), "%s%s%s",
-      adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+	// remove "-<array index>" if this is an array job
+	std::string filePrefix(pjob->ji_qs.ji_fileprefix);
+	std::size_t dot_pos = filePrefix.find_first_of(".");
+	std::string jobnum;
+	if (dot_pos != std::string::npos)
+	  {
+	  jobnum = filePrefix.substr(0, dot_pos);
+	  std::size_t dash = jobnum.find_first_of("-");
+	  if (dash != std::string::npos)
+		{
+		jobnum.resize(dash);
+		}
+	  }
+
+	  std::string adjustedFilePrefix(jobnum);
+	  adjustedFilePrefix  += ".";
+	  adjustedFilePrefix += filePrefix.substr(dot_pos+1, filePrefix.size());
+
+      snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+        adjusted_path_jobs.c_str(), adjustedFilePrefix.c_str(), JOB_SCRIPT_SUFFIX);
     
-    if ((fd = open(namebuf, O_RDONLY)) >= 0)
-      {
-      memset(job_script_buf, 0, sizeof(job_script_buf));
-
-      while ((bytes_read = read_ac_socket(fd, job_script_buf, sizeof(job_script_buf) - 1)) > 0)
+      if ((fd = open(namebuf, O_RDONLY)) >= 0)
         {
-        bf += job_script_buf;
         memset(job_script_buf, 0, sizeof(job_script_buf));
-        }
 
-      close(fd);
-      }
-    else
-      {
-      bf += "unable to open script file\n";
-      }
+        while ((bytes_read = read_ac_socket(fd, job_script_buf, sizeof(job_script_buf) - 1)) > 0)
+          {
+          bf += job_script_buf;
+          memset(job_script_buf, 0, sizeof(job_script_buf));
+          }
+
+        close(fd);
+        }
+      else
+        {
+        bf += "unable to open script file\n";
+        }
    
     bf += "\t</job_script>\n";
     }
