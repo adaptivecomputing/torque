@@ -1498,19 +1498,6 @@ int perform_commit_work(
 
   if ((rc = svr_enquejob(pj, FALSE, NULL, false, false)) != PBSE_NONE)
     {
-//    if (rc != PBSE_JOB_RECYCLED)
-//      {
-//      if (LOGLEVEL >= 6)
-//        {
-//        snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Could not queue job %s",
-//          pj->ji_qs.ji_jobid);
-//        
-//        log_err(rc, pj->ji_qs.ji_jobid, log_buf);
-//        }
-//
-//      svr_job_purge(pj);
-//      }
-
     req_reject(rc, 0, preq, NULL, log_buf);
 
     return(rc);
