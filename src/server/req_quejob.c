@@ -2212,7 +2212,11 @@ int req_jobscript(
           log_err(rc, pj->ji_qs.ji_jobid, log_buf);
           }
 
-		svr_job_purge(pj);
+		rc = svr_job_purge(pj);
+		if (rc == PBSE_NONE || rc == PBSE_JOBNOTFOUND)
+		  {
+		  job_mutex->set_unlock_on_exit(false);
+		  }
         }
       return(rc);
 	  }
