@@ -759,8 +759,12 @@ int decode_attributes_into_job(
       {
       /* FAILURE */
       rc = PBSE_ATTRRO;
-      svr_job_purge(pj);
-      job_mutex->set_unlock_on_exit(false);
+	  int ret;
+      ret = svr_job_purge(pj);
+	  if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
+		{
+      	job_mutex->set_unlock_on_exit(false);
+		}
       reply_badattr(rc, 1, psatl, preq);
       return(rc);
       }
@@ -795,8 +799,13 @@ int decode_attributes_into_job(
           {
           /* FAILURE */
           /* any other error is fatal */
-          svr_job_purge(pj);
-          job_mutex->set_unlock_on_exit(false);
+		  int ret;
+
+          ret = svr_job_purge(pj);
+		  if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
+		  {
+          	job_mutex->set_unlock_on_exit(false);
+		  }
           reply_badattr(rc, 1, psatl, preq);
           return(rc);
           }
@@ -818,7 +827,6 @@ int decode_attributes_into_job(
       /* FAILURE */
       /* any other error is fatal */
       svr_job_purge(pj);
-      job_mutex->set_unlock_on_exit(false);
       reply_badattr(rc, 1, psatl, preq);
       return(rc);
       }    /* END if (rc != 0) */
@@ -856,8 +864,12 @@ int perform_attribute_post_actions(
 
       if (rc)
         {
-        svr_job_purge(pj);
-        job_mutex->set_unlock_on_exit(false);
+  	  	int ret;
+      	ret = svr_job_purge(pj);
+	  	if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
+		  {
+      	  job_mutex->set_unlock_on_exit(false);
+		  }
         req_reject(rc, i, preq, NULL, "cannot execute attribute action");
         return(rc);
         }
@@ -954,7 +966,7 @@ int check_attribute_settings(
           (pj->ji_wattr[JOB_ATR_priority].at_val.at_long > 1024))
         {
         rc = PBSE_BADATVAL;
-        svr_job_purge(pj);
+		svr_job_purge(pj);
         req_reject(rc, 0, preq, NULL, "invalid job priority");
         return(rc);
         }
@@ -1172,7 +1184,7 @@ int check_attribute_settings(
         (pj->ji_wattr[JOB_ATR_errpath].at_val.at_str == NULL))
       {
       rc = PBSE_NOATTR;
-      svr_job_purge(pj);
+	  svr_job_purge(pj);
       req_reject(rc, 0, preq, NULL, "no output/error file specified");
       return(rc);
       }
@@ -1249,7 +1261,12 @@ int check_attribute_settings(
             pj->ji_wattr[JOB_ATR_account].at_val.at_str) == 0)
         {
         rc = PBSE_BADACCT;
-        svr_job_purge(pj);
+   	    int ret;
+	    ret = svr_job_purge(pj);
+	    if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
+		  {
+		  job_mutex->set_unlock_on_exit(false);
+		  }
         req_reject(rc, 0, preq, NULL, "invalid account");
         return(rc);
         }
@@ -1269,7 +1286,12 @@ int check_attribute_settings(
         {
         /* no default found */
         rc = PBSE_BADACCT;
-        svr_job_purge(pj);
+    	int ret;
+	    ret = svr_job_purge(pj);
+	    if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
+		  {
+		  job_mutex->set_unlock_on_exit(false);
+		  }
         req_reject(rc, 0, preq, NULL, "no default account available");
         return(rc);
         }
@@ -1287,6 +1309,7 @@ int check_attribute_settings(
       {
       rc = PBSE_IVALREQ;
       snprintf(log_buf, sizeof(log_buf), "no job owner specified");
+
       svr_job_purge(pj);
       log_err(rc, __func__, log_buf);
       req_reject(rc, 0, preq, NULL, log_buf);
@@ -1801,8 +1824,12 @@ int req_quejob(
 
   if ((rc = determine_job_file_name(preq, jobid, filename)) != PBSE_NONE)
     {
-    svr_job_purge(pj);
-    job_mutex->set_unlock_on_exit(false);
+	int ret;
+    ret = svr_job_purge(pj);
+	if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
+	  {
+      job_mutex->set_unlock_on_exit(false);
+	  }
     return(rc);
     }
   snprintf(pj->ji_qs.ji_fileprefix, sizeof(pj->ji_qs.ji_fileprefix), "%s", filename.c_str());
@@ -1818,8 +1845,12 @@ int req_quejob(
       pj->ji_qs.ji_jobid,
       max_queuable);
 
-    svr_job_purge(pj);
-    job_mutex->set_unlock_on_exit(false);
+	int ret;
+    ret = svr_job_purge(pj);
+	if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
+	  {
+      job_mutex->set_unlock_on_exit(false);
+	  }
 
     req_reject(PBSE_MAXQUED, 0, preq, NULL, log_buf);
     
@@ -1875,7 +1906,13 @@ int req_quejob(
   que_mgr->unlock();
   if (rc != PBSE_NONE)
     {
-    svr_job_purge(pj);
+ 	int ret;
+    ret = svr_job_purge(pj);
+	if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
+	  {
+      job_mutex->set_unlock_on_exit(false);
+	  }
+
     job_mutex->set_unlock_on_exit(false);
     req_reject(rc, 0, preq, NULL, EMsg);
     return(rc);
@@ -1926,7 +1963,13 @@ int req_quejob(
           log_err(rc, pj->ji_qs.ji_jobid, log_buf);
           }
 
-		svr_job_purge(pj);
+	 	int ret;
+    	ret = svr_job_purge(pj);
+		if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
+	  	  {
+      	  job_mutex->set_unlock_on_exit(false);
+	  	  }
+
         }
         return(rc);
 	  }
@@ -1949,8 +1992,13 @@ int req_quejob(
         }
       }
     
-    svr_job_purge(pj);
-    job_mutex->set_unlock_on_exit(false);
+	int ret;
+    ret = svr_job_purge(pj);
+	if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
+	  {
+	  job_mutex->set_unlock_on_exit(false);
+	  }
+
     return(rc);
     }
 
@@ -2413,14 +2461,14 @@ int req_rdytocommit(
     return(rc);
     }
 
-    boost::shared_ptr<mutex_mgr> job_mutex  = create_managed_mutex(pj->ji_mutex, true, rc);
-	if (rc != PBSE_NONE)
-	  {
-	  snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Failed to create job mutex: %d", rc);
-	  log_err(rc, __func__, log_buf);
-	  req_reject(rc, 0, preq, NULL, log_buf);
-	  return(rc);
-  	  }
+  boost::shared_ptr<mutex_mgr> job_mutex  = create_managed_mutex(pj->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Failed to create job mutex: %d", rc);
+	log_err(rc, __func__, log_buf);
+	req_reject(rc, 0, preq, NULL, log_buf);
+	return(rc);
+	}
 
 
   if (pj->ji_qs.ji_substate != JOB_SUBSTATE_TRANSIN)
@@ -2484,7 +2532,14 @@ int req_rdytocommit(
     log_err(rc, __func__, log_buf);
 
     if ((pj = svr_find_job(jobid, FALSE)) != NULL)
-      svr_job_purge(pj);
+	  {
+	  int ret;
+      ret = svr_job_purge(pj);
+	  if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
+		{
+		job_mutex->set_unlock_on_exit(false);
+		}	
+	  }
 
     return(rc);
     }

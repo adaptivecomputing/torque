@@ -1100,9 +1100,12 @@ void close_quejob(
       else
         {
         // Delete the job
-        svr_job_purge(pjob);
-       
-        pjob_mutex->set_unlock_on_exit(false);
+		int rc;
+        rc = svr_job_purge(pjob);
+		if (rc == PBSE_NONE || rc == PBSE_JOBNOTFOUND)
+		  {
+          pjob_mutex->set_unlock_on_exit(false);
+		  }
         }
 
       break;

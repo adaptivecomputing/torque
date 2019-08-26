@@ -1203,7 +1203,12 @@ int create_and_queue_array_subjob(
 
     if (rc != PBSE_JOB_RECYCLED)
       {
-      svr_job_purge(pjobclone);
+	  int rc;
+      rc = svr_job_purge(pjobclone);
+	  if (rc == PBSE_NONE || rc == PBSE_JOBNOTFOUND)
+		{
+		clone_mgr->set_unlock_on_exit(false);
+		}
       }
 
     if ((pa = get_array(arrayid.c_str())) == NULL)
@@ -1236,8 +1241,14 @@ int create_and_queue_array_subjob(
     {
     /* XXX need more robust error handling */
     array_mgr->unlock();
-    svr_job_purge(pjobclone);
-    
+   
+    int rc;
+    rc = svr_job_purge(pjobclone);
+	if (rc == PBSE_NONE || rc == PBSE_JOBNOTFOUND)
+	  {
+	  clone_mgr->set_unlock_on_exit(false);
+	  }
+
     if ((pa = get_array(arrayid.c_str())) == NULL)
       {
       return(FATAL_ERROR);
@@ -1345,7 +1356,13 @@ int perform_array_postprocessing(
          char log_buf[LOCAL_LOG_BUF_SIZE];
          snprintf(log_buf, sizeof(log_buf), "Failed to allocate queue mutex. Cannot route job %s", pjob->ji_qs.ji_jobid);
          log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-         svr_job_purge(pjob);
+
+		 int rc;
+         rc = svr_job_purge(pjob);
+		 if (rc == PBSE_NONE || rc == PBSE_JOBNOTFOUND)
+			{
+			job_mutex->set_unlock_on_exit(false);
+			}
          }
 		
        if ((pque->qu_qs.qu_type == QTYPE_RoutePush) &&
@@ -1361,7 +1378,14 @@ int perform_array_postprocessing(
              snprintf(log_buf, sizeof(log_buf), "cannot route job %s", pjob->ji_qs.ji_jobid);
              log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
              }
-           svr_job_purge(pjob);
+
+		   int rc;
+           rc = svr_job_purge(pjob);
+		   if (rc == PBSE_NONE || rc == PBSE_JOBNOTFOUND)
+		 	{
+			job_mutex->set_unlock_on_exit(false);
+			}
+    
            pque_mutex->unlock();
            continue;
            }
@@ -2055,6 +2079,7 @@ int svr_job_purge(
         }
       else
         pjob_mutex->unlock();
+		pjob_mutex->set_unlock_on_exit(false);
       }
     }
   else

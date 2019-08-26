@@ -200,7 +200,12 @@ void delay_and_send_sig_kill(
 
       unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
 
-      svr_job_purge(pjob);
+	  int ret;
+      ret = svr_job_purge(pjob);
+	  if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
+		{
+		pjob_mutex->set_unlock_on_exit(false);
+		}
 
       reply_ack(preq_clt);
       }
