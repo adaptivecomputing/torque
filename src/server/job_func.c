@@ -2079,8 +2079,12 @@ int svr_job_purge(
         }
       else
         pjob_mutex->unlock();
-		pjob_mutex->set_unlock_on_exit(false);
       }
+	  else if (pjob != NULL)
+		{
+		job_free(pjob, TRUE);
+		pjob_mutex->set_unlock_on_exit(false);
+		}
     }
   else
     {

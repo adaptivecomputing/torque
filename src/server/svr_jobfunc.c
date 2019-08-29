@@ -755,6 +755,15 @@ int svr_dequejob(
     return(PBSE_BAD_PARAMETER);
     }
 
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if ( rc != PBSE_NONE)
+	{
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "Failed to create job mutex: %d", rc);
+    log_err(rc, __func__, log_buf);
+    return(rc);
+    }
+
+
   /* do not allow svr_dequeujob to be called on a running job */
   if ((pjob->ji_qs.ji_state == JOB_STATE_RUNNING) &&
       (pjob->ji_is_array_template == false))
@@ -928,7 +937,7 @@ int svr_dequejob(
     strcpy(job_id, pjob->ji_qs.ji_jobid);
 
     /* this function will lock queues and jobs */
-    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+	job_mutex->unlock();
 
     if (parent_queue_mutex_held == TRUE)
       {
