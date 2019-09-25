@@ -147,7 +147,9 @@ int relay_to_mom(
 
   job            **pjob_ptr,
   batch_request   *request, /* the request to send */
-  void           (*func)(struct work_task *))
+  void           (*func)(struct work_task *),
+  boost::shared_ptr<mutex_mgr>& job_mutex)
+
 
   {
   int             handle; /* a client style connection handle */
@@ -210,7 +212,7 @@ int relay_to_mom(
   node->unlock_node(__func__, "after svr_connect", LOGLEVEL);
   
   strcpy(jobid, pjob->ji_qs.ji_jobid);
-  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+  job_mutex->unlock();
   *pjob_ptr = NULL;
 
   handle = svr_connect(addr, port, &local_errno, NULL, NULL);
@@ -233,6 +235,15 @@ int relay_to_mom(
     update_failure_counts(node_name.c_str(), 0);
 
   *pjob_ptr = svr_find_job(jobid, TRUE);
+  if (*pjob_ptr == NULL)
+	{
+	rc = PBSE_JOBNOTFOUND;
+	job_mutex->set_unlock_on_exit(false);
+	}
+  else
+	{
+	job_mutex->mark_as_locked();
+	}
 
   return(rc);
   }  /* END relay_to_mom() */

@@ -139,7 +139,7 @@ struct work_task *set_task(enum work_type type, long event_id, void (*func)(work
   exit(1);
   }
 
-int depend_on_exec(job *pjob)
+int depend_on_exec(job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex)
   {
   fprintf(stderr, "The call to depend_on_exec to be mocked!!\n");
   exit(1);
@@ -214,7 +214,7 @@ struct batch_request *cpy_stage(struct batch_request *preq, job *pjob, enum job_
   exit(1);
   }
 
-void account_jobstr(job *pjob)
+void account_jobstr(job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex)
   {
   fprintf(stderr, "The call to account_jobstr to be mocked!!\n");
   exit(1);

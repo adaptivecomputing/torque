@@ -12,7 +12,7 @@
 
 int mk_subdirs(char **);
 int pbsd_init_reque(job *, int);
-void check_jobs_queue(job *pjob);
+void check_jobs_queue(job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex);
 void remove_invalid_allocations(pbsnode *pnode);
 
 extern char global_log_ext_msg[LOCAL_LOG_BUF_SIZE];

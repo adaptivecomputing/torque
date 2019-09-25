@@ -145,7 +145,7 @@ extern all_jobs alljobs;
 void post_delete_route(struct work_task *);
 void post_delete_mom1(batch_request *);
 void post_delete_mom2(struct work_task *);
-int forced_jobpurge(job *,struct batch_request *);
+int forced_jobpurge(job *,struct batch_request *, boost::shared_ptr<mutex_mgr>& job_mutex);
 void job_delete_nanny(struct work_task *);
 int apply_job_delete_nanny(job *pjob, int  delay);
 void post_job_delete_nanny(batch_request *);
@@ -163,15 +163,15 @@ const char *delasyncstr = DELASYNC;
 
 /* Extern Functions */
 
-extern void set_resc_assigned(job *, enum batch_op);
+extern void set_resc_assigned(job *, enum batch_op, boost::shared_ptr<mutex_mgr>& job_mutex);
 extern job  *chk_job_request(char *, struct batch_request *);
-extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
+extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int, boost::shared_ptr<mutex_mgr>& job_mutex);
 extern int   svr_chk_owner(struct batch_request *, job *);
 extern int  svr_authorize_jobreq(struct batch_request *, job *);
-void chk_job_req_permissions(job **,struct batch_request *);
+void chk_job_req_permissions(job **,struct batch_request *, boost::shared_ptr<mutex_mgr>& job_mutex);
 void          on_job_exit_task(struct work_task *);
-void           remove_stagein(job **pjob_ptr);
-extern void removeBeforeAnyDependencies(job **pjob_ptr);
+void           remove_stagein(job **pjob_ptr, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern void removeBeforeAnyDependencies(job **pjob_ptr, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 
 
@@ -188,7 +188,8 @@ extern void removeBeforeAnyDependencies(job **pjob_ptr);
 int delete_inactive_job(
 
   job        **pjob_ptr,
-  const char  *Msg)
+  const char  *Msg,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   job  *pjob;
@@ -202,7 +203,7 @@ int delete_inactive_job(
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
     /* job has restart file at mom, do end job processing */
-    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
+    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE, job_mutex);
 
     /* force new connection */
     pjob->ji_momhandle = -1;
@@ -213,15 +214,16 @@ int delete_inactive_job(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
       }
 
+	job_mutex->unlock();
     set_task(WORK_Immed, 0, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
     /* job has staged-in file, should remove them */
-    remove_stagein(&pjob);
+    remove_stagein(&pjob, job_mutex);
 
     if (pjob != NULL)
-      job_abt(&pjob, Msg);
+      job_abt(&pjob, Msg, job_mutex, false);
     }
   else
     {
@@ -232,9 +234,9 @@ int delete_inactive_job(
     struct pbs_queue *pque;
     int    KeepSeconds = 0;
 
-    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
+    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE, job_mutex);
 
-    if ((pque = get_jobs_queue(&pjob)) != NULL)
+    if ((pque = get_jobs_queue(&pjob, job_mutex)) != NULL)
       {
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
       
@@ -255,7 +257,10 @@ int delete_inactive_job(
       KeepSeconds = 0;
 
     if (pjob != NULL)
+	  {
+	  job_mutex->unlock();
       set_task(WORK_Timed, time(NULL) + KeepSeconds, on_job_exit_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
+	  }
     }  /* END else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0) */
 
   if (pjob == NULL)
@@ -271,7 +276,8 @@ int delete_inactive_job(
 
 void remove_stagein(
 
-  job **pjob_ptr)  /* I */
+  job **pjob_ptr,  /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
 
@@ -279,7 +285,7 @@ void remove_stagein(
   job                  *pjob = *pjob_ptr;
   u_long                addr;
 
-  preq = cpy_stage(preq, pjob, JOB_ATR_stagein, 0);
+  preq = cpy_stage(preq, pjob, JOB_ATR_stagein, 0, job_mutex);
 
   if (preq != NULL)
     {
@@ -297,7 +303,7 @@ void remove_stagein(
 
     /* The preq is freed in relay_to_mom (failure)
      * or in issue_Drequest (success) */
-    if (relay_to_mom(&pjob, preq, NULL) == PBSE_NONE)
+    if (relay_to_mom(&pjob, preq, NULL, job_mutex) == PBSE_NONE)
       {
       if (pjob != NULL)
         pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
@@ -333,7 +339,8 @@ void remove_stagein(
 int perform_job_delete_array_bookkeeping(
 
   job *pjob,
-  int  cancel_exit_code)
+  int  cancel_exit_code,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int rc = PBSE_NONE;
@@ -341,7 +348,7 @@ int perform_job_delete_array_bookkeeping(
   if ((pjob->ji_arraystructid[0] != '\0') &&
       (pjob->ji_is_array_template == FALSE))
     {
-    job_array *pa = get_jobs_array(&pjob);
+    job_array *pa = get_jobs_array(&pjob, job_mutex);
 
     if (pjob == NULL)
       return(PBSE_JOBNOTFOUND);
@@ -351,7 +358,7 @@ int perform_job_delete_array_bookkeeping(
       int old_state = pjob->ji_qs.ji_state;
       std::string jobid(pjob->ji_qs.ji_jobid);
 
-      unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+	  job_mutex->unlock();
         
       pa->update_array_values(old_state,
                               aeTerminate,
@@ -359,7 +366,13 @@ int perform_job_delete_array_bookkeeping(
                               cancel_exit_code);
             
       if ((pjob = svr_find_job((char *)jobid.c_str(),FALSE)) == NULL)
+		{
         rc = PBSE_JOBNOTFOUND;
+		}
+	  else
+		{
+		job_mutex->mark_as_locked();
+		}
 
       unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
       }
@@ -380,7 +393,8 @@ int perform_job_delete_array_bookkeeping(
 
 void force_purge_work(
 
-  job *pjob)
+  job *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char       log_buf[LOCAL_LOG_BUF_SIZE];
@@ -392,9 +406,9 @@ void force_purge_work(
   snprintf(log_buf, sizeof(log_buf), "purging job %s without checking MOM", pjob->ji_qs.ji_jobid);
   log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
   
-  free_nodes(pjob);
+  free_nodes(pjob, NULL, job_mutex);
 
-  if ((pque = get_jobs_queue(&pjob)) != NULL)
+  if ((pque = get_jobs_queue(&pjob, job_mutex)) != NULL)
     {
 	int rc;
     boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
@@ -406,17 +420,17 @@ void force_purge_work(
     if (pque->qu_qs.qu_type == QTYPE_Execution)
       {
       pque_mutex->unlock();
-      set_resc_assigned(pjob, DECR);
+      set_resc_assigned(pjob, DECR, job_mutex);
       }
     }
 
   // On error, the job has disappeared, which should happen once we're done with this function
   // anyway.
-  if (perform_job_delete_array_bookkeeping(pjob, cancel_exit_code) == PBSE_NONE)
+  if (perform_job_delete_array_bookkeeping(pjob, cancel_exit_code, job_mutex) == PBSE_NONE)
     {
-    depend_on_term(pjob);
+    depend_on_term(pjob, job_mutex);
     
-    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
+    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE, job_mutex);
   
     if (is_ms_on_server(pjob))
       {
@@ -426,10 +440,10 @@ void force_purge_work(
         snprintf(log_buf, sizeof(log_buf), "Mother Superior is on the server, not cleaning spool files in %s", __func__);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         }
-      svr_job_purge(pjob, 1);
+      svr_job_purge(pjob, job_mutex, 1);
       }
     else
-      svr_job_purge(pjob);
+      svr_job_purge(pjob, job_mutex);
     }
   else
     throw (int)PBSE_JOB_RECYCLED;
@@ -452,9 +466,11 @@ void ensure_deleted(
     {
     if ((pjob = svr_find_job(jobid, FALSE)) != NULL)
       {
+	  int rc;
+	  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
       try
         {
-        force_purge_work(pjob);
+        force_purge_work(pjob, job_mutex);
         }
       catch (int err)
         {
@@ -479,7 +495,8 @@ void ensure_deleted(
 void setup_apply_job_delete_nanny(
 
   job    *pjob,           /* I */
-  time_t  time_now)       /* I */
+  time_t  time_now,       /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   long KeepSeconds = 0;  
@@ -562,7 +579,8 @@ int execute_job_delete(
 
   job           *pjob,            /* M */
   char          *Msg,             /* I */
-  batch_request *preq)            /* I */
+  batch_request *preq,            /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   struct work_task *pwtnew;
@@ -577,7 +595,7 @@ int execute_job_delete(
   long              force_cancel = FALSE;
   long              status_cancel_queue = FALSE;
 
-  chk_job_req_permissions(&pjob, preq);
+  chk_job_req_permissions(&pjob, preq, job_mutex);
 
   if (pjob == NULL)
     {
@@ -587,10 +605,12 @@ int execute_job_delete(
 
   try
  	{
-	removeBeforeAnyDependencies(&pjob);
+	removeBeforeAnyDependencies(&pjob, job_mutex);
 	}
 	catch (int rc)
 	{
+	job_mutex->set_lock_state(false);
+	job_mutex->set_unlock_on_exit(false);
 	reply_ack(preq);
 	return(rc);
 	}
@@ -602,12 +622,6 @@ int execute_job_delete(
     reply_ack(preq);
     return(PBSE_NONE);
     }
-
-  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
-  if (rc != PBSE_NONE)
-	{
-	return rc;
-	}
 
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_QUEUE, __func__, pjob->ji_qs.ji_jobid);
@@ -694,7 +708,7 @@ jump:
 
 
   /* NOTE:  should annotate accounting record with extend message (NYI) */
-  account_record(PBS_ACCT_DEL, pjob, log_buf);
+  account_record(PBS_ACCT_DEL, pjob, log_buf, job_mutex);
 
   sprintf(log_buf, msg_manager, msg_deletejob, preq->rq_user, preq->rq_host);
 
@@ -715,7 +729,7 @@ jump:
     /* only send email if owner did not delete job and job deleted
        has not been previously attempted */
 
-    svr_mailowner(pjob, MAIL_DEL, MAIL_FORCE, log_buf);
+    svr_mailowner(pjob, MAIL_DEL, MAIL_FORCE, log_buf, job_mutex);
     /*
      * If we sent mail and already sent the extra message
      * then reset message so we don't trigger a redundant email
@@ -759,7 +773,7 @@ jump:
       return(-1);
       }
 
-    setup_apply_job_delete_nanny(pjob, time_now);
+    setup_apply_job_delete_nanny(pjob, time_now, job_mutex);
 
     // mark this job as being in the middle of getting deleted
     pjob->ji_being_deleted = true;
@@ -770,7 +784,7 @@ jump:
      */
     get_batch_request_id(preq);
 
-    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1, strdup(del), strdup(preq->rq_id.c_str()))))
+    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1, strdup(del), strdup(preq->rq_id.c_str()), job_mutex)))
       {
       /* cant send to MOM */
 
@@ -816,19 +830,19 @@ jump:
 
     }
 
-  if (perform_job_delete_array_bookkeeping(pjob, status_cancel_queue) != PBSE_NONE)
+  if (perform_job_delete_array_bookkeeping(pjob, status_cancel_queue, job_mutex) != PBSE_NONE)
     {
     // The job disappeared while updating the array
     job_mutex->set_unlock_on_exit(false);
     return -1;
     }
 
-  depend_on_term(pjob);
+  depend_on_term(pjob, job_mutex);
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
     /* job has restart file at mom, do end job processing */
-    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
+    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE, job_mutex);
 
     /* force new connection */
     pjob->ji_momhandle = -1;
@@ -844,12 +858,12 @@ jump:
   else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
     {
     /* job has staged-in file, should remove them */
-    remove_stagein(&pjob);
+    remove_stagein(&pjob, job_mutex);
 
 
     if (pjob != NULL)
       {
-      job_abt(&pjob, Msg);
+      job_abt(&pjob, Msg, job_mutex, false);
 
       if (pjob == NULL)
         job_mutex->set_unlock_on_exit(false);
@@ -858,7 +872,7 @@ jump:
       job_mutex->set_unlock_on_exit(false);
     }
 
-  delete_inactive_job(&pjob, Msg);
+  delete_inactive_job(&pjob, Msg, job_mutex);
 
   if (pjob == NULL)
     job_mutex->set_unlock_on_exit(false);
@@ -903,14 +917,21 @@ int delete_all_work(
 
   while ((pjob = next_job(&alljobs, iter)) != NULL)
     {
-    if ((pjob->ji_arraystructid[0] != '\0') &&
+    // use mutex manager to make sure job mutex locks are properly handled at exit
+	boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+ 	if (rc != PBSE_NONE)
+	  {
+	  return rc;
+	  }
+ 
+   if ((pjob->ji_arraystructid[0] != '\0') &&
         (pjob->ji_is_array_template == false) &&
-        (svr_authorize_jobreq(preq, pjob) == 0))
+        (svr_authorize_jobreq(preq, pjob) == PBSE_NONE))
       {
       // Mark this array as being deleted if it hasn't yet been marked
       if (marked_arrays.find(pjob->ji_arraystructid) == marked_arrays.end())
         {
-        job_array *pa = get_jobs_array(&pjob);
+        job_array *pa = get_jobs_array(&pjob, job_mutex);
 
         if (pjob == NULL)
           {
@@ -926,14 +947,7 @@ int delete_all_work(
         }
       }
     
-    // use mutex manager to make sure job mutex locks are properly handled at exit
-    boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
-	if (rc != PBSE_NONE)
-	  {
-	  return rc;
-	  }
- 
-    if ((rc = forced_jobpurge(pjob, &preq_dup)) == PURGE_SUCCESS)
+    if ((rc = forced_jobpurge(pjob, &preq_dup, job_mutex)) == PURGE_SUCCESS)
       {
       job_mutex->set_unlock_on_exit(false);
 
@@ -952,10 +966,16 @@ int delete_all_work(
     /* mutex is freed below */
     if (rc == PBSE_NONE)
       {
-      if ((rc = execute_job_delete(pjob, Msg, &preq_dup)) == PBSE_NONE)
+      if ((rc = execute_job_delete(pjob, Msg, &preq_dup, job_mutex)) == PBSE_NONE)
         {
+		bool lockState = job_mutex->get_lock_state();
+		if ((pjob != NULL) && (lockState == true))
+		  {
+		  job_mutex->unlock();
+		  }
         // execute_job_delete() handles mutex so don't unlock on exit
-        job_mutex->set_unlock_on_exit(false);
+		if (pjob == NULL)
+		  job_mutex->set_unlock_on_exit(false);
         }
        
       }
@@ -1078,9 +1098,28 @@ int single_delete_work(
     }
   else
     {
+	boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  char log_buf[LOG_BUF_SIZE];
+	  sprintf(log_buf, "failed to create managed mutex");
+	  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	  return(rc);
+  	  }
+
     /* mutex is freed below */
-    if ((rc = forced_jobpurge(pjob, preq)) == PBSE_NONE)
-      rc = execute_job_delete(pjob, Msg, preq);
+    if ((rc = forced_jobpurge(pjob, preq, job_mutex)) == PBSE_NONE)
+      rc = execute_job_delete(pjob, Msg, preq, job_mutex);
+
+	bool lockState = job_mutex->get_lock_state();
+	if ((pjob != NULL) && (lockState == true))
+	  {
+	  job_mutex->unlock();
+	  }
+	if (pjob == NULL)
+	  {
+	  job_mutex->set_unlock_on_exit(false);
+      }
  
     if ((rc == PBSE_NONE) ||
         (rc == PURGE_SUCCESS))
@@ -1419,13 +1458,13 @@ void post_delete_mom1(
 
       /* removed the resources assigned to job */
 
-      free_nodes(pjob);
+      free_nodes(pjob, NULL, job_mutex);
 
-      set_resc_assigned(pjob, DECR);
+      set_resc_assigned(pjob, DECR, job_mutex);
 
       job_mutex->set_unlock_on_exit(false);
 
-      svr_job_purge(pjob);
+      svr_job_purge(pjob, job_mutex);
 
       reply_ack(preq_clt);
       }
@@ -1455,7 +1494,7 @@ void post_delete_mom1(
    */
   if (delay == 0)
     {
-    if ((pque = get_jobs_queue(&pjob)) != NULL)
+    if ((pque = get_jobs_queue(&pjob, job_mutex)) != NULL)
       {
       boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
   	  if (rc != PBSE_NONE)
@@ -1524,7 +1563,7 @@ void post_delete_mom2(
 
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
-      issue_signal(&pjob, sigk, NULL, NULL, NULL);
+      issue_signal(&pjob, sigk, NULL, NULL, NULL, job_mutex);
       
       if (pjob != NULL)
         {
@@ -1552,7 +1591,8 @@ void post_delete_mom2(
 int forced_jobpurge(
 
   job           *pjob,
-  batch_request *preq)
+  batch_request *preq,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   bool owner_purge = false;
@@ -1572,7 +1612,7 @@ int forced_jobpurge(
 
         try
           {
-          force_purge_work(pjob);
+          force_purge_work(pjob, job_mutex);
           }
         catch (int err)
           {
@@ -1593,7 +1633,7 @@ int forced_jobpurge(
         /* FAILURE */
         req_reject(PBSE_PERM, 0, preq, NULL, NULL);
 
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+		job_mutex->unlock();
 
         return(-1);
         }
@@ -1719,7 +1759,7 @@ void job_delete_nanny(
           snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame), "%s", sigk);
           }
         
-        issue_signal(&pjob, sigk, post_job_delete_nanny, newreq, NULL);
+        issue_signal(&pjob, sigk, post_job_delete_nanny, newreq, NULL, job_mutex);
         
         if (pjob != NULL)
           apply_job_delete_nanny(pjob, time_now + 60);
@@ -1799,13 +1839,13 @@ void post_job_delete_nanny(
 
     log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,preq_sig->rq_ind.rq_signal.rq_jid,log_buf);
 
-    free_nodes(pjob);
+    free_nodes(pjob, NULL, job_mutex);
 
-    set_resc_assigned(pjob, DECR);
+    set_resc_assigned(pjob, DECR, job_mutex);
  
     job_mutex->set_unlock_on_exit(false);
 
-    svr_job_purge(pjob);
+    svr_job_purge(pjob, job_mutex);
 
     return;
     }
@@ -1866,6 +1906,9 @@ void purge_completed_jobs(
 
   while ((pjob = next_job(&alljobs,iter)) != NULL)
     {
+	int rc;
+	boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+
     if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_COMPLETE) &&
         (pjob->ji_wattr[JOB_ATR_comp_time].at_val.at_long <= purge_time) &&
         ((pjob->ji_wattr[JOB_ATR_reported].at_flags & ATR_VFLAG_SET) != 0) &&
@@ -1882,10 +1925,10 @@ void purge_completed_jobs(
       pjob->ji_wattr[JOB_ATR_reported].at_val.at_long = 1;
       pjob->ji_wattr[JOB_ATR_reported].at_flags = ATR_VFLAG_SET | ATR_VFLAG_MODIFY;
           
-      job_save(pjob, SAVEJOB_FULL, 0); 
+      job_save(pjob, SAVEJOB_FULL, 0, job_mutex); 
       }
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	job_mutex->unlock();
     }
 
 

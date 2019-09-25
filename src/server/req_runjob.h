@@ -19,7 +19,7 @@ int req_stagein(struct batch_request *preq);
 
 /* static int svr_stagein(job *pjob, struct batch_request *preq, int state, int substate); */
 
-int svr_startjob(job *pjob, struct batch_request *preq, char *FailHost, char *EMsg);
+int svr_startjob(job *pjob, struct batch_request *preq, char *FailHost, char *EMsg, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 /* static int svr_strtjob2(job *pjob, struct batch_request *preq); */
 

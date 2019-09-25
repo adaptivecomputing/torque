@@ -184,7 +184,8 @@ int  increment_queued_jobs(
    
   user_info_holder *uih,
   char             *user_name,
-  job              *pjob)
+  job              *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int           rc = PBSE_NONE;
@@ -249,7 +250,8 @@ int  decrement_queued_jobs(
 
   user_info_holder *uih,    
   char             *user_name,
-  job              *pjob)
+  job              *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   user_info *ui;

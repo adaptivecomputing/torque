@@ -18,7 +18,7 @@ int svr_get_privilege(char *user, char *host);
 
 int authenticate_user(struct batch_request *preq, struct credential *pcred, char **autherr);
 
-void chk_job_req_permissions(job **pjob_ptr, struct batch_request *preq);
+void chk_job_req_permissions(job **pjob_ptr, struct batch_request *preq, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 job *chk_job_request(char *jobid, struct batch_request *preq);
 

@@ -7,7 +7,7 @@
 #include "batch_request.h"
 #include "attribute.h"
 
-int issue_signal(job **, const char *, void (*func)(batch_request *), void *extra, char *extend);
+int issue_signal(job **, const char *, void (*func)(batch_request *), void *extra, char *extend, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 extern char scaff_buffer[];
 extern int  unlocked_job;

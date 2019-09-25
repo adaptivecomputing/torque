@@ -31,7 +31,7 @@ int set_depend(pbs_attribute *attr, pbs_attribute *new_attr, enum batch_op op);
 int unregister_sync(pbs_attribute *attr, batch_request *preq);
 int register_before_dep(batch_request *preq, job *pjob, int type);
 int register_dependency(batch_request *preq, job *pjob, int type);
-int release_before_dependency(batch_request *preq, job *pjob, int type);
+int release_before_dependency(batch_request *preq, job *pjob, int type, boost::shared_ptr<mutex_mgr>& job_mutex);
 int release_syncwith_dependency(batch_request *preq, job *pjob);
 void set_depend_hold(job *pjob, pbs_attribute *pattr, job_array *);
 int delete_dependency_job(batch_request *preq, job **pjob_ptr);
@@ -68,6 +68,9 @@ START_TEST(test_depend_on_que)
   {
   job       *pjob = (job *)calloc(1, sizeof(job));
   depend    *pdep;
+  int 		rc;
+
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, false, rc);
   initialize_depend_attr(pjob->ji_wattr + JOB_ATR_depend);
   pdep = make_depend(JOB_DEPEND_TYPE_AFTERNOTOK, pjob->ji_wattr + JOB_ATR_depend);
   make_dependjob(pdep, job2);

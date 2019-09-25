@@ -218,7 +218,8 @@ int encode_svrstate(
 void set_resc_assigned(
 
   job *pjob,         /* I */
-  enum batch_op op)  /* INCR or DECR */
+  enum batch_op op,  /* INCR or DECR */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   resource      *pr;
@@ -231,7 +232,7 @@ void set_resc_assigned(
   if ((pjob == NULL))
     return;
 
-  if ((pque = get_jobs_queue(&pjob)) != NULL)
+  if ((pque = get_jobs_queue(&pjob, job_mutex)) != NULL)
     {
     mutex_mgr pque_mutex = mutex_mgr(pque->qu_mutex, true);
     if (pque->qu_qs.qu_type == QTYPE_Execution)

@@ -102,8 +102,8 @@ extern user_info_holder users;
 
 
 int          can_queue_new_job(char *user_name, job *pjob);
-int          increment_queued_jobs(user_info_holder *uih, char *user_name, job *pjob);
-int          decrement_queued_jobs(user_info_holder *uih, char *user_name, job *pjob);
+int          increment_queued_jobs(user_info_holder *uih, char *user_name, job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex);
+int          decrement_queued_jobs(user_info_holder *uih, char *user_name, job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex);
 unsigned int get_num_queued(user_info_holder *uih, const char *user_name);
 void         free_user_info_holder(user_info_holder *uih);
 void         remove_server_suffix(std::string &user_name);

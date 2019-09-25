@@ -5,7 +5,7 @@
 #include "pbs_job.h" /* job */
 #include "batch_request.h" /* batch_request */
 
-int svr_movejob(job *jobp, char *destination, int *, struct batch_request *req);
+int svr_movejob(job *jobp, char *destination, int *, struct batch_request *req, boost::shared_ptr<mutex_mgr>&);
 
 void finish_routing_processing(job *pjob, int status);
 
@@ -15,7 +15,7 @@ void finish_move_process(char *jobid, struct batch_request *preq, long time, cha
 
 void *send_job(void *vp);
 
-int net_move(job *jobp, struct batch_request *req);
+int net_move(job *jobp, struct batch_request *req, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 /* static int should_retry_route(int err); */
 

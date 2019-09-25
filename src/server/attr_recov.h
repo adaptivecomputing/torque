@@ -2,6 +2,8 @@
 #define _ATTR_RECOV_H
 #include "license_pbs.h" /* See here for the software license */
 
+#include <boost/shared_ptr.hpp>
+#include "mutex_mgr.hpp"
 #include "attribute.h" /* attribute_def, pbs_attribute */
 
 void save_setup(int fds);

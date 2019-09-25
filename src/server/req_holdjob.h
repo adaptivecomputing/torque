@@ -13,7 +13,7 @@ int req_holdjob(struct batch_request *preq);
 
 int req_checkpointjob(struct batch_request *preq);
 
-int release_job(struct batch_request *preq, void *j);
+int release_job(struct batch_request *preq, void *j, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 int req_releasejob(struct batch_request *preq);
 

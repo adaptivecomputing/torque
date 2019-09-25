@@ -102,7 +102,11 @@ void initialize_recycler()
   } /* END initialize_recycler() */
 
 
-
+/*
+ * Remove a job from the recycler list
+ * If a job is found the job's ji_mutex will be locked
+ * on return
+ */
 job *pop_job_from_recycler(
 
   all_jobs *aj)
@@ -130,6 +134,7 @@ void *remove_some_recycle_jobs(
   {
   job    *pjob = NULL;
   time_t  time_now = time(NULL);
+  int rc;
 
   pthread_mutex_lock(recycler.rc_mutex);
 
@@ -140,17 +145,19 @@ void *remove_some_recycle_jobs(
     if (pjob == NULL)
       break;
 
+	boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+
     if (time_now - pjob->ji_momstat < MINIMUM_RECYCLE_TIME)
       {
-      insert_job(&recycler.rc_jobs, pjob);
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      insert_job(&recycler.rc_jobs, pjob, job_mutex);
+	  job_mutex->unlock();
       break;
       }
 
     if (LOGLEVEL >= 10)
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	job_mutex->unlock();
     free_all_of_job(pjob);
     }
 
@@ -163,7 +170,8 @@ void *remove_some_recycle_jobs(
 
 int insert_into_recycler(
 
-  job *pjob)
+  job *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int              rc;
@@ -188,7 +196,7 @@ int insert_into_recycler(
   sprintf(pjob->ji_qs.ji_jobid,"%016lx",(long)pjob);
   pjob->ji_being_recycled = true;
     
-  rc = insert_job(&recycler.rc_jobs, pjob);
+  rc = insert_job(&recycler.rc_jobs, pjob, job_mutex);
   pjob->ji_momstat = time(NULL);
     
   pthread_mutex_unlock(recycler.rc_mutex);

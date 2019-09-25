@@ -110,8 +110,9 @@ class mutex_mgr
     int unlock();
     int lock();
     void set_lock_state(bool val);
+	bool get_lock_state();
     void set_unlock_on_exit(bool val);
-	  void mark_as_locked();
+    void mark_as_locked();
     bool is_valid();
 
     static mutexPtr nullPtr;

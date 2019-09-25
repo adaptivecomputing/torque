@@ -107,9 +107,9 @@
 
 extern int  acct_open (char *filename, bool acct_mutex_locked);
 void        acct_close (bool acct_mutex_locked);
-extern void account_record (int acctype, job *pjob, const char *text);
-extern void account_jobstr (job *pjob);
-extern void account_jobend (job *pjob, std::string &acct_data);
+extern void account_record (int acctype, job *pjob, const char *text, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern void account_jobstr (job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern void account_jobend (job *pjob, std::string &acct_data, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 #endif
 

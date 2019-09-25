@@ -360,7 +360,7 @@ int recov_attr(
   pbs_attribute        *pattr,
   int                   limit,
   int                   unknown,
-  int                   do_actions)
+  int					do_actions)
 
   {
   int       amt;
@@ -526,7 +526,9 @@ int recov_attr(
         resc_access_perm);
 
     if ((do_actions) && (padef + index)->at_action != NULL)
+	  {
       (padef + index)->at_action(pattr + index, parent, ATR_ACTION_RECOV);
+	  }
 
     (pattr + index)->at_flags = pal->al_flags & ~ATR_VFLAG_MODIFY;
 

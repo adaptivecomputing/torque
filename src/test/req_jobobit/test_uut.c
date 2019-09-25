@@ -21,7 +21,7 @@ int   is_joined(job *pjob, enum job_atr ati);
 batch_request *return_stdfile(batch_request *preq, job *pjob, enum job_atr ati);
 void rel_resc(job *pjob);
 int handle_exiting_or_abort_substate(job *pjob);
-int setrerun(job *pjob,const char *text);
+int setrerun(job *pjob,const char *text, boost::shared_ptr<mutex_mgr>& job_mutex);
 batch_request *setup_cpyfiles(batch_request *preq, job *pjob, char *from, char *to, int direction, int tflag);
 int handle_returnstd(job *pjob, batch_request *preq, int type);
 int mom_comm(job *pjob, void *(*func)(struct work_task *vp));

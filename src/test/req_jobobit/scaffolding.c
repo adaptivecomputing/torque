@@ -337,7 +337,7 @@ void log_err(int error, const char *func_id, const char *msg)
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 
-void account_jobend(job *pjob, std::string &data) 
+void account_jobend(job *pjob, std::string &data, boost::shared_ptr<mutex_mgr>& job_mutex) 
   {
   called_account_jobend++;
   }

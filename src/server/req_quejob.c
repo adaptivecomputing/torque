@@ -140,10 +140,10 @@
 
 extern int   reply_jid(char *);
 extern int   svr_authorize_jobreq(struct batch_request *, job *);
-extern int   svr_chkque(job *, pbs_queue *, char *, int, char *);
-extern int   job_route(job *);
+extern int   svr_chkque(job *, pbs_queue *, char *, int, char *, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern int   job_route(job *, boost::shared_ptr<mutex_mgr>&);
 extern int   node_avail_complex(char *, int *, int *, int *, int*);
-extern void  set_chkpt_deflt(job *, pbs_queue *);
+extern void  set_chkpt_deflt(job *, pbs_queue *, boost::shared_ptr<mutex_mgr>& job_mutex);
 void        *job_clone_wt(void *);
 
 /* Global Data Items: */
@@ -760,7 +760,7 @@ int decode_attributes_into_job(
       /* FAILURE */
       rc = PBSE_ATTRRO;
 	  int ret;
-      ret = svr_job_purge(pj);
+      ret = svr_job_purge(pj, job_mutex);
 	  if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
 		{
       	job_mutex->set_unlock_on_exit(false);
@@ -801,7 +801,7 @@ int decode_attributes_into_job(
           /* any other error is fatal */
 		  int ret;
 
-          ret = svr_job_purge(pj);
+          ret = svr_job_purge(pj, job_mutex);
 		  if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
 		  {
           	job_mutex->set_unlock_on_exit(false);
@@ -826,7 +826,7 @@ int decode_attributes_into_job(
       {
       /* FAILURE */
       /* any other error is fatal */
-      svr_job_purge(pj);
+      svr_job_purge(pj, job_mutex);
       reply_badattr(rc, 1, psatl, preq);
       return(rc);
       }    /* END if (rc != 0) */
@@ -865,7 +865,7 @@ int perform_attribute_post_actions(
       if (rc)
         {
   	  	int ret;
-      	ret = svr_job_purge(pj);
+      	ret = svr_job_purge(pj, job_mutex);
 	  	if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
 		  {
       	  job_mutex->set_unlock_on_exit(false);
@@ -884,7 +884,8 @@ int perform_attribute_post_actions(
 int use_proxy_name_if_needed(
 
   job           *pj,
-  batch_request *preq)
+  batch_request *preq,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int  rc = PBSE_NONE;
@@ -910,7 +911,7 @@ int use_proxy_name_if_needed(
     if (job_exists(tmp_job_id) == true)
       {
       /* not unique, reject job */
-      svr_job_purge(pj);
+      svr_job_purge(pj, job_mutex);
      
       rc = PBSE_JOBEXIST; 
       snprintf(log_buf,sizeof(log_buf),
@@ -937,7 +938,8 @@ int check_attribute_settings(
   int            resc_access_perm,
   pbs_queue     *pque,
   boost::shared_ptr<mutex_mgr>     que_mgr,
-  std::string   &cpuClock)
+  std::string   &cpuClock,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int            rc = PBSE_NONE;
@@ -966,13 +968,13 @@ int check_attribute_settings(
           (pj->ji_wattr[JOB_ATR_priority].at_val.at_long > 1024))
         {
         rc = PBSE_BADATVAL;
-		svr_job_purge(pj);
+		svr_job_purge(pj, job_mutex);
         req_reject(rc, 0, preq, NULL, "invalid job priority");
         return(rc);
         }
       }
 
-    if ((rc = use_proxy_name_if_needed(pj, preq)) != PBSE_NONE)
+    if ((rc = use_proxy_name_if_needed(pj, preq, job_mutex)) != PBSE_NONE)
       {
       return(rc);
       }
@@ -1097,7 +1099,7 @@ int check_attribute_settings(
       
       replace_attr_string(
         &pj->ji_wattr[JOB_ATR_outpath],
-        (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds))));
+        (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds, job_mutex))));
       }
     else if (pj->ji_wattr[JOB_ATR_outpath].at_flags & ATR_VFLAG_SET)
       {
@@ -1123,7 +1125,7 @@ int check_attribute_settings(
 /*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
           replace_attr_string(
             &pj->ji_wattr[JOB_ATR_outpath],
-            (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds))));
+            (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds, job_mutex))));
           }
         }
       }
@@ -1150,7 +1152,7 @@ int check_attribute_settings(
       pj->ji_wattr[JOB_ATR_errpath].at_val.at_str[strlen(pj->ji_wattr[JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
       
       replace_attr_string(&pj->ji_wattr[JOB_ATR_errpath],
-        (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds))));
+        (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds, job_mutex))));
       }
     else if (pj->ji_wattr[JOB_ATR_errpath].at_flags & ATR_VFLAG_SET)
       {
@@ -1175,7 +1177,7 @@ int check_attribute_settings(
           std::string ds = "";
 /*          strcat(pj->ji_wattr[JOB_ATR_outpath].at_val.at_str, "/"); */
           replace_attr_string(&pj->ji_wattr[JOB_ATR_errpath],
-            (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds))));
+            (strdup(add_std_filename(pj, pj->ji_wattr[JOB_ATR_errpath].at_val.at_str, (int)'e', ds, job_mutex))));
           }
         }
       }
@@ -1184,7 +1186,7 @@ int check_attribute_settings(
         (pj->ji_wattr[JOB_ATR_errpath].at_val.at_str == NULL))
       {
       rc = PBSE_NOATTR;
-	  svr_job_purge(pj);
+	  svr_job_purge(pj, job_mutex);
       req_reject(rc, 0, preq, NULL, "no output/error file specified");
       return(rc);
       }
@@ -1194,7 +1196,7 @@ int check_attribute_settings(
      */
 
     que_mgr->lock();
-    set_chkpt_deflt(pj, pque);
+    set_chkpt_deflt(pj, pque, job_mutex);
     que_mgr->unlock();
 
     /* If queue has checkpoint directory name specified, propagate it to the job. */
@@ -1262,7 +1264,7 @@ int check_attribute_settings(
         {
         rc = PBSE_BADACCT;
    	    int ret;
-	    ret = svr_job_purge(pj);
+	    ret = svr_job_purge(pj, job_mutex);
 	    if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
 		  {
 		  job_mutex->set_unlock_on_exit(false);
@@ -1287,7 +1289,7 @@ int check_attribute_settings(
         /* no default found */
         rc = PBSE_BADACCT;
     	int ret;
-	    ret = svr_job_purge(pj);
+	    ret = svr_job_purge(pj, job_mutex);
 	    if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
 		  {
 		  job_mutex->set_unlock_on_exit(false);
@@ -1310,7 +1312,7 @@ int check_attribute_settings(
       rc = PBSE_IVALREQ;
       snprintf(log_buf, sizeof(log_buf), "no job owner specified");
 
-      svr_job_purge(pj);
+      svr_job_purge(pj, job_mutex);
       log_err(rc, __func__, log_buf);
       req_reject(rc, 0, preq, NULL, log_buf);
       return(rc);
@@ -1321,7 +1323,7 @@ int check_attribute_settings(
     if (++pj->ji_wattr[JOB_ATR_hopcount].at_val.at_long > PBS_MAX_HOPCOUNT)
       {
       rc = PBSE_HOPCOUNT;
-      svr_job_purge(pj);
+      svr_job_purge(pj, job_mutex);
       req_reject(rc, 0, preq, NULL, "max job hop reached");
       return(rc);
       }
@@ -1384,7 +1386,8 @@ int perform_commit_work(
 
   batch_request *preq,
   job           *pj,
-  int            version)
+  int            version,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int        rc = PBSE_NONE;
@@ -1450,7 +1453,7 @@ int perform_commit_work(
     return(rc);
     }
 
-  if (svr_authorize_jobreq(preq, pj) == -1)
+  if (svr_authorize_jobreq(preq, pj) != PBSE_NONE)
     {
     rc = PBSE_PERM;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "no permission to start job %s",
@@ -1462,7 +1465,7 @@ int perform_commit_work(
     }
 
   /* remove job from the server new job list, set state, and enqueue it */
-  if (remove_job(&newjobs, pj) == THING_NOT_FOUND)
+  if (remove_job(&newjobs, pj, job_mutex) == THING_NOT_FOUND)
     {
     if (LOGLEVEL >= 8)
       {
@@ -1480,7 +1483,7 @@ int perform_commit_work(
     long max_size = 0;
     long max_slot = 0;
 
-    if ((rc = setup_array_struct(pj)))
+    if ((rc = setup_array_struct(pj, job_mutex)))
       {
       if (rc == ARRAY_TOO_LARGE)
         {
@@ -1505,13 +1508,13 @@ int perform_commit_work(
         req_reject(PBSE_BAD_ARRAY_REQ, 0, preq, NULL, NULL);
         }
 
-      svr_job_purge(pj);
+      svr_job_purge(pj, job_mutex);
       return(PBSE_BAD_ARRAY_REQ);
       }
     }  /* end if (pj->ji_is_array_template) */
 
-  svr_evaljobstate(*pj, newstate, newsub, 1);
-  svr_setjobstate(pj, newstate, newsub, FALSE);
+  svr_evaljobstate(*pj, newstate, newsub, 1, job_mutex);
+  svr_setjobstate(pj, newstate, newsub, FALSE, job_mutex);
 
   set_interactive_job_roaming_policy(pj);
 
@@ -1519,7 +1522,7 @@ int perform_commit_work(
   pj->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
   pj->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
 
-  if ((rc = svr_enquejob(pj, FALSE, NULL, false, false)) != PBSE_NONE)
+  if ((rc = svr_enquejob(pj, FALSE, NULL, false, false, job_mutex)) != PBSE_NONE)
     {
     req_reject(rc, 0, preq, NULL, log_buf);
 
@@ -1532,7 +1535,7 @@ int perform_commit_work(
    * to the user.
    */
 
-  if ((pque = get_jobs_queue(&pj)) != NULL)
+  if ((pque = get_jobs_queue(&pj, job_mutex)) != NULL)
     {
     boost::shared_ptr<mutex_mgr> pque_mutex  = create_managed_mutex(pque->qu_mutex, true, rc);
 	if (rc != PBSE_NONE)
@@ -1551,7 +1554,7 @@ int perform_commit_work(
       {
       /* job_route expects the queue to be unlocked */
       pque_mutex->unlock();
-      if ((rc = job_route(pj)))
+      if ((rc = job_route(pj, job_mutex)))
         {
         if (LOGLEVEL >= 6)
           {
@@ -1564,17 +1567,17 @@ int perform_commit_work(
 
         if (!pj->ji_is_array_template)
           {
-          decrement_queued_jobs(pque->qu_uih, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
-          decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+          decrement_queued_jobs(pque->qu_uih, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj, job_mutex);
+          decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj, job_mutex);
           }
 
-        svr_job_purge(pj);
+        svr_job_purge(pj, job_mutex);
         req_reject(rc, 0, preq, NULL, log_buf);
         return(rc);
         }
       }
 
-    if (job_save(pj, SAVEJOB_FULL, 0) != 0)
+    if (job_save(pj, SAVEJOB_FULL, 0, job_mutex) != 0)
       {
       // unlock the queue so it can be purged
       pque_mutex->unlock();
@@ -1596,11 +1599,11 @@ int perform_commit_work(
       
        if (!pj->ji_is_array_template)
          {
-         decrement_queued_jobs(pque->qu_uih, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
-         decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj);
+         decrement_queued_jobs(pque->qu_uih, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj, job_mutex);
+         decrement_queued_jobs(&users, pj->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pj, job_mutex);
          }
 
-      svr_job_purge(pj);
+      svr_job_purge(pj, job_mutex);
       req_reject(rc, 0, preq, NULL, log_buf);
       return(rc);
       }
@@ -1667,7 +1670,7 @@ int perform_commit_work(
     {
     /* notify creator where job is */
 
-    issue_track(pj);
+    issue_track(pj, job_mutex);
     }
 
 #ifdef AUTORUN_JOBS
@@ -1813,7 +1816,7 @@ int req_quejob(
 
   sum_select_mem_request(pj);
 
-  rc = check_attribute_settings(pj, preq, resc_access_perm, pque, que_mgr, cpuClock);
+  rc = check_attribute_settings(pj, preq, resc_access_perm, pque, que_mgr, cpuClock, job_mutex);
   if (rc != PBSE_NONE)
     {
     job_mutex->set_unlock_on_exit(false);
@@ -1825,7 +1828,7 @@ int req_quejob(
   if ((rc = determine_job_file_name(preq, jobid, filename)) != PBSE_NONE)
     {
 	int ret;
-    ret = svr_job_purge(pj);
+    ret = svr_job_purge(pj, job_mutex);
 	if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
 	  {
       job_mutex->set_unlock_on_exit(false);
@@ -1846,7 +1849,7 @@ int req_quejob(
       max_queuable);
 
 	int ret;
-    ret = svr_job_purge(pj);
+    ret = svr_job_purge(pj, job_mutex);
 	if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
 	  {
       job_mutex->set_unlock_on_exit(false);
@@ -1896,7 +1899,7 @@ int req_quejob(
   que_mgr->lock();
   try
     {
-    rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg);
+    rc = svr_chkque(pj, pque, preq->rq_host, MOVE_TYPE_Move, EMsg, job_mutex);
     }
   catch (int e)
     {
@@ -1907,7 +1910,7 @@ int req_quejob(
   if (rc != PBSE_NONE)
     {
  	int ret;
-    ret = svr_job_purge(pj);
+    ret = svr_job_purge(pj, job_mutex);
 	if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
 	  {
       job_mutex->set_unlock_on_exit(false);
@@ -1945,13 +1948,13 @@ int req_quejob(
   pj->ji_internal_id = job_mapper.get_new_id(pj->ji_qs.ji_jobid);
 
   /* link job into server's new jobs list request  */
-  insert_job(&newjobs,pj);
+  insert_job(&newjobs, pj, job_mutex);
 
   if ((version > 1) &&
       (pj->ji_wattr[JOB_ATR_interactive].at_val.at_long))
     {
     // On failure, perform commit work will reply to and free the request
-    if ((rc = perform_commit_work(preq, pj, version)) != PBSE_NONE)
+    if ((rc = perform_commit_work(preq, pj, version, job_mutex)) != PBSE_NONE)
 	  {
       if (rc != PBSE_JOB_RECYCLED)      
 		{
@@ -1964,7 +1967,7 @@ int req_quejob(
           }
 
 	 	int ret;
-    	ret = svr_job_purge(pj);
+    	ret = svr_job_purge(pj, job_mutex);
 		if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
 	  	  {
       	  job_mutex->set_unlock_on_exit(false);
@@ -1980,7 +1983,7 @@ int req_quejob(
     {
     /* reply failed, purge the job and close the connection */
     rc = PBSE_SOCKET_WRITE; /* Re-write reply_jobid to return the error */
-    if (remove_job(&newjobs, pj) == THING_NOT_FOUND)
+    if (remove_job(&newjobs, pj, job_mutex) == THING_NOT_FOUND)
       {
       if (LOGLEVEL >= 8)
         {
@@ -1993,7 +1996,7 @@ int req_quejob(
       }
     
 	int ret;
-    ret = svr_job_purge(pj);
+    ret = svr_job_purge(pj, job_mutex);
 	if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
 	  {
 	  job_mutex->set_unlock_on_exit(false);
@@ -2031,7 +2034,7 @@ int req_jobcredential(
     return rc;
     }
 
-  if (svr_authorize_jobreq(preq, pj) == -1)
+  if (svr_authorize_jobreq(preq, pj) == PBSE_NO_PRIVILEGES)
     {
     rc = PBSE_PERM;
     req_reject(rc, 0, preq, NULL, "job request not authorized");
@@ -2069,7 +2072,7 @@ int write_job_file(
   int         rc = PBSE_NONE;
   std::string adjusted_path_jobs;
 
-  if (svr_authorize_jobreq(preq, pj) == -1)
+  if (svr_authorize_jobreq(preq, pj) == PBSE_NO_PRIVILEGES)
     {
     rc = PBSE_PERM;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
@@ -2248,7 +2251,7 @@ int req_jobscript(
   if (perform_commit == true)
     {
     // On error, preq has been replied to and freed
-    if ((rc = perform_commit_work(preq, pj, 2)) != PBSE_NONE)
+    if ((rc = perform_commit_work(preq, pj, 2, job_mutex)) != PBSE_NONE)
 	  {
 	   if (rc != PBSE_JOB_RECYCLED)      
 		{
@@ -2260,7 +2263,7 @@ int req_jobscript(
           log_err(rc, pj->ji_qs.ji_jobid, log_buf);
           }
 
-		rc = svr_job_purge(pj);
+		rc = svr_job_purge(pj, job_mutex);
 		if (rc == PBSE_NONE || rc == PBSE_JOBNOTFOUND)
 		  {
 		  job_mutex->set_unlock_on_exit(false);
@@ -2482,7 +2485,7 @@ int req_rdytocommit(
     return(rc);
     }
 
-  if (svr_authorize_jobreq(preq, pj) == -1)
+  if (svr_authorize_jobreq(preq, pj) == PBSE_NO_PRIVILEGES)
     {
     rc = PBSE_PERM;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot authorize job req %s",
@@ -2534,7 +2537,8 @@ int req_rdytocommit(
     if ((pj = svr_find_job(jobid, FALSE)) != NULL)
 	  {
 	  int ret;
-      ret = svr_job_purge(pj);
+	  job_mutex->mark_as_locked();
+      ret = svr_job_purge(pj, job_mutex);
 	  if (ret == PBSE_NONE || ret == PBSE_JOBNOTFOUND)
 		{
 		job_mutex->set_unlock_on_exit(false);
@@ -2680,7 +2684,7 @@ int req_commit2(
     return(rc);
     }
 
-  if (svr_authorize_jobreq(preq, pj) == -1)
+  if (svr_authorize_jobreq(preq, pj) == PBSE_NO_PRIVILEGES)
     {
     rc = PBSE_PERM;
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "no permission to start job %s",
@@ -2736,7 +2740,7 @@ int req_commit2(
     {
     /* notify creator where job is */
 
-    issue_track(pj);
+    issue_track(pj, job_mutex);
     }
 
   job_mutex->unlock();
@@ -2792,10 +2796,15 @@ int req_commit(
     return(rc);
     }
 
-  // Perform commit work will reply to preq for us 
-  rc = perform_commit_work(preq, pj, 1);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pj->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	log_err(rc, __func__, "Failed to create managed mutex");
+	return(rc);
+	}
 
-  unlock_ji_mutex(pj, __func__, "", LOGLEVEL);
+  // Perform commit work will reply to preq for us 
+  rc = perform_commit_work(preq, pj, 1, job_mutex);
 
   return(rc);
   }  /* END req_commit() */

@@ -166,7 +166,7 @@ extern void tcp_settimeout(long);
 extern int  schedule_jobs(void);
 extern int  notify_listeners(void);
 extern void svr_shutdown(int);
-extern int  svr_startjob(job *, struct batch_request **, char *, char *);
+extern int  svr_startjob(job *, struct batch_request **, char *, char *, boost::shared_ptr<mutex_mgr>& job_mutex);
 extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
 void stream_eof(int, u_long, uint16_t, int);
@@ -1470,10 +1470,11 @@ void main_loop(void)
   /* save any jobs that need saving */
   while ((pjob = next_job(&alljobs, iter)) != NULL)
     {
+	int rc;
+	boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
     if (pjob->ji_modified)
-      job_save(pjob, SAVEJOB_FULL, 0);
+      job_save(pjob, SAVEJOB_FULL, 0, job_mutex);
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
     }
 
   delete iter;

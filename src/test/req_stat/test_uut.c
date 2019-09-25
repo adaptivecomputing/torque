@@ -6,7 +6,7 @@
 #include "pbs_error.h"
 #include "array.h"
 
-bool in_execution_queue(job *pjob, job_array *pa);
+bool in_execution_queue(job *pjob, job_array *pa, boost::shared_ptr<mutex_mgr>& job_mutex);
 //int stat_to_mom(const char*, struct stat_cntl*);
 
 job *get_next_status_job(struct stat_cntl *cntl, int &job_array_index, job_array *pa, all_jobs_iterator *iter);

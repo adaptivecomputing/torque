@@ -2,10 +2,14 @@
 #define _JOB_RECOV_H
 #include "license_pbs.h" /* See here for the software license */
 #include "job_recovery.h"
+#include "mutex_mgr.hpp"
 
 
-
+#ifdef PBS_MOM
 int job_save(job *pjob, int updatetype, int mom_port);
+#else
+int job_save(job *pjob, int updatetype, int mom_port, boost::shared_ptr<mutex_mgr>& job_mutex);
+#endif
 
 job *job_recov(const char *);
 

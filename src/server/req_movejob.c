@@ -111,8 +111,8 @@ extern char *msg_manager;
 extern char *msg_movejob;
 extern char *pbs_o_host;
 
-int   svr_movejob(job *, char *, int *, struct batch_request *);
-int   svr_chkque(job *, pbs_queue *, char *, int, char *);
+int   svr_movejob(job *, char *, int *, struct batch_request *, boost::shared_ptr<mutex_mgr>& job_mutex);
+int   svr_chkque(job *, pbs_queue *, char *, int, char *, boost::shared_ptr<mutex_mgr>& job_mutex);
 job  *chk_job_request(char *, struct batch_request *);
 
 /*
@@ -184,7 +184,7 @@ int req_movejob(
     return(PBSE_NONE);
     }
 
-  switch (svr_movejob(jobp, req->rq_ind.rq_move.rq_destin, &local_errno, req))
+  switch (svr_movejob(jobp, req->rq_ind.rq_move.rq_destin, &local_errno, req, job_mutex))
     {
 
     case 0:
@@ -275,7 +275,7 @@ int req_orderjob(
   boost::shared_ptr<mutex_mgr> job2_mutex = create_managed_mutex(pjob2->ji_mutex, true, rc);
   if (rc != PBSE_NONE)
 	 {
-	 sprintf(log_buf, "failed to allocate mutex for pjob2: %s", pjob1->ji_qs.ji_jobid);
+	 sprintf(log_buf, "failed to allocate mutex for pjob2: %s", pjob2->ji_qs.ji_jobid);
 	 log_err(rc, __func__, log_buf);
      req_reject(rc, 0, req, NULL, log_buf);
 	 return(rc);
@@ -312,7 +312,7 @@ int req_orderjob(
     /* jobs are in different queues */
     int ok = FALSE;
 
-    if ((pque2 = get_jobs_queue(&pjob2)) == NULL)
+    if ((pque2 = get_jobs_queue(&pjob2, job2_mutex )) == NULL)
       {
       rc = PBSE_BADSTATE;
       if (pjob2 == NULL)
@@ -328,12 +328,12 @@ int req_orderjob(
 		return rc;
 		}
 
-      if ((rc = svr_chkque(pjob1, pque2, get_variable(pjob1, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
+      if ((rc = svr_chkque(pjob1, pque2, get_variable(pjob1, pbs_o_host), MOVE_TYPE_Order, NULL, job1_mutex)) == PBSE_NONE)
         {
         reservation1 = have_reservation(pjob1, pque2);
         pque2_mutex->unlock();
 
-        if ((pque1 = get_jobs_queue(&pjob1)) == NULL)
+        if ((pque1 = get_jobs_queue(&pjob1, job1_mutex)) == NULL)
           {
           rc = PBSE_BADSTATE;
           if (pjob1 == NULL)
@@ -349,7 +349,7 @@ int req_orderjob(
 			return rc;
 			}
 
-          if ((rc = svr_chkque(pjob2, pque1, get_variable(pjob2, pbs_o_host), MOVE_TYPE_Order, NULL)) == PBSE_NONE)
+          if ((rc = svr_chkque(pjob2, pque1, get_variable(pjob2, pbs_o_host), MOVE_TYPE_Order, NULL, job2_mutex)) == PBSE_NONE)
             {
             reservation2 = have_reservation(pjob2, pque1);
             ok = TRUE;
@@ -380,24 +380,22 @@ int req_orderjob(
     strcpy(pjob1->ji_qs.ji_queue, pjob2->ji_qs.ji_queue);
     strcpy(pjob2->ji_qs.ji_queue, tmpqn);
 
-    svr_dequejob(pjob1, FALSE);
-    svr_dequejob(pjob2, FALSE);
+    svr_dequejob(pjob1, FALSE, job1_mutex);
+    svr_dequejob(pjob2, FALSE, job2_mutex);
 
-    if (svr_enquejob(pjob1, FALSE, NULL, reservation1, false) == PBSE_JOB_RECYCLED)
+    if (svr_enquejob(pjob1, FALSE, NULL, reservation1, false, job1_mutex) == PBSE_JOB_RECYCLED)
       {
       pjob1 = NULL;
-      job1_mutex->set_unlock_on_exit(false);
       }
 
-    if (svr_enquejob(pjob2, FALSE, NULL, reservation2, false) == PBSE_JOB_RECYCLED)
+    if (svr_enquejob(pjob2, FALSE, NULL, reservation2, false, job2_mutex) == PBSE_JOB_RECYCLED)
       {
       pjob2 = NULL;
-      job2_mutex->set_unlock_on_exit(false);
       }
     }
   else
     {
-    if ((pque1 = get_jobs_queue(&pjob1)) != NULL)
+    if ((pque1 = get_jobs_queue(&pjob1, job1_mutex)) != NULL)
       {
       boost::shared_ptr<mutex_mgr> pque1_mutex = create_managed_mutex(pque1->qu_mutex, true, rc);
 	  if (rc != PBSE_NONE)
@@ -414,12 +412,12 @@ int req_orderjob(
   /* need to update disk copy of both jobs to save new order */
   if (pjob1 != NULL)
     {
-    job_save(pjob1, SAVEJOB_FULL, 0);
+    job_save(pjob1, SAVEJOB_FULL, 0, job1_mutex);
     }
 
   if (pjob2 != NULL)
     {
-    job_save(pjob2, SAVEJOB_FULL, 0);
+    job_save(pjob2, SAVEJOB_FULL, 0, job2_mutex);
     }
 
   /* SUCCESS */

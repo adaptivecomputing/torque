@@ -87,6 +87,7 @@
 #include "server_limits.h" /* PBS_NUMJOBSTATE */
 #include "attribute.h" /* attribute_def, pbs_attribute */
 #include "user_info.h"
+#include "mutex_mgr.hpp"
 
 #define INITIAL_QUEUE_SIZE 5
 
@@ -267,17 +268,17 @@ void garbage_collect_recycling();
 pbs_queue *find_queuebyname(const char *quename);
 pbs_queue *que_alloc(const char *name, int sv_qs_mutex_held);
 int   count_user_queued_jobs(pbs_queue *,char *);
-int   svr_chkque(job *, pbs_queue *, char *, int, char *);
-int   default_router(job *, pbs_queue *, long);
-int   site_alt_router(job *, pbs_queue *, long);
+int   svr_chkque(job *, pbs_queue *, char *, int, char *, boost::shared_ptr<mutex_mgr>& job_mutex);
+int   default_router(job *, pbs_queue *, long, boost::shared_ptr<mutex_mgr>& job_mutex);
+int   site_alt_router(job *, pbs_queue *, long, boost::shared_ptr<mutex_mgr>& job_mutex);
 int   site_acl_check(job *, pbs_queue *);
-void  set_chkpt_deflt(job *, pbs_queue *);
+void  set_chkpt_deflt(job *, pbs_queue *, boost::shared_ptr<mutex_mgr>& job_mutex );
 
 extern all_queues svr_queues;
 
 struct job;
 
-pbs_queue *lock_queue_with_job_held(pbs_queue *pque, struct job **pjob_ptr);
+pbs_queue *lock_queue_with_job_held(pbs_queue *pque, struct job **pjob_ptr, boost::shared_ptr<mutex_mgr>& job_mutex);
 int lock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging);
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging);
 pbs_queue *next_queue(all_queues *,all_queues_iterator *);

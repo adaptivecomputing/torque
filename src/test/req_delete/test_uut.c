@@ -26,7 +26,7 @@ void ensure_deleted(struct work_task *ptask);
 int  apply_job_delete_nanny(job *pjob, int delay);
 void job_delete_nanny(struct work_task *ptask);
 void post_job_delete_nanny(batch_request *preq_sig);
-int forced_jobpurge(job *pjob, batch_request *preq);
+int forced_jobpurge(job *pjob, batch_request *preq, boost::shared_ptr<mutex_mgr>& job_mutex);
 void post_delete_mom2(struct work_task *pwt);
 int handle_delete_all(batch_request *preq, char *Msg);
 int handle_single_delete(batch_request *preq, char *Msg);
@@ -143,21 +143,23 @@ START_TEST(test_forced_jobpurge)
   {
   job           *pjob;
   batch_request *preq;
+  int rc;
 
   pjob = new job();
   preq = new batch_request();
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
   memset(pjob->ji_arraystructid, 0, sizeof(pjob->ji_arraystructid));
 
+  boost::shared_ptr<mutex_mgr>& job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc); 
   preq->rq_extend = strdup(delpurgestr);
   nanny = 0;
-  fail_unless(forced_jobpurge(pjob, preq) == -1);
+  fail_unless(forced_jobpurge(pjob, preq, job_mutex) == -1);
 
   preq->rq_perm = ATR_DFLAG_MGRD;
-  fail_unless(forced_jobpurge(pjob, preq) == PURGE_SUCCESS);
+  fail_unless(forced_jobpurge(pjob, preq, job_mutex) == PURGE_SUCCESS);
  
   preq->rq_extend = NULL;
-  fail_unless(forced_jobpurge(pjob, preq) == PBSE_NONE);
+  fail_unless(forced_jobpurge(pjob, preq, job_mutex) == PBSE_NONE);
 
   nanny = 1;
   }

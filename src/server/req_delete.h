@@ -6,11 +6,11 @@
 #include "work_task.h" /* work_task */
 #include "batch_request.h" /* batch_request */
 
-void remove_stagein(job **pjob);
+void remove_stagein(job **pjob, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 void ensure_deleted(struct work_task *ptask);
 
-int execute_job_delete(job *pjob, char *Msg, struct batch_request *preq);
+int execute_job_delete(job *pjob, char *Msg, struct batch_request *preq, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 int req_deletejob(struct batch_request *preq);
 
@@ -22,6 +22,6 @@ void purge_completed_jobs(struct batch_request *preq);
 
 int is_ms_on_server(const job *pjob);
 
-void setup_apply_job_delete_nanny(job *pjob, time_t  time_now);
+void setup_apply_job_delete_nanny(job *pjob, time_t  time_now, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 #endif /* _REQ_DELETE_H */

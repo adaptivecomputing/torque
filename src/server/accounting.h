@@ -6,11 +6,11 @@
 
 /* static char *acct_job(job *pjob, char **Buf, unsigned int *BufSize); */
 
-void account_record(int acctype, job *pjob, const char *text);
+void account_record(int acctype, job *pjob, const char *text, boost::shared_ptr<mutex_mgr>& job_mutex);
 
-void account_jobstr(job *pjob);
+void account_jobstr(job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex);
 
-void account_jobend(job *pjob, char *used);
+void account_jobend(job *pjob, char *used, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 void acct_cleanup(long days_to_keep);
 

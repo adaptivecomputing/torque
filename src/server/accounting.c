@@ -143,7 +143,8 @@ extern int       LOGLEVEL;
 int acct_job(
 
   job            *pjob, /* I */
-  std::string&    ds)   /* O */
+  std::string&    ds,   /* O */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int         resc_access_perm = READ_ONLY;
@@ -189,7 +190,7 @@ int acct_job(
     pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str);
   ds += local_buf;
 
-  if ((pque = get_jobs_queue(&pjob)) != NULL)
+  if ((pque = get_jobs_queue(&pjob, job_mutex)) != NULL)
     {
     /* queue name */
     sprintf(local_buf, "queue=%s ", pque->qu_qs.qu_name);
@@ -434,7 +435,8 @@ void account_record(
 
   int         acctype, /* accounting record type */
   job        *pjob,
-  const char *text)  /* text to log, may be null */
+  const char *text,  /* text to log, may be null */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   time_t     time_now = time(NULL);
@@ -488,14 +490,15 @@ void account_record(
 
 void account_jobstr(
 
-  job *pjob)
+  job *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex )
 
   {
   std::string ds = "";
 
-  acct_job(pjob, ds);
+  acct_job(pjob, ds, job_mutex);
 
-  account_record(PBS_ACCT_RUN, pjob, ds.c_str());
+  account_record(PBS_ACCT_RUN, pjob, ds.c_str(), job_mutex);
 
   return;
   }  /* END account_jobstr() */
@@ -516,7 +519,8 @@ void account_jobstr(
 void add_procs_and_nodes_used(
 
   job         &pjob,
-  std::string &acct_data)
+  std::string &acct_data,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   if (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
@@ -577,7 +581,8 @@ void add_procs_and_nodes_used(
 void account_jobend(
 
   job         *pjob,
-  std::string &used) /* job usage information, see req_jobobit() */
+  std::string &used, /* job usage information, see req_jobobit() */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   std::string ds = "";
@@ -587,7 +592,7 @@ void account_jobend(
   long                walltime_val = 0;
 #endif
 
-  if ((acct_job(pjob, ds)) != PBSE_NONE)
+  if ((acct_job(pjob, ds, job_mutex)) != PBSE_NONE)
     {
     return;
     }
@@ -607,7 +612,7 @@ void account_jobend(
     ds += local_buf;
     }
 
-  add_procs_and_nodes_used(*pjob, ds);
+  add_procs_and_nodes_used(*pjob, ds, job_mutex);
 
   /* add the execution end time */
 #ifdef USESAVEDRESOURCES
@@ -643,7 +648,7 @@ void account_jobend(
   /* finally add on resources used from req_jobobit() */
   ds += used;
 
-  account_record(PBS_ACCT_END, pjob, ds.c_str());
+  account_record(PBS_ACCT_END, pjob, ds.c_str(), job_mutex);
 
   return;
   }  /* END account_jobend() */

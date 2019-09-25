@@ -85,7 +85,7 @@ int         is_num(const char *);
 int         array_request_token_count(const char *);
 int         array_request_parse_token(char *, int *, int *);
 job_array  *next_array_check(int *, job_array *);
-void        force_purge_work(job *pjob);
+void        force_purge_work(job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 #define     BUFSIZE 256
 
@@ -1068,7 +1068,11 @@ int array_delete(
     {
     job *pjob;
     if ((pjob = svr_find_job(pa->ai_qs.parent_id, FALSE)) != NULL)
-      svr_job_purge(pjob);
+	  {
+	  int rc;
+	  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+      svr_job_purge(pjob, job_mutex);
+	  }
     }
 
   /* free the memory allocated for the struct */
@@ -1138,7 +1142,8 @@ int set_slot_limit(
 
 int setup_array_struct(
     
-  job *pjob)
+  job *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   job_array          *pa;
@@ -1161,7 +1166,7 @@ int setup_array_struct(
 	return(PBSE_MUTEX);
 	}
 
-  if (job_save(pjob, SAVEJOB_FULL, 0) != 0)
+  if (job_save(pjob, SAVEJOB_FULL, 0, job_mutex) != 0)
     {
     /* the array is deleted in svr_job_purge */
     pa_mutex->unlock();
@@ -1170,7 +1175,7 @@ int setup_array_struct(
     if (LOGLEVEL >= 6)
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "cannot save job");
 
-    svr_job_purge(pjob);
+    svr_job_purge(pjob, job_mutex);
     delete pa;
 
     return(1);
@@ -1434,7 +1439,7 @@ int delete_array_range(
       }
     else
       {
-      boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+      boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
 	  if (rc != PBSE_NONE)
 		{
 		char log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1460,7 +1465,7 @@ int delete_array_range(
 
         try
           {
-          force_purge_work(pjob);
+          force_purge_work(pjob, job_mutex);
           }
         catch (int err)
           {
@@ -1474,10 +1479,10 @@ int delete_array_range(
           }
         }
       else
-        deleted = attempt_delete(pjob);
+        deleted = attempt_delete(pjob, job_mutex);
       
       // Both attempt_delete and force_purge_work unlock pjob
-      pjob_mutex->set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
       pthread_mutex_lock(pa->ai_mutex);
 
       if (deleted == false)
@@ -1572,7 +1577,7 @@ int delete_whole_array(
       }
     else
       {
-      boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+      boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
 	  if (rc != PBSE_NONE)
 		{
 		log_err(rc, __func__, "Failed to allocate job mutex");
@@ -1600,7 +1605,7 @@ int delete_whole_array(
 
         try
           {
-          force_purge_work(pjob);
+          force_purge_work(pjob, job_mutex);
           }
         catch (int err)
           {
@@ -1614,10 +1619,10 @@ int delete_whole_array(
           }
         }
       else
-        deleted = attempt_delete(pjob);
+        deleted = attempt_delete(pjob, job_mutex);
 
       /* we come out of attempt_delete unlocked */
-      pjob_mutex->set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
 
       if (deleted == false)
         {
@@ -1703,8 +1708,9 @@ int hold_array_range(
         }
       else
         {
-        hold_job(temphold,pjob);
-        unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+		int rc;
+		boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+        hold_job(temphold,pjob, job_mutex);
         }
       }
     }
@@ -1757,7 +1763,7 @@ int release_array_range(
       }
     else
       {
-      boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+      boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
 	  if (rc != PBSE_NONE)
 		{
 		char log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1767,7 +1773,7 @@ int release_array_range(
 		return rc;
 		}
 
-      if ((rc = release_job(preq, pjob, pa)))
+      if ((rc = release_job(preq, pjob, pa, job_mutex)))
         {
         return(rc);
         }
@@ -1820,7 +1826,7 @@ int modify_array_range(
         {
         batch_request array_req(*preq);
         array_req.update_object_id(index);
-        boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+        boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
  	    if (rc != PBSE_NONE)
 		  {
 		  char log_buf[LOCAL_LOG_BUF_SIZE];
@@ -1833,21 +1839,21 @@ int modify_array_range(
 
         pthread_mutex_unlock(pa->ai_mutex);
         array_req.rq_noreply = true;
-        modify_job((void **)&pjob, plist, &array_req, checkpoint_req, NO_MOM_RELAY);
-        pa = get_jobs_array(&pjob);
+        modify_job((void **)&pjob, plist, &array_req, checkpoint_req, NO_MOM_RELAY, job_mutex);
+        pa = get_jobs_array(&pjob, job_mutex);
 
         if (pa == NULL)
           {
           array_gone = true;
 
           if (pjob == NULL)
-            pjob_mutex->set_unlock_on_exit(false);
+            job_mutex->set_unlock_on_exit(false);
           break;
           }
         
         if (pjob == NULL)
           {
-          pjob_mutex->set_unlock_on_exit(false);
+          job_mutex->set_unlock_on_exit(false);
           pa->job_ids[i] = NULL;
           }
         }
@@ -1925,6 +1931,8 @@ void release_slot_hold(
  * @param held - the job pointer whose mutex we're holding
  * @param candidates - a vector of job ids that could have holds released
  * @return PBSE_NONE
+ *
+ * @note update_slot_values does not need a managed mutex for now
  */
 
 int update_slot_values(
@@ -1985,15 +1993,17 @@ int update_slot_values(
 int check_array_slot_limits(
 
   job       *pjob,
-  job_array *pa_held)
+  job_array *pa_held,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   std::vector<std::string>  candidates;
   job_array                *pa;
+  int						rc;
 
   if (pa_held == NULL)
     {
-    pa = get_jobs_array(&pjob);
+    pa = get_jobs_array(&pjob, job_mutex);
 
     if (pa == NULL)
       {
@@ -2006,17 +2016,11 @@ int check_array_slot_limits(
   else
     pa = pa_held;
 
-  int rc;
-  boost::shared_ptr<mutex_mgr> array_mgr = create_managed_mutex(pa->ai_mutex, true, rc);
-  if (rc != PBSE_NONE)
-	{
-	log_err(rc, __func__, "failed to allocate array_mgr mutex");
-	return rc;
-	}
-
-  // Don't unlock the array if we held it coming in
+  boost::shared_ptr<mutex_mgr> array_mutex = create_managed_mutex(pa->ai_mutex, true, rc);
   if (pa_held != NULL)
-    array_mgr->set_unlock_on_exit(false);
+	{
+	array_mutex->set_unlock_on_exit(false);
+	}
 
   if (pa->ai_qs.slot_limit != NO_SLOT_LIMIT)
     {
@@ -2050,6 +2054,7 @@ int check_array_slot_limits(
           }
         else
           {
+		  int rc;
           boost::shared_ptr<mutex_mgr> pj_mutex = create_managed_mutex(pj->ji_mutex, true, rc);
    	      if (rc != PBSE_NONE)
 		 	{
@@ -2080,7 +2085,10 @@ int check_array_slot_limits(
       }
 
     if (jobs_currently_running != pa->ai_qs.jobs_running)
+	  {
+	  // Do not pass job_mutex or mutex_mgr to update_slot_values
       update_slot_values(pa, jobs_currently_running, number_queued, pjob, candidates);
+	  }
     }
 
   return(PBSE_NONE);
@@ -2176,7 +2184,7 @@ void update_array_statuses()
     if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
       {
 	  int rc;
-      boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+      boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
       if (rc != PBSE_NONE)
 	 	{
 	    char log_buf[LOCAL_LOG_BUF_SIZE];
@@ -2188,17 +2196,17 @@ void update_array_statuses()
 
      if (running > 0)
         {
-        svr_setjobstate(pjob, JOB_STATE_RUNNING, pjob->ji_qs.ji_substate, FALSE);
+        svr_setjobstate(pjob, JOB_STATE_RUNNING, pjob->ji_qs.ji_substate, FALSE, job_mutex);
         }
       else if ((complete > 0) && 
                (queued == 0))
         {
-        svr_setjobstate(pjob, JOB_STATE_COMPLETE, pjob->ji_qs.ji_substate, FALSE);
+        svr_setjobstate(pjob, JOB_STATE_COMPLETE, pjob->ji_qs.ji_substate, FALSE, job_mutex);
         }
       else 
         {
         /* default to just calling the array queued */
-        svr_setjobstate(pjob, JOB_STATE_QUEUED, pjob->ji_qs.ji_substate, FALSE);
+        svr_setjobstate(pjob, JOB_STATE_QUEUED, pjob->ji_qs.ji_substate, FALSE, job_mutex);
         }
       }
     } /* END for each array */

@@ -132,18 +132,18 @@
 
 /* External functions called */
 
-extern void remove_stagein(job **);
-extern void remove_checkpoint(job **);
-extern int  job_route(job *);
+extern void remove_stagein(job **, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern void remove_checkpoint(job **, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern int  job_route(job *, boost::shared_ptr<mutex_mgr>&);
 int PBSD_commit_get_sid(int ,long *,char *);
 int get_job_file_path(job *,enum job_file, char *, int);
-void add_dest(job *jobp);
+void add_dest(job *jobp, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 
 
 /* Private Functions local to this file */
 
-int  local_move(job *, int *, struct batch_request *);
+int  local_move(job *, int *, struct batch_request *, boost::shared_ptr<mutex_mgr>& job_mutex);
 int should_retry_route(int err);
 
 /* Global Data */
@@ -170,7 +170,7 @@ extern time_t            pbs_tcp_timeout;
 extern int               LOGLEVEL;
 extern bool              cpy_stdout_err_on_rerun;
 
-int net_move(job *, struct batch_request *);
+int net_move(job *, struct batch_request *, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 /* have_reservation - See if we have queue restrictions on max_queuable or 
    max_user_queuable. 
@@ -217,7 +217,8 @@ int svr_movejob(
   job                  *jobp,
   char                 *destination,
   int                  *my_err,
-  struct batch_request *req)
+  struct batch_request *req,
+  boost::shared_ptr<mutex_mgr>& job_mutex )
 
   {
   pbs_net_t     destaddr;
@@ -268,10 +269,10 @@ int svr_movejob(
 
   if (local != 0)
     {
-    return(local_move(jobp, my_err, req));
+    return(local_move(jobp, my_err, req, job_mutex));
     }
 
-  return(net_move(jobp, req));
+  return(net_move(jobp, req, job_mutex));
   }  /* svr_movejob() */
 
 
@@ -292,7 +293,8 @@ int local_move(
 
   job                  *pjob,
   int                  *my_err,
-  struct batch_request *req)
+  struct batch_request *req,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   pbs_queue *dest_que = NULL;
@@ -334,7 +336,7 @@ int local_move(
     }
 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
-  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+  job_mutex->unlock();
 
   dest_que = find_queuebyname(destination);
   if (dest_que == NULL)
@@ -358,11 +360,14 @@ int local_move(
   if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
     {
     /* job disappeared while locking queue */
+	job_mutex->set_unlock_on_exit(false);
     return(PBSE_JOB_RECYCLED);
     }
 
+  job_mutex->mark_as_locked();
+
   /* check the destination */
-  if ((*my_err = svr_chkque(pjob, dest_que, get_variable(pjob, pbs_o_host), mtype, NULL)))
+  if ((*my_err = svr_chkque(pjob, dest_que, get_variable(pjob, pbs_o_host), mtype, NULL, job_mutex)))
     {
     /* should this queue be retried? */
     return(should_retry_route(*my_err));
@@ -372,7 +377,7 @@ int local_move(
   /* dequeue job from present queue, update destination and */
   /* queue_rank for new queue and enqueue into destination  */
   dest_que_mutex->unlock();
-  rc = svr_dequejob(pjob, FALSE); 
+  rc = svr_dequejob(pjob, FALSE, job_mutex); 
   if (rc)
     return(rc);
 
@@ -381,7 +386,7 @@ int local_move(
   if (!(pjob->ji_wattr[JOB_ATR_qrank].at_flags & ATR_VFLAG_SET))
     pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
     
-  if ((*my_err = svr_enquejob(pjob, FALSE, NULL, reservation, false)) == PBSE_JOB_RECYCLED)
+  if ((*my_err = svr_enquejob(pjob, FALSE, NULL, reservation, false, job_mutex)) == PBSE_JOB_RECYCLED)
     return(-1);
 
   if (*my_err != PBSE_NONE)
@@ -393,7 +398,7 @@ int local_move(
     {
     pjob->ji_lastdest = 0; /* reset in case of another route */
     
-    job_save(pjob, SAVEJOB_FULL, 0);
+    job_save(pjob, SAVEJOB_FULL, 0, job_mutex);
     }
 
   return(PBSE_NONE);
@@ -405,7 +410,8 @@ int local_move(
 void finish_routing_processing(
 
   job *pjob,
-  int  status)
+  int  status,
+  boost::shared_ptr<mutex_mgr> job_mutex)
 
   {
   int          newstate;
@@ -422,15 +428,15 @@ void finish_routing_processing(
     case LOCUTION_SUCCESS:  /* normal return, job was routed */
 
       if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
-        remove_stagein(&pjob);
+        remove_stagein(&pjob, job_mutex);
 
       if (pjob != NULL)
         {
         if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
-          remove_checkpoint(&pjob);
+          remove_checkpoint(&pjob, job_mutex);
 
         if (pjob != NULL)
-          svr_job_purge(pjob); /* need to remove server job struct */
+          svr_job_purge(pjob, job_mutex); /* need to remove server job struct */
         }
 
       break;
@@ -440,35 +446,34 @@ void finish_routing_processing(
       if (pjob->ji_qs.ji_substate == JOB_SUBSTATE_ABORT)
         {
         /* job delete in progress, just set to queued status */
-        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
+        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE, job_mutex);
         
-        svr_mailowner(pjob, 'a', TRUE, "Couldn't route job to remote server");
+        svr_mailowner(pjob, 'a', TRUE, "Couldn't route job to remote server", job_mutex);
 
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	    job_mutex->unlock();
 
         return;
         }
 
-      add_dest(pjob);  /* else mark destination as bad */
+      add_dest(pjob, job_mutex);  /* else mark destination as bad */
 
       /* fall through */
 
     default: /* try routing again */
        
-      svr_mailowner(pjob, 'a', TRUE, "Couldn't route job to remote server");
+      svr_mailowner(pjob, 'a', TRUE, "Couldn't route job to remote server", job_mutex);
 
       /* force re-eval of job state out of Transit */
 
-      svr_evaljobstate(*pjob, newstate, newsub, 1);
-      svr_setjobstate(pjob, newstate, newsub, FALSE);
+      svr_evaljobstate(*pjob, newstate, newsub, 1, job_mutex);
+      svr_setjobstate(pjob, newstate, newsub, FALSE, job_mutex);
 
-      if ((status = job_route(pjob)) == PBSE_ROUTEREJ)
-        job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
+      if ((status = job_route(pjob, job_mutex)) == PBSE_ROUTEREJ)
+        job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ), job_mutex, false);
       else if (status != 0)
-        job_abt(&pjob, msg_routexceed);
+        job_abt(&pjob, msg_routexceed, job_mutex, false);
       else
-        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-
+		job_mutex->unlock();
 
       break;
     }  /* END switch (status) */
@@ -484,7 +489,8 @@ void finish_moving_processing(
 
   job                  *pjob,
   struct batch_request *req,
-  int                   status)
+  int                   status,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char         log_buf[LOCAL_LOG_BUF_SIZE];
@@ -502,7 +508,10 @@ void finish_moving_processing(
     }
 
   if (pjob == NULL)
+	{
+	job_mutex->set_unlock_on_exit(false);
     return;
+	}
 
   switch (status)
     {
@@ -510,12 +519,12 @@ void finish_moving_processing(
 
       /* purge server's job structure */
       if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn)
-        remove_stagein(&pjob);
+        remove_stagein(&pjob, job_mutex);
 
       if (pjob != NULL)
         {
         if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_COPIED)
-          remove_checkpoint(&pjob);
+          remove_checkpoint(&pjob, job_mutex);
         }
 
       snprintf(log_buf, sizeof(log_buf), "%s", msg_movejob);
@@ -523,7 +532,7 @@ void finish_moving_processing(
         req->rq_ind.rq_move.rq_destin, req->rq_user, req->rq_host);
 
       if (pjob != NULL)
-        svr_job_purge(pjob);
+        svr_job_purge(pjob, job_mutex);
     
       reply_ack(req);
 
@@ -536,10 +545,10 @@ void finish_moving_processing(
       if (pjob != NULL)
         {
         /* force re-eval of job state out of Transit */
-        svr_evaljobstate(*pjob, newstate, newsub, 1);
-        svr_setjobstate(pjob, newstate, newsub, FALSE);
+        svr_evaljobstate(*pjob, newstate, newsub, 1, job_mutex);
+        svr_setjobstate(pjob, newstate, newsub, FALSE, job_mutex);
    
-        unlock_ji_mutex(pjob, __func__, "3", LOGLEVEL);
+		job_mutex->unlock();
         }
 
       req_reject(status, 0, req, NULL, NULL);
@@ -596,12 +605,12 @@ void finish_move_process(
       {
       case MOVE_TYPE_Move:
 
-        finish_moving_processing(pjob, preq, status);
+        finish_moving_processing(pjob, preq, status, job_mutex);
         break;
         
       case MOVE_TYPE_Route:
 
-        finish_routing_processing(pjob, status);
+        finish_routing_processing(pjob, status, job_mutex);
         break;
         
       case MOVE_TYPE_Exec:
@@ -652,7 +661,8 @@ void free_server_attrs(
 int get_job_script_path(
 
   job         *pjob,
-  std::string &script_path)
+  std::string &script_path,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   // get the adjusted path to the script
@@ -660,7 +670,7 @@ int get_job_script_path(
 
   if (pjob->ji_arraystructid[0] != '\0')
     {
-    job_array *pa = get_jobs_array(&pjob);
+    job_array *pa = get_jobs_array(&pjob, job_mutex);
 
     if (pa != NULL)
       {
@@ -752,7 +762,7 @@ int update_substate_if_needed(
 	  	}
 
      pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUT;
-      job_save(pjob, SAVEJOB_QUICK, 0);
+      job_save(pjob, SAVEJOB_QUICK, 0, job_mutex);
       }
     else
       {
@@ -902,9 +912,10 @@ int attempt_to_queue_job_on_mom(
 
   if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
     {
+	boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
     pjob->ji_qs.ji_substate = JOB_SUBSTATE_TRNOUTCM;      
-    job_save(pjob, SAVEJOB_QUICK, 0);
-    unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
+    job_save(pjob, SAVEJOB_QUICK, 0, job_mutex);
+	job_mutex->unlock();
     }
   else
     return(LOCUTION_FAIL);
@@ -1378,7 +1389,7 @@ int send_job_work(
     encode_type = ATR_ENCODE_SVR;
 
     /* clear default resource settings */
-    ret = svr_dequejob(pjob, FALSE);
+    ret = svr_dequejob(pjob, FALSE, job_mutex);
     if (ret)
       {
       job_mutex->set_unlock_on_exit(false);
@@ -1388,7 +1399,7 @@ int send_job_work(
 
   encode_attributes(attrl, pjob, resc_access_perm, encode_type);
 
-  rc = get_job_script_path(pjob, script_name);
+  rc = get_job_script_path(pjob, script_name, job_mutex);
 
   if (rc != PBSE_NONE)
     {
@@ -1593,7 +1604,8 @@ void *send_job(
 int net_move(
 
   job                  *jobp,
-  struct batch_request *req)
+  struct batch_request *req,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   void             *data;
@@ -1631,7 +1643,7 @@ int net_move(
     data      = NULL;
     }
 
-  svr_setjobstate(jobp, JOB_STATE_TRANSIT, JOB_SUBSTATE_TRNOUT, TRUE);
+  svr_setjobstate(jobp, JOB_STATE_TRANSIT, JOB_SUBSTATE_TRNOUT, TRUE, job_mutex);
 
   args = new send_job_request();
 

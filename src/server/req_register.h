@@ -14,7 +14,7 @@ int req_registerarray(struct batch_request *preq);
 
 int register_array_depend(job_array *pa, struct batch_request *preq, int type, int num_jobs);
 
-int depend_on_exec(job *pjob);
+int depend_on_exec(job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 void depend_clrrdy(job *pjob);
 

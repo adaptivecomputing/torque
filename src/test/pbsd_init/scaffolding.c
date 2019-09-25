@@ -327,7 +327,7 @@ void initialize_all_jobs_array(all_jobs *aj)
   exit(1);
   }
 
-int job_abt(struct job **pjobp, const char *text, bool b=false)
+int job_abt(struct job **pjobp, const char *text, boost::shared_ptr<mutex_mgr>& job_mutex, bool b=false)
   {
   aborted++;
   return(0);
@@ -672,7 +672,7 @@ const char *id_map::get_name(int id)
   return 0;
   }
 
-void rel_resc(job *pjob) {}
+void rel_resc(job *pjob, job_mutex) {}
 
 void mom_hierarchy_handler::initialLoadHierarchy() {}
 

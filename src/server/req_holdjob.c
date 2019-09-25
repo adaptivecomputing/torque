@@ -242,7 +242,7 @@ int req_holdjob(
 
     batch_request dup_req(*preq);
     
-    if ((rc = relay_to_mom(&pjob, &dup_req, NULL)) != PBSE_NONE)
+    if ((rc = relay_to_mom(&pjob, &dup_req, NULL, job_mutex)) != PBSE_NONE)
       {
       *hold_val = old_hold;  /* reset to the old value */
       req_reject(rc, 0, preq, NULL, "relay to mom failed");
@@ -256,7 +256,7 @@ int req_holdjob(
         {
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN | JOB_SVFLG_CHECKPOINT_FILE;
         
-        job_save(pjob, SAVEJOB_QUICK, 0);
+        job_save(pjob, SAVEJOB_QUICK, 0, job_mutex);
         
         /* fill in log_buf again, since relay_to_mom changed it */
         sprintf(log_buf, msg_jobholdset, pset, preq->rq_user, preq->rq_host);
@@ -297,9 +297,9 @@ int req_holdjob(
       /* indicate attributes changed     */
       pjob->ji_modified = 1;
 
-      svr_evaljobstate(*pjob, newstate, newsub, 0);
+      svr_evaljobstate(*pjob, newstate, newsub, 0, job_mutex);
 
-      svr_setjobstate(pjob, newstate, newsub, FALSE);
+      svr_setjobstate(pjob, newstate, newsub, FALSE, job_mutex);
       }
 
     reply_ack(preq);
@@ -349,7 +349,7 @@ void *req_checkpointjob(
 
     batch_request dup_req(*preq);
 
-    if ((rc = relay_to_mom(&pjob, &dup_req, NULL)) != PBSE_NONE)
+    if ((rc = relay_to_mom(&pjob, &dup_req, NULL, job_mutex)) != PBSE_NONE)
       {
       req_reject(rc, 0, preq, NULL, NULL);
 
@@ -362,7 +362,7 @@ void *req_checkpointjob(
         {
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_CHECKPOINT_FILE;
         
-        job_save(pjob, SAVEJOB_QUICK, 0);
+        job_save(pjob, SAVEJOB_QUICK, 0, job_mutex);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
         unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
         pjob = NULL;
@@ -396,7 +396,8 @@ int release_job(
 
   struct batch_request *preq, /* I */
   void                 *j,    /* I/O */
-  job_array            *pa)   /* I */
+  job_array            *pa,   /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   long           old_hold;
@@ -439,7 +440,7 @@ int release_job(
   if (pjob->ji_arraystructid[0] != '\0')
     {
     // Make sure our slot limit counts are correct
-    check_array_slot_limits(pjob, pa);
+    check_array_slot_limits(pjob, pa, job_mutex);
     }
 
   /* everything went well, if holds changed, update the job state */
@@ -448,9 +449,9 @@ int release_job(
     {
     pjob->ji_modified = 1; /* indicates attributes changed */
 
-    svr_evaljobstate(*pjob, newstate, newsub, 0);
+    svr_evaljobstate(*pjob, newstate, newsub, 0, job_mutex);
 
-    svr_setjobstate(pjob, newstate, newsub, FALSE); /* saves job */
+    svr_setjobstate(pjob, newstate, newsub, FALSE, job_mutex); /* saves job */
     sprintf(log_buf, msg_jobholdrel,
         pset,
         preq->rq_user,
@@ -506,7 +507,7 @@ int req_releasejob(
 	return rc;
 	}
 
-  if ((rc = release_job(preq, pjob, NULL)) != 0)
+  if ((rc = release_job(preq, pjob, NULL, job_mutex)) != 0)
     {
     req_reject(rc,0,preq,NULL,NULL);
     }
@@ -549,7 +550,7 @@ int release_whole_array(
 		return(rc);
 		}
 
-      if ((rc = release_job(preq, pjob, pa)) != 0)
+      if ((rc = release_job(preq, pjob, pa, job_mutex)) != 0)
         return(rc);
       }
     }
@@ -610,7 +611,7 @@ int req_releasearray(
 	return(rc);
 	}
 	
-  if (svr_authorize_jobreq(preq, pjob) == -1)
+  if (svr_authorize_jobreq(preq, pjob) == PBSE_NO_PRIVILEGES)
     {
     req_reject(PBSE_PERM,0,preq,NULL,NULL);
     return(PBSE_NONE);
@@ -770,8 +771,8 @@ void process_hold_reply(
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;  /* reset it */
       
       pjob->ji_modified = 1;    /* indicate attributes changed */
-      svr_evaljobstate(*pjob, newstate, newsub, 0);
-      svr_setjobstate(pjob, newstate, newsub, FALSE); /* saves job */
+      svr_evaljobstate(*pjob, newstate, newsub, 0, job_mutex);
+      svr_setjobstate(pjob, newstate, newsub, FALSE, job_mutex); /* saves job */
       
       if (preq->rq_reply.brp_code != PBSE_NOSUP)
         {
@@ -802,10 +803,10 @@ void process_hold_reply(
 
       pjob->ji_modified = 1;    /* indicate attributes changed     */
       
-      svr_evaljobstate(*pjob, newstate, newsub, 0);
-      svr_setjobstate(pjob, newstate, newsub, FALSE); /* saves job */
+      svr_evaljobstate(*pjob, newstate, newsub, 0, job_mutex);
+      svr_setjobstate(pjob, newstate, newsub, FALSE, job_mutex); /* saves job */
       
-      account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed and held"); /* note in accounting file */
+      account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed and held", job_mutex); /* note in accounting file */
       reply_ack(preq);
       }
     }
@@ -854,7 +855,7 @@ void process_checkpoint_reply(
 	  }
 
     /* record that MOM has a checkpoint file */
-    account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed"); /* note in accounting file */
+    account_record(PBS_ACCT_CHKPNT, pjob, "Checkpointed", job_mutex); /* note in accounting file */
     reply_ack(preq);
     }
   } /* END process_checkpoint_reply() */

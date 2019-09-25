@@ -259,7 +259,7 @@ struct batch_request *setup_cpyfiles(struct batch_request *preq, job *pjob, char
   exit(1);
   }
 
-int insert_into_recycler(job *pjob)
+int insert_into_recycler(job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex)
   {
   return 0;
   }

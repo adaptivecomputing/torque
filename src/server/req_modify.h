@@ -14,7 +14,7 @@ void mom_cleanup_checkpoint_hold(struct work_task *ptask);
 
 void chkpt_xfr_done(struct work_task *ptask);
 
-int modify_job(void **j, svrattrl *plist, struct batch_request *preq, int checkpoint_req, int flag);
+int modify_job(void **j, svrattrl *plist, struct batch_request *preq, int checkpoint_req, int flag, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 int modify_whole_array(job_array *pa, svrattrl *plist, struct batch_request *preq, int checkpoint_req);
 
@@ -22,7 +22,7 @@ int req_modifyarray(struct batch_request *preq);
 
 int req_modifyjob(struct batch_request *preq);
 
-int modify_job_attr(job *pjob, svrattrl *plist, int perm, int *bad);
+int modify_job_attr(job *pjob, svrattrl *plist, int perm, int *bad, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 void post_modify_arrayreq(struct work_task *pwt);
 

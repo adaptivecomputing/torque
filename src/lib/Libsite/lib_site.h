@@ -6,7 +6,7 @@
 int site_allow_u(char *user, char *host);
 
 /* from file site_alt_rte.c */
-int site_alt_router(job *jobp, pbs_queue *qp, long retry_time);
+int site_alt_router(job *jobp, pbs_queue *qp, long retry_time, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 /* from file site_check_u.c */
 int site_check_user_map(job *pjob, char *luser, char *EMsg, int logging); 

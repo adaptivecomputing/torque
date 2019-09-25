@@ -128,7 +128,7 @@ const char *get_correct_jobname(const char *jobid, std::string &corrected);
 
 /* Local Private Functions */
 
-void set_depend_hold(job *, pbs_attribute *, job_array *);
+void set_depend_hold(job *, pbs_attribute *, job_array *, boost::shared_ptr<mutex_mgr>& job_mutex);
 int register_sync(struct depend *,  char *child, char *host, long);
 int register_dep(pbs_attribute *, struct batch_request *, int, int *);
 int unregister_dep(pbs_attribute *, struct batch_request *);
@@ -144,8 +144,8 @@ depend_job *make_dependjob(struct depend *, const char *jobid);
 void   del_depend_job(struct depend *pdep, depend_job *pdj);
 int    build_depend(pbs_attribute *, const char *);
 void   clear_depend(struct depend *, int type, int exists);
-int    release_cheapest(job *, struct depend *);
-int    send_depend_req(job *, depend_job *pparent, int, int, int, void (*postfunc)(batch_request *),bool bAsyncOk);
+int    release_cheapest(job *, struct depend *, boost::shared_ptr<mutex_mgr>& job_mutex);
+int    send_depend_req(job *, depend_job *pparent, int, int, int, void (*postfunc)(batch_request *),bool bAsyncOk, boost::shared_ptr<mutex_mgr>& job_mutex);
 depend_job *alloc_dependjob(const char *jobid);
 
 /* External Global Data Items */
@@ -263,6 +263,7 @@ int check_dependency_job(
     return(rc);
     }
 
+  // We want to return the new pjob with its mutex locked.
   job_mutex->set_unlock_on_exit(false);
   *job_ptr = pjob;
 
@@ -281,7 +282,8 @@ int check_dependency_job(
 int register_syncwith(
 
   batch_request *preq,
-  job           *pjob)
+  job           *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   pbs_attribute *pattr = &pjob->ji_wattr[JOB_ATR_depend];
@@ -300,7 +302,7 @@ int register_syncwith(
       {
       /* all registered - release first */
       
-      release_cheapest(pjob, pdep);
+      release_cheapest(pjob, pdep, job_mutex);
       }
     }
   else
@@ -409,7 +411,8 @@ int register_dependency(
  
   batch_request *preq,
   job           *pjob,
-  int            type)
+  int            type,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int rc = PBSE_NONE;
@@ -423,7 +426,7 @@ int register_dependency(
     
     case JOB_DEPEND_TYPE_SYNCWITH:
      
-      rc = register_syncwith(preq, pjob);
+      rc = register_syncwith(preq, pjob, job_mutex);
       
       break;
       
@@ -469,7 +472,8 @@ int release_before_dependency(
 
   batch_request *preq,
   job           *pjob,
-  int            type)
+  int            type,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
  
   {
   int                rc = PBSE_NONE;
@@ -498,7 +502,16 @@ int release_before_dependency(
         /* no more dependencies of this type */
         delete pdep;
         
-        set_depend_hold(pjob, pattr, NULL);
+		try
+		  {
+          set_depend_hold(pjob, pattr, NULL, job_mutex);
+		  }
+		catch(int e)
+		  {
+		  sprintf(log_buf, "Failed to set dependency hold: %d", e);
+		  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		  return(e);
+		  }
         }
       
       return(rc);
@@ -516,7 +529,8 @@ int release_before_dependency(
 int release_syncwith_dependency(
  
   batch_request *preq,
-  job           *pjob)
+  job           *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
  
   {
   pbs_attribute     *pattr = &pjob->ji_wattr[JOB_ATR_depend];
@@ -534,7 +548,17 @@ int release_syncwith_dependency(
     {
     pdep->dp_released = 1;
     
-    set_depend_hold(pjob, pattr, NULL);
+	try
+	  {
+      set_depend_hold(pjob, pattr, NULL, job_mutex);
+	  }
+	catch (int e)
+	  {
+	  char log_buf[LOG_BUF_SIZE];
+	  sprintf(log_buf, "failed to set dependency hold: %d", e);
+	  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	  return(rc);
+	  }
     
     sprintf(tmpcoststr, "%ld", preq->rq_ind.rq_register.rq_cost);
 
@@ -559,7 +583,8 @@ int release_dependency(
 
   batch_request *preq,
   job           *pjob,
-  int            type)
+  int            type,
+  boost::shared_ptr<mutex_mgr>& job_mutex )
 
   {
   int rc = PBSE_NONE;
@@ -575,13 +600,13 @@ int release_dependency(
       
     case JOB_DEPEND_TYPE_BEFORENOTOK:
       
-      rc = release_before_dependency(preq, pjob, type);
+      rc = release_before_dependency(preq, pjob, type, job_mutex);
       
       break;
       
     case JOB_DEPEND_TYPE_SYNCWITH:
       
-      rc = release_syncwith_dependency(preq, pjob);
+      rc = release_syncwith_dependency(preq, pjob, job_mutex);
       
       break;
     }
@@ -594,7 +619,8 @@ int release_dependency(
 int ready_dependency(
 
   batch_request *preq,
-  job           *pjob)
+  job           *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int                rc = PBSE_NONE;
@@ -619,7 +645,7 @@ int ready_dependency(
         }
       }
     
-    release_cheapest(pjob, pdep); /* release next one */
+    release_cheapest(pjob, pdep, job_mutex); /* release next one */
     }
   else
     {
@@ -644,7 +670,8 @@ int ready_dependency(
 int delete_dependency_job(
  
   batch_request *preq,
-  job           **pjob_ptr)
+  job           **pjob_ptr,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
  
   {
   job *pjob = *pjob_ptr;
@@ -666,7 +693,7 @@ int delete_dependency_job(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
     
     /* pjob freed and set to NULL */
-    job_abt(pjob_ptr, log_buf, true);
+    job_abt(pjob_ptr, log_buf, job_mutex, true);
     }
 
   return(rc);
@@ -688,7 +715,8 @@ int unregister_dependency(
  
   batch_request *preq,
   job           *pjob,
-  int            type)
+  int            type,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   pbs_attribute *pattr = &pjob->ji_wattr[JOB_ATR_depend];
@@ -710,8 +738,18 @@ int unregister_dependency(
     unregister_dep(pattr, preq);
     }
   
-  set_depend_hold(pjob, pattr, NULL);
-
+  try 
+	{
+    set_depend_hold(pjob, &pjob->ji_wattr[JOB_ATR_depend], NULL, job_mutex);
+    }
+  catch (int err)
+ 	{
+	char log_buf[LOG_BUF_SIZE];
+  	sprintf(log_buf, "Failed to set dependency hold: %d", err);
+  	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return(err);
+   	}
+ 
   return(rc);
   } /* END unregister_dependency() */
 
@@ -744,6 +782,14 @@ int req_register(
   if ((rc = check_dependency_job(preq->rq_ind.rq_register.rq_parent, preq, &pjob)) != PBSE_NONE)
     return(rc);
 
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "Failed to create managed mutex");
+    log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
+	return(rc);
+	}
+	
   if (LOGLEVEL >= 8)
     {
     sprintf(log_buf,"Dependency requested parent job %s state (%s), child job %s",
@@ -781,31 +827,31 @@ int req_register(
       {
       case JOB_DEPEND_OP_REGISTER:
 
-        rc = register_dependency(preq, pjob, type);
+        rc = register_dependency(preq, pjob, type, job_mutex);
 
         break;
         
       case JOB_DEPEND_OP_RELEASE:
 
-        rc = release_dependency(preq, pjob, type);
+        rc = release_dependency(preq, pjob, type, job_mutex);
 
         break;
 
       case JOB_DEPEND_OP_READY:
 
-        rc = ready_dependency(preq, pjob);
+        rc = ready_dependency(preq, pjob, job_mutex);
    
         break;
    
       case JOB_DEPEND_OP_DELETE:
    
-        rc = delete_dependency_job(preq, &pjob);
+        rc = delete_dependency_job(preq, &pjob, job_mutex);
    
         break;
    
       case JOB_DEPEND_OP_UNREG:
 
-        rc =  unregister_dependency(preq, pjob, type);
+        rc =  unregister_dependency(preq, pjob, type, job_mutex);
 
         break;
 
@@ -841,13 +887,10 @@ int req_register(
     {
     if ((pjob != NULL) &&
         (pjob->ji_modified != 0))
-      job_save(pjob, SAVEJOB_FULL, 0);
+      job_save(pjob, SAVEJOB_FULL, 0, job_mutex);
 
     reply_ack(preq);
     }
-
-  if (pjob != NULL)
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
 
   return(rc);
   }  /* END req_register() */
@@ -1231,11 +1274,7 @@ bool set_array_depend_holds(
               
               /* pjob freed and set to NULL */
 			  unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-              job_abt(&pjob, log_buf, true);
-              if (pjob == NULL)
-				{
-                job_mutex->set_unlock_on_exit(false);
-				}
+              job_abt(&pjob, log_buf, job_mutex, true);
 
 			  if (pa != NULL)
 				{
@@ -1258,7 +1297,7 @@ bool set_array_depend_holds(
                 "Setting HOLD_s due to dependencies\n");
               }
 
-            svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_DEPNHOLD, FALSE);
+            svr_setjobstate(pjob, JOB_STATE_HELD, JOB_SUBSTATE_DEPNHOLD, FALSE, job_mutex);
             }
           }
         else 
@@ -1275,15 +1314,16 @@ bool set_array_depend_holds(
            * logged in set_depend_hold */
           try 
             {
-            set_depend_hold(pjob, &pjob->ji_wattr[JOB_ATR_depend], pa);
+            set_depend_hold(pjob, &pjob->ji_wattr[JOB_ATR_depend], pa, job_mutex);
             }
-          catch (int err)
-            {
-            job_mutex->set_unlock_on_exit(false);
-            }
+		  catch (int err)
+        	{
+		  	sprintf(log_buf, "Failed to set dependency hold: %d", err);
+		  	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+			dependency_satisfied = false;
+          	}
           }
         }
-
       }
     }
 
@@ -1337,7 +1377,7 @@ void post_doq(
 		{
 		sprintf(log_buf, "Failed to create job mutex: %d", rc);
 		log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, jobid, log_buf);
-        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, log_buf);
+        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, log_buf, job_mutex);
 		return;
 		}
 		
@@ -1348,7 +1388,7 @@ void post_doq(
 
       if (preq->rq_reply.brp_code != PBSE_BADSTATE)
         {
-        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, log_buf);
+        svr_mailowner(pjob, MAIL_ABORT, MAIL_FORCE, log_buf, job_mutex);
         }
 
       pattr = &pjob->ji_wattr[JOB_ATR_depend];
@@ -1367,11 +1407,12 @@ void post_doq(
 
         try
           {
-          set_depend_hold(pjob, pattr, NULL);
+          set_depend_hold(pjob, pattr, NULL, job_mutex);
           }
         catch (int err)
           {
-          job_mutex->set_unlock_on_exit(false);
+		  sprintf(log_buf, "Failed to set dependency hold: %d", err);
+		  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
           }
         }
       }
@@ -1394,7 +1435,8 @@ int alter_unreg(
 
   job           *pjob,
   pbs_attribute *old,  /* current job dependency attribure */
-  pbs_attribute *new_attr)  /* job dependency pbs_attribute after alter */
+  pbs_attribute *new_attr,  /* job dependency pbs_attribute after alter */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   struct depend *poldd;
@@ -1420,7 +1462,7 @@ int alter_unreg(
         if ((pnewd == 0) || 
             (find_dependjob(pnewd, oldjd->dc_child.c_str()) == 0))
           {
-          int rc = send_depend_req(pjob, oldjd, type, JOB_DEPEND_OP_UNREG, SYNC_SCHED_HINT_NULL, NULL, false);
+          int rc = send_depend_req(pjob, oldjd, type, JOB_DEPEND_OP_UNREG, SYNC_SCHED_HINT_NULL, NULL, false, job_mutex);
 
           if (rc == PBSE_JOBNOTFOUND)
             return(rc);
@@ -1460,6 +1502,21 @@ int depend_on_que(
   job               *pjob = (job *)pj;
   char               job_id[PBS_MAXSVRJOBID+1];
 
+  if (pjob == NULL)
+	{
+	return(PBSE_BAD_PARAMETER);
+	}
+
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	char log_buf[LOG_BUF_SIZE];
+	sprintf(log_buf, "failed to create managed mutex");
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return(rc);
+	}
+
+
   strcpy(job_id, pjob->ji_qs.ji_jobid);
 
   if (((mode != ATR_ACTION_ALTER) && 
@@ -1472,12 +1529,22 @@ int depend_on_que(
     {
     /* if there are dependencies being removed, unregister them */
 
-    if (alter_unreg(pjob, &(pjob)->ji_wattr[JOB_ATR_depend], pattr) == PBSE_JOBNOTFOUND)
+    if (alter_unreg(pjob, &(pjob)->ji_wattr[JOB_ATR_depend], pattr, job_mutex) == PBSE_JOBNOTFOUND)
       return(PBSE_JOBNOTFOUND);
     }
 
   /* First set a System hold if required */
-  set_depend_hold(pjob, pattr, NULL);
+  try
+	{
+	set_depend_hold(pjob, pattr, NULL, job_mutex);
+	}
+  catch (int e)
+	{
+	char log_buf[LOG_BUF_SIZE];
+	sprintf(log_buf, "Failed to set dependency hold: %d", e);
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return(e);
+	}
 
   /* Check if there are dependencies that require registering */
 
@@ -1498,7 +1565,7 @@ int depend_on_que(
       register_sync(pdep, (pjob)->ji_qs.ji_jobid, server_name, cost);
 
       if (pdep->dp_numreg > pdep->dp_numexp)
-        release_cheapest(pjob, pdep);
+        release_cheapest(pjob, pdep, job_mutex);
       }
     else if (type != JOB_DEPEND_TYPE_ON)
       {
@@ -1522,7 +1589,7 @@ int depend_on_que(
       for (unsigned int i = 0; i < pparent.size(); i++)
         {
         if ((rc = send_depend_req(pjob, pparent[i], type, JOB_DEPEND_OP_REGISTER,
-                                  SYNC_SCHED_HINT_NULL, post_doq, false)) != PBSE_NONE)
+                                  SYNC_SCHED_HINT_NULL, post_doq, false, job_mutex)) != PBSE_NONE)
           break;
         }
 
@@ -1611,7 +1678,8 @@ void post_doe(
 
 int depend_on_exec(
 
-  job *pjob)
+  job *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   depend     *pdep;
@@ -1638,7 +1706,8 @@ int depend_on_exec(
             JOB_DEPEND_OP_RELEASE,
             SYNC_SCHED_HINT_NULL,
             post_doe,
-            false) == PBSE_JOBNOTFOUND)
+            false,
+			job_mutex) == PBSE_JOBNOTFOUND)
         {
         return(PBSE_JOBNOTFOUND);
         }
@@ -1664,7 +1733,8 @@ int depend_on_exec(
             JOB_DEPEND_OP_READY,
             SYNC_SCHED_HINT_NULL,
             NULL,
-            false) == PBSE_JOBNOTFOUND)
+            false,
+			job_mutex) == PBSE_JOBNOTFOUND)
         {
         return(PBSE_JOBNOTFOUND);
         }
@@ -1685,7 +1755,7 @@ int depend_on_exec(
       pdep->dp_jobs[0]->dc_state = JOB_DEPEND_OP_READY;
       }
 
-    release_cheapest(pjob, pdep);
+    release_cheapest(pjob, pdep, job_mutex);
     }
 
   return(PBSE_NONE);
@@ -1704,7 +1774,8 @@ int depend_on_exec(
 
 int depend_on_term(
 
-  job *pjob)
+  job *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int                exitstat;
@@ -1795,7 +1866,7 @@ int depend_on_term(
             {
             pparent = pdep->dp_jobs[i];
 
-            rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, NULL, true);
+            rc = send_depend_req(pjob, pparent, type, JOB_DEPEND_OP_DELETE, SYNC_SCHED_HINT_NULL, NULL, true, job_mutex);
             
             if (rc == PBSE_JOBNOTFOUND)
               {
@@ -1816,7 +1887,7 @@ int depend_on_term(
         pparent = pdep->dp_jobs[i];
 
         /* "release" the job to execute */
-        if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, NULL, true)) != PBSE_NONE)
+        if ((rc = send_depend_req(pjob, pparent, type, op, SYNC_SCHED_HINT_NULL, NULL, true, job_mutex)) != PBSE_NONE)
           {
           return(rc);
           }
@@ -1841,7 +1912,8 @@ int depend_on_term(
 int release_cheapest(
 
   job           *pjob,
-  struct depend *pdep)
+  struct depend *pdep,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   long               lowestcost = 0;
@@ -1877,7 +1949,7 @@ int release_cheapest(
       hint = SYNC_SCHED_HINT_FIRST;
 
     if ((rc = send_depend_req(pjob, cheapest, JOB_DEPEND_TYPE_SYNCWITH,
-          JOB_DEPEND_OP_RELEASE, hint, NULL, false)) == PBSE_NONE)
+          JOB_DEPEND_OP_RELEASE, hint, NULL, false, job_mutex)) == PBSE_NONE)
       {
       cheapest->dc_state = JOB_DEPEND_OP_RELEASE;
       }
@@ -1908,7 +1980,8 @@ void set_depend_hold(
 
   job           *pjob,
   pbs_attribute *pattr, 
-  job_array     *pa)
+  job_array     *pa,
+  boost::shared_ptr<mutex_mgr>& job_mutex )
 
   {
   int                loop = 1;
@@ -1973,6 +2046,7 @@ void set_depend_hold(
             snprintf(log_buf, sizeof(log_buf),
               "Job %s somehow has a dependency on itself. Purging.", pjob->ji_qs.ji_jobid);
             log_err(-1, __func__, log_buf);
+			job_mutex->unlock();
             enqueue_threadpool_request(svr_job_purge_task, pjob, task_pool);
             throw (int)PBSE_BADDEPEND;
             }
@@ -2055,15 +2129,15 @@ void set_depend_hold(
           "Clearing HOLD_s due to dependencies\n");
         }
 
-      svr_evaljobstate(*pjob, newstate, newsubst, 0);
-      svr_setjobstate(pjob, newstate, newsubst, FALSE);
+      svr_evaljobstate(*pjob, newstate, newsubst, 0, job_mutex);
+      svr_setjobstate(pjob, newstate, newsubst, FALSE, job_mutex);
       }
 
     // If we have array dependencies, we need to update them
     if (array_names.size() != 0)
       {
       std::string jobid(pjob->ji_qs.ji_jobid);
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+	  job_mutex->unlock();
 
       for (size_t i = 0; i < array_names.size(); i++)
         {
@@ -2091,8 +2165,12 @@ void set_depend_hold(
 
       if (pjob == NULL)
         {
+		job_mutex->set_unlock_on_exit(false);
         throw (int)PBSE_JOBNOTFOUND;
         }
+
+	  job_mutex->mark_as_locked();
+
       }
     }
   else
@@ -2111,7 +2189,7 @@ void set_depend_hold(
         "Setting HOLD_s due to dependencies\n");
       }
 
-    svr_setjobstate(pjob, JOB_STATE_HELD, substate, FALSE);
+    svr_setjobstate(pjob, JOB_STATE_HELD, substate, FALSE, job_mutex);
     }
 
   return;
@@ -2464,7 +2542,8 @@ int send_depend_req(
   int          op,
   int          schedhint,
   void       (*postfunc)(batch_request *),
-  bool         bAsyncOk)
+  bool         bAsyncOk,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int            rc = 0;
@@ -2530,7 +2609,7 @@ int send_depend_req(
 
   /* save jobid and unlock mutex */
   strcpy(job_id, pjob->ji_qs.ji_jobid);
-  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+  job_mutex->unlock();
 
   if (bAsyncOk)
     {
@@ -2556,6 +2635,8 @@ int send_depend_req(
       return(PBSE_JOBNOTFOUND);
       }
 
+	job_mutex->mark_as_locked();
+
     return(rc);
     }
   /* local requests have already been processed and freed. Do not attempt to
@@ -2571,6 +2652,7 @@ int send_depend_req(
     {
     return(PBSE_JOBNOTFOUND);
     }
+  job_mutex->mark_as_locked();
 
   return(PBSE_NONE);
   }  /* END send_depend_req() */
@@ -3415,12 +3497,13 @@ void removeAfterAnyDependency(
 
       try
         {
-        set_depend_hold(pLockedJob, pattr, NULL);
+        set_depend_hold(pLockedJob, pattr, NULL, job_mutex);
         }
-
       catch (int e)
         {
-        job_mutex->set_unlock_on_exit(false);
+		char log_buf[LOCAL_LOG_BUF_SIZE];
+		sprintf(log_buf, "failed to set dependency hold: %d", e);
+		log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pLockedJob->ji_qs.ji_jobid, log_buf);
         }
       }
     }
@@ -3434,22 +3517,13 @@ void removeAfterAnyDependency(
 
 void removeBeforeAnyDependencies(
     
-  job **pjob_ptr)
+  job **pjob_ptr,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   job        *pLockedJob = *pjob_ptr;
   std::string jobid(pLockedJob->ji_qs.ji_jobid);
 
-  int rc;
-  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pLockedJob->ji_mutex, true, rc);
-  if (rc != PBSE_NONE)
- 	{
-	char log_buf[LOCAL_LOG_BUF_SIZE];
-	sprintf(log_buf, "Failed to allocate job mutex: %d", rc);
-	log_event(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pLockedJob->ji_qs.ji_jobid, log_buf);
-	throw rc;
-	}
-	
   job_mutex->set_unlock_on_exit(false);
   
   pbs_attribute *pattr = &pLockedJob->ji_wattr[JOB_ATR_depend];
@@ -3469,6 +3543,7 @@ void removeBeforeAnyDependencies(
       if (pLockedJob == NULL)
         {
         *pjob_ptr = NULL;
+		throw PBSE_JOBNOTFOUND;
         break;
         }
 

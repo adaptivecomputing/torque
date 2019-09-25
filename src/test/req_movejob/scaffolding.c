@@ -17,7 +17,7 @@ int job_save(job *pjob, int updatetype, int mom_port)
   exit(1);
   }
 
-int svr_movejob(job *jobp, char *destination, int *err, struct batch_request *req)
+int svr_movejob(job *jobp, char *destination, int *err, struct batch_request *req, boost::shared_ptr<mutex_mgr>& job_mutex)
   {
   fprintf(stderr, "The call to svr_movejob to be mocked!!\n");
   exit(1);

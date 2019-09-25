@@ -106,7 +106,7 @@
 #include "net_connect.h"
 #include "job_host_data.hpp"
 #include "json/json.h"
-
+#include "mutex_mgr.hpp"
 
 #define SAVEJOB_BUF_SIZE 8192
 
@@ -880,15 +880,15 @@ typedef container::item_container<job *>::item_iterator all_jobs_iterator;
 
 
 
-int  insert_job(all_jobs *, job *);
+int  insert_job(all_jobs *, job *, boost::shared_ptr<mutex_mgr>&);
 int  insert_job_after(all_jobs *,job *before,job *after);
 int  insert_job_after(all_jobs *, char *after_id, job *after);
 int  insert_job_first(all_jobs *,job *);
 int  get_jobs_index(all_jobs *, job *);
-int  remove_job(all_jobs *, job *, bool force_lock=false);
-int  has_job(all_jobs *,job *);
+int  remove_job(all_jobs *, job *,  boost::shared_ptr<mutex_mgr>& job_mutex, bool force_lock=false);
+int  has_job(all_jobs *,job *, boost::shared_ptr<mutex_mgr>& job_mutex);
 int  swap_jobs(all_jobs *,job *,job *);
-struct pbs_queue *get_jobs_queue(job **);
+struct pbs_queue *get_jobs_queue(job **, boost::shared_ptr<mutex_mgr>& job_mutex );
 
 job *next_job(all_jobs *,all_jobs_iterator *);
 extern all_jobs alljobs;
@@ -902,7 +902,7 @@ typedef struct job_recycler
   } job_recycler;
 
 
-int   insert_into_recycler(job *);
+int   insert_into_recycler(job *, boost::shared_ptr<mutex_mgr>&);
 void  update_recycler_next_id();
 void  initialize_recycler();
 void  garbage_collect_recycling();
@@ -1308,14 +1308,14 @@ dir so that job can be restarted */
 
 extern void  depend_clrrdy(job *);
 extern int   depend_on_que(pbs_attribute *, void *, int);
-extern int   depend_on_exec(job *);
-extern int   depend_on_term(job *);
+extern int   depend_on_exec(job *, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern int   depend_on_term(job *, boost::shared_ptr<mutex_mgr>& job_mutex);
 job         *find_job_regular_jobs(char *);
 job         *find_job_array_jobs(char *);
 extern char *get_egroup(job *);
 extern char *get_variable(job *, const char *);
 extern int   init_chkmom(job *);
-extern void  issue_track(job *);
+extern void  issue_track(job *, boost::shared_ptr<mutex_mgr>& job_mutex);
 #ifdef PBS_MOM
 job         *mom_job_alloc();
 #else
@@ -1337,37 +1337,42 @@ int          post_stageout(job *pjob, int exitstatus);
 void         delete_staged_in_files(job *pjob, char *home_dir, char **bad_list);
 #endif
 extern job  *job_recov(const char *);
+
+#ifdef PBS_MOM
 extern int   job_save(job *, int, int);
-extern int   modify_job_attr(job *, svrattrl *, int, int *);
+#else
+extern int   job_save(job *, int, int, boost::shared_ptr<mutex_mgr>& job_mutex);
+#endif
+extern int   modify_job_attr(job *, svrattrl *, int, int *, boost::shared_ptr<mutex_mgr>& job_mutex);
 extern const char *prefix_std_file(job *, std::string& , int);
-extern const char *add_std_filename(job *, char *, int, std::string&);
-extern int   set_jobexid(job *, pbs_attribute *, char *);
+extern const char *add_std_filename(job *, char *, int, std::string&, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern int   set_jobexid(job *, pbs_attribute *, char *, boost::shared_ptr<mutex_mgr>&);
 extern int   site_check_user_map(job *, char *, char *, int);
-int  svr_dequejob(job *, int);
+int  svr_dequejob(job *, int, boost::shared_ptr<mutex_mgr>& job_mutex);
 int initialize_ruserok_mutex();
-extern int   svr_enquejob(job *, int, const char *, bool, bool being_recovered);
-void         svr_evaljobstate(job &, int &, int &, int);
-extern void  svr_mailowner(job *, int, int, const char *);
-extern void  svr_mailowner_with_message(job *, int, int, const char *, const char *);
-extern void  set_resc_deflt(job *, pbs_attribute *, int);
-extern void  set_statechar(job *);
-extern int   svr_setjobstate(job *, int, int, int);
-int          split_job(job *);
+extern int   svr_enquejob(job *, int, const char *, bool, bool being_recovered, boost::shared_ptr<mutex_mgr>&);
+void         svr_evaljobstate(job &, int &, int &, int, boost::shared_ptr<mutex_mgr>& );
+extern void  svr_mailowner(job *, int, int, const char *, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern void  svr_mailowner_with_message(job *, int, int, const char *, const char *, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern void  set_resc_deflt(job *, pbs_attribute *, int, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern void  set_statechar(job *, boost::shared_ptr<mutex_mgr>&);
+extern int   svr_setjobstate(job *, int, int, int, boost::shared_ptr<mutex_mgr>& job_mutex);
+int          split_job(job *, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 bool   have_reservation(job *, struct pbs_queue *);
 
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
-int issue_signal(job **, const char *, void(*)(struct batch_request *), void *, char *);
+int issue_signal(job **, const char *, void(*)(struct batch_request *), void *, char *, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 #ifdef BATCH_REQUEST_H
 extern job  *chk_job_request(char *, struct batch_request *);
-extern int   net_move(job *, struct batch_request *);
+extern int   net_move(job *, struct batch_request *, boost::shared_ptr<mutex_mgr>& job_mutex);
 extern int   svr_chk_owner(struct batch_request *, job *);
 
-extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
-extern struct batch_request *setup_cpyfiles(struct batch_request *, job *, char *, char *, int, int);
-extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
+extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern struct batch_request *setup_cpyfiles(struct batch_request *, job *, char *, char *, int, int, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 #endif /* BATCH_REQUEST_H */
 

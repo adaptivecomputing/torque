@@ -75,6 +75,11 @@
 #include "list_link.h"
 #include <string>
 
+#ifndef PBS_MOM
+#include <boost/shared_ptr.hpp>
+#include "mutex_mgr.hpp"
+#endif
+
 /*
  * This header file contains the definitions for attributes
  *
@@ -106,6 +111,8 @@
 
 #include <sys/time.h>
 #include <time.h>
+#include <boost/shared_ptr.hpp>
+#include "mutex_mgr.hpp"
 
 #ifndef ATTRIBUTE_H
 #define ATTRIBUTE_H 1
@@ -364,8 +371,8 @@ struct array_strings
 
 void clear_attr(pbs_attribute *pattr, attribute_def *pdef);
 int  find_attr(attribute_def *attrdef, const char *name, int limit);
-int  recov_attr(int fd, void *parent, attribute_def *padef,
-                pbs_attribute *pattr, int limit, int unknown, int do_actions);
+int  recov_attr(int fd, void *parent, attribute_def *padef, pbs_attribute *pattr, int limit, int unknown, 
+		int do_actions);
 long attr_ifelse_long(pbs_attribute *, pbs_attribute *, long);
 bool attr_ifelse_bool(pbs_attribute *, pbs_attribute *, bool);
 void free_null(pbs_attribute *attr);

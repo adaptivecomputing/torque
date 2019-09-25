@@ -29,10 +29,10 @@ char  server_name[] = "lei.ac";
 
 int add_encoded_attributes(xmlNodePtr *attr_node, pbs_attribute *pattr);
 void translate_dependency_to_string(pbs_attribute *pattr, std::string &value);
-int  set_array_job_ids(job **pjob, char *log_buf, size_t buflen);
+int  set_array_job_ids(job **pjob, char *log_buf, size_t buflen, boost::shared_ptr<mutex_mgr>& job_mutex);
 svrattrl *fill_svrattr_info(const char *aname, const char *avalue, const char *rname, char *log_buf, size_t      buf_len);
-void decode_attribute(svrattrl *pal, job **pjob, bool freeExisting);
-job_array *ghost_create_jobs_array(job *pjob, const char *array_id);
+void decode_attribute(svrattrl *pal, job **pjob, bool freeExisting, boost::shared_ptr<mutex_mgr>&);
+job_array *ghost_create_jobs_array(job *pjob, const char *array_id, boost::shared_ptr<mutex_mgr>&);
 void check_and_reallocate_job_ids(job_array *pa, int index);
 void update_recovered_array_values(job_array *pa, job *pjob);
 
@@ -99,12 +99,14 @@ END_TEST
 
 START_TEST(test_decode_attribute)
   {
+  int		rc;
   char      buf[1024];
   job      *pjob = new job();
   svrattrl *pal = fill_svrattr_info("Hold_Types", "1", "", buf, sizeof(buf));
   pal->al_flags = ATR_VFLAG_SET;
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
 
-  decode_attribute(pal, &pjob, false);
+  decode_attribute(pal, &pjob, false, job_mutex);
   fail_unless(pjob->ji_wattr[JOB_ATR_hold].at_val.at_long == 1, "val: %d", (int)pjob->ji_wattr[JOB_ATR_hold].at_val.at_long);
   fail_unless((pjob->ji_wattr[JOB_ATR_hold].at_flags & ATR_VFLAG_SET) != 0);
   }
@@ -135,27 +137,29 @@ END_TEST
 
 START_TEST(test_set_array_jobs_ids)
   {
+  int rc;
   job  *pjob = new job();
   char  buf[1024];
   std::string expected_err_msg;
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
 
   init();
 
   sprintf(pjob->ji_qs.ji_jobid, "4[21].napali");
-  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) == PBSE_NONE);
+  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf), job_mutex) == PBSE_NONE);
 
   pjob->ji_wattr[JOB_ATR_job_array_id].at_flags |= ATR_VFLAG_SET;
   pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long = 21;
-  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) != PBSE_NONE);
+  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf), job_mutex) != PBSE_NONE);
 
   // check the returned error message
   expected_err_msg = "array struct missing for array job ";
   expected_err_msg.append(pjob->ji_qs.ji_jobid);
-  fail_unless(strcmp(buf, expected_err_msg.c_str()) == 0);
+  fail_unless(strcmp(buf, expected_err_msg.c_str(), job_mutex) == 0);
 
   pjob = new job();
   sprintf(pjob->ji_qs.ji_jobid, "4[].napali");
-  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf)) == -1); // We should delete template jobs that don't have an array
+  fail_unless(set_array_job_ids(&pjob, buf, sizeof(buf), job_mutex) == -1); // We should delete template jobs that don't have an array
   fail_unless(pjob->ji_is_array_template == TRUE);
   }
 END_TEST

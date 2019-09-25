@@ -10,6 +10,6 @@ int req_track(struct batch_request *preq);
 
 void track_save(struct work_task *pwt);
     
-void issue_track(job *pjob);
+void issue_track(job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex );
 
 #endif /* _REQ_TRACK_H */
