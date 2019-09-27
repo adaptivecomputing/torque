@@ -35,7 +35,7 @@ int handle_terminating_array_subjob(job *pjob);
 int handle_terminating_job(job *pjob, int alreadymailed, const char *mailbuf);
 int update_substate_from_exit_status(job *pjob, int *alreadymailed, const char *text);
 int handle_stageout(job *pjob, int type, batch_request *preq);
-int handle_stagedel(job *pjob,int type,batch_request *preq);
+int handle_stagedel(job *pjob,int type,batch_request *preq, boost::shared_ptr<mutex_mgr>& job_mutex);
 int get_used(job *pjob, std::string &data);
 void set_job_comment(job *pjob, const char *cmt);
 

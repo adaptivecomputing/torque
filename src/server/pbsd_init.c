@@ -1177,7 +1177,7 @@ void remove_invalid_allocations(
         if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
           bad_allocation.push_back(job_ids[i]);
 
-        unlock_ji_mutex(pjob, __func__, "", 10);
+		unlock_ji_mutex(pjob, __func__, pjob->ji_qs.ji_jobid, LOGLEVEL);
         }
       }
 
@@ -2486,7 +2486,6 @@ int pbsd_init_job(
   char              job_id[PBS_MAXSVRJOBID+1];
   int               job_exit_status;
 
-  job_mutex->lock();
   pjob->ji_momhandle = -1;
 
   /* update at_server pbs_attribute in case name changed */

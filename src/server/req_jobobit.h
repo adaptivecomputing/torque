@@ -33,7 +33,7 @@ int handle_returnstd(job *pjob, struct batch_request *preq, int type, boost::sha
 
 int handle_stageout(job *pjob, int type, struct batch_request *preq);
 
-int handle_stagedel(job *pjob, int type, struct batch_request *preq);
+int handle_stagedel(job *pjob, int type, struct batch_request *preq, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 int handle_exited(job *pjob);
 

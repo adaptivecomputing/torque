@@ -876,7 +876,6 @@ int handle_exiting_or_abort_substate(
     {
     if (depend_on_term(pjob, job_mutex) == PBSE_JOBNOTFOUND)
       {
-      job_mutex->set_unlock_on_exit(false);
       return(PBSE_JOBNOTFOUND);
       }
     }
@@ -1390,7 +1389,8 @@ int handle_stagedel(
 
   job           *pjob,
   int            type,
-  batch_request *preq)
+  batch_request *preq,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int           rc = PBSE_NONE;
@@ -1400,14 +1400,6 @@ int handle_stagedel(
   unsigned int  dummy;
   char          job_id[PBS_MAXSVRJOBID+1];
   char         *job_momname = NULL;
-
-  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
-  if (rc != PBSE_NONE)
-	{
-	sprintf(log_buf, "failed to allocate job mutex: %d", rc);
-	log_record(PBSEVENT_ERROR, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);	
-    goto handle_stagedel_cleanup;
-	}
 
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
@@ -1844,6 +1836,7 @@ int handle_complete_first_time(
   if (pjob == NULL)
     {
     /* let the caller know the job is gone */
+	job_mutex->set_unlock_on_exit(false);
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while removing job from exiting list.");
     return PBSE_JOBNOTFOUND;
     }
@@ -1873,6 +1866,7 @@ int handle_complete_first_time(
   else if (pjob == NULL)
     {
     /* let the caller know the job is gone */
+	job_mutex->set_unlock_on_exit(false);
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 4");
     return PBSE_JOBNOTFOUND;
     }
@@ -2126,6 +2120,7 @@ void on_job_exit(
     case JOB_SUBSTATE_ABORT:
 
       rc = handle_exiting_or_abort_substate(pjob, job_mutex);
+	  job_mutex->unlock();
       /* pjob->ji_mutex is always unlocked when returning from handle_exiting_or_abort_substate */
       pjob = NULL;
 
@@ -2139,10 +2134,10 @@ void on_job_exit(
        * and keep_completed is a positive value. This is so that a completed
        * job can be restarted from a checkpoint file.
        */
-      if ((pjob == NULL) && 
-          ((pjob = svr_find_job(job_id, TRUE)) == NULL))
-	 	{
-        break;
+      if (pjob == NULL)
+		{  
+        if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
+          break;
 		}
 
 	  job_mutex->mark_as_locked();
@@ -2150,14 +2145,17 @@ void on_job_exit(
       if ((rc = handle_returnstd(pjob, preq, type, job_mutex)) != PBSE_NONE)
         break;
 
+	  job_mutex->unlock();
       preq = NULL;
       pjob = NULL;
 
     case JOB_SUBSTATE_STAGEOUT:
 
-      if ((pjob == NULL) &&
-          ((pjob = svr_find_job(job_id, TRUE)) == NULL))
-        break;
+      if (pjob == NULL)
+		{  
+        if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
+          break;
+		}
 
 	  job_mutex->mark_as_locked();
       if ((rc = handle_stageout(pjob, type, preq, job_mutex)) == PBSE_JOBNOTFOUND)
@@ -2167,39 +2165,45 @@ void on_job_exit(
         break;
         }
 
+	  job_mutex->unlock();
       preq = NULL;
       pjob = NULL;
 
     case JOB_SUBSTATE_STAGEDEL:
 
-      if ((pjob == NULL) &&
-          ((pjob = svr_find_job(job_id, TRUE)) == NULL))
-        {
-        snprintf(log_buf, sizeof(log_buf), "could not find job: %s", job_id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-        break;
-        }
+      if (pjob == NULL)
+		{  
+        if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
+		  {
+          snprintf(log_buf, sizeof(log_buf), "could not find job: %s", job_id);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+          break;
+          }
+		}
 
 	  job_mutex->mark_as_locked();
-      if ((rc = handle_stagedel(pjob, type, preq)) != PBSE_NONE)
+      if ((rc = handle_stagedel(pjob, type, preq, job_mutex)) != PBSE_NONE)
         {
         snprintf(log_buf, sizeof(log_buf), "handle_stagedel failed: %d", rc);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         break;
         }
 
+	  job_mutex->unlock();
       preq = NULL;
       pjob = NULL;
 
     case JOB_SUBSTATE_EXITED:
 
-      if ((pjob == NULL) &&
-          ((pjob = svr_find_job(job_id, TRUE)) == NULL))
-        {
-        snprintf(log_buf, sizeof(log_buf), "could not find job: %s", job_id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-        break;
-        }
+      if (pjob == NULL)
+		{  
+        if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
+		  {
+          snprintf(log_buf, sizeof(log_buf), "could not find job: %s", job_id);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+          break;
+          }
+		}
 
 	  job_mutex->mark_as_locked();
       rc = handle_exited(pjob);
@@ -2212,18 +2216,21 @@ void on_job_exit(
         break;
         }
 
+	  job_mutex->unlock();
       type = rc;
       pjob = NULL;
 
     case JOB_SUBSTATE_COMPLETE:
 
-      if ((pjob == NULL) &&
-          ((pjob = svr_find_job(job_id, TRUE)) == NULL))
-        {
-        snprintf(log_buf, sizeof(log_buf), "could not find job: %s", job_id);
-        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-        break;
-        }
+      if (pjob == NULL)
+		{  
+        if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
+		  {
+          snprintf(log_buf, sizeof(log_buf), "could not find job: %s", job_id);
+          log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+          break;
+          }
+		}
 
 	  job_mutex->mark_as_locked();
       if (pjob->ji_parent_job != NULL)
@@ -2236,6 +2243,7 @@ void on_job_exit(
         }
       else
         {
+		job_mutex->unlock();
         set_task(WORK_Immed, 0, add_to_completed_jobs, strdup(pjob->ji_qs.ji_jobid), FALSE);
         }
 
