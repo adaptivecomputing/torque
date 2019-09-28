@@ -1916,7 +1916,6 @@ int req_quejob(
       job_mutex->set_unlock_on_exit(false);
 	  }
 
-    job_mutex->set_unlock_on_exit(false);
     req_reject(rc, 0, preq, NULL, EMsg);
     return(rc);
     }

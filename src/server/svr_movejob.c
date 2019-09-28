@@ -1392,7 +1392,6 @@ int send_job_work(
     ret = svr_dequejob(pjob, FALSE, job_mutex);
     if (ret)
       {
-      job_mutex->set_unlock_on_exit(false);
       return(ret);
       }
     }

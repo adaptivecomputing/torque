@@ -1482,7 +1482,6 @@ int delete_array_range(
         deleted = attempt_delete(pjob, job_mutex);
       
       // Both attempt_delete and force_purge_work unlock pjob
-      job_mutex->set_unlock_on_exit(false);
       pthread_mutex_lock(pa->ai_mutex);
 
       if (deleted == false)
@@ -1620,9 +1619,6 @@ int delete_whole_array(
         }
       else
         deleted = attempt_delete(pjob, job_mutex);
-
-      /* we come out of attempt_delete unlocked */
-      job_mutex->set_unlock_on_exit(false);
 
       if (deleted == false)
         {

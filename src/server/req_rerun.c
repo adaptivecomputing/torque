@@ -680,7 +680,6 @@ int req_rerunjob(
     }
 
   /* finalize_rerunjob will return with pjob->ji_mutex unlocked */
-  job_mutex->set_unlock_on_exit(false);
   return finalize_rerunjob(preq, pjob, rc, job_mutex);
   }
 

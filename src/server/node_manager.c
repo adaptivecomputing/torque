@@ -774,8 +774,6 @@ void *finish_job(
 	return NULL;
 	}
 
-  job_mutex->set_unlock_on_exit(false);
-
   free(jobid);
 
   free_nodes(pjob, NULL, job_mutex);
