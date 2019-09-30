@@ -798,6 +798,10 @@ int  remove_job(
         {
         rc = PBSE_JOBNOTFOUND;
         }
+	  else
+		{
+		job_mutex->mark_as_locked();
+		}
       }
     }
 
