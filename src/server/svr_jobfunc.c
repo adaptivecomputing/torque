@@ -762,6 +762,7 @@ int svr_dequejob(
   /* make sure pjob isn't null */
   if (pjob == NULL)
     {
+	job_mutex->set_unlock_on_exit(false);
     return(PBSE_BAD_PARAMETER);
     }
 
@@ -773,7 +774,7 @@ int svr_dequejob(
     }
 
   /* remove job from server's all job list and reduce server counts */
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 4)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   if (parent_queue_mutex_held == FALSE)
@@ -782,6 +783,7 @@ int svr_dequejob(
 
     if (pjob == NULL)
       {
+	  job_mutex->set_unlock_on_exit(false);
       log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 10");
       return(PBSE_JOBNOTFOUND);
       }
@@ -834,7 +836,7 @@ int svr_dequejob(
       return(rc);
       }
 
-    if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
+    if (rc == THING_NOT_FOUND && (LOGLEVEL >= 4))
       {
       snprintf(log_buf,sizeof(log_buf),
          "Could not remove job %s from queue->qu_jobs\n", jobid.c_str());
@@ -851,7 +853,7 @@ int svr_dequejob(
         return(rc2);
 
       if ((rc2 == THING_NOT_FOUND) &&
-          (LOGLEVEL >= 8))
+          (LOGLEVEL >= 4))
         {
         snprintf(log_buf,sizeof(log_buf),
            "Could not remove job %s from qu_jobs_array_sum\n", jobid.c_str());
@@ -915,7 +917,7 @@ int svr_dequejob(
       return(rc);
       }
     if ((rc == THING_NOT_FOUND) &&
-        (LOGLEVEL >= 8))
+        (LOGLEVEL >= 4))
       {
       snprintf(log_buf,sizeof(log_buf),
         "Could not remove job %s from alljobs\n", pjob->ji_qs.ji_jobid); 
