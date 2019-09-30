@@ -4241,7 +4241,7 @@ int place_subnodes_in_hostlist(
 #ifdef GEOMETRY_REQUESTS
   if (IS_VALID_STR(ProcBMStr))
     {
-    rc = reserve_node(pnode, pjob, ProcBMStr, node_info, job_mutex);
+    rc = reserve_node(pnode, pjob, ProcBMStr, node_info);
 
     if (rc == PBSE_NONE)
       {
@@ -4975,7 +4975,7 @@ int set_nodes(
 
   ProcBMStr[0] = '\0';
 #ifdef GEOMETRY_REQUESTS
-  get_bitmap(pjob, sizeof(ProcBMStr), ProcBMStr, job_mutex);
+  get_bitmap(pjob, sizeof(ProcBMStr), ProcBMStr);
 #endif /* GEOMETRY_REQUESTS */
 
   if (pjob->ji_wattr[JOB_ATR_login_prop].at_flags & ATR_VFLAG_SET)

@@ -945,7 +945,7 @@ void stat_update(
         else
           {
           /* save so we can recover resources used */
-          job_save(pjob, SAVEJOB_FULL, 0);
+          job_save(pjob, SAVEJOB_FULL, 0, job_mutex);
           }
 #endif    /* USESAVEDRESOURCES */
 
