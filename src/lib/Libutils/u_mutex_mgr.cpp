@@ -187,8 +187,12 @@ using namespace std;
     if (mutex_valid == false)
       return;
 
-	sprintf(log_buf, "~mutex_mgr: locked = %d: unlock_on_exit = %d", locked, unlock_on_exit);
-    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+	if (LOGLEVEL >= 7)
+	  {
+	  sprintf(log_buf, "~mutex_mgr: locked = %d: unlock_on_exit = %d", locked, unlock_on_exit);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+	  }
+
     if ((unlock_on_exit == true) && (locked == true))
 	  {
       rc = pthread_mutex_unlock(managed_mutex);
