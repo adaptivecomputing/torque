@@ -187,7 +187,8 @@ using namespace std;
     if (mutex_valid == false)
       return;
 
-	if (LOGLEVEL >= 7)
+	int level = 4;
+	if (level >= 7)
 	  {
 	  sprintf(log_buf, "~mutex_mgr: locked = %d: unlock_on_exit = %d", locked, unlock_on_exit);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);
@@ -246,7 +247,7 @@ using namespace std;
     if (rc != 0)
 	  {
 	  char log_buf[LOG_BUF_SIZE];
-	  snprintf(log_buf, LOG_BUF_SIZE, "%s:%s", "UNLOCK error in mutex_mgr::unlock", strerror(errno));
+	  snprintf(log_buf, LOG_BUF_SIZE, "%s:%s", "UNLOCK error in mutex_mgr::lock", strerror(errno));
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);
       return PBSE_SYSTEM;
       }
