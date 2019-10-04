@@ -449,7 +449,7 @@ extern void  req_change_power_state(struct batch_request *request);
 #endif
 
 #ifdef SERVER_LIMITS_H
-int relay_to_mom (job **, struct batch_request *, void (*func)(struct work_task *));
+int relay_to_mom (job **, struct batch_request *, void (*func)(struct work_task *), boost::shared_ptr<mutex_mgr>& job_mutex);
 #endif  /* SERVER_LIMITS_H */
 
 /* PBS Batch Request Decode/Encode routines */

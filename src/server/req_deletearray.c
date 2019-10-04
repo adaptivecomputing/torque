@@ -30,10 +30,10 @@
 extern int LOGLEVEL;
 extern int  svr_authorize_req(struct batch_request *preq, char *owner, char *submit_host);
 
-extern struct work_task *apply_job_delete_nanny(struct job *, int);
+extern struct work_task *apply_job_delete_nanny(struct job *);
 extern int has_job_delete_nanny(struct job *);
-extern void setup_apply_job_delete_nanny(struct job *, time_t  time_now);
-extern void remove_stagein(job **pjob);
+extern void setup_apply_job_delete_nanny(struct job *, time_t  time_now, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern void remove_stagein(job **pjob, boost::shared_ptr<mutex_mgr>& job_mutex);
 extern void change_restart_comment_if_needed(struct job *);
 
 extern char *msg_unkarrayid;
@@ -43,7 +43,7 @@ void post_delete(struct work_task *pwt);
 
 void array_delete_wt(struct work_task *ptask);
 void          on_job_exit_task(struct work_task *);
-int   delete_inactive_job(job **pjob_ptr, const char *Msg);
+int   delete_inactive_job(job **pjob_ptr, const char *Msg, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 extern int LOGLEVEL;
 
@@ -59,7 +59,8 @@ extern int LOGLEVEL;
  */
 bool attempt_delete(
 
-  void *j) /* I */
+  void *j, /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   bool       skipped = false;
@@ -73,12 +74,6 @@ bool attempt_delete(
 
   pjob = (job *)j;
 
-  int rc;
-  boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
-  if (rc != PBSE_NONE)
-	{
-	return skipped;
-	}
 
   if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE) != 0)
     {
@@ -108,11 +103,11 @@ bool attempt_delete(
     
     if (pjob->ji_has_delete_nanny == false)
       {
-      setup_apply_job_delete_nanny(pjob, time_now);
+      setup_apply_job_delete_nanny(pjob, time_now, job_mutex);
 
       /* need to issue a signal to the mom, but we don't want to sent an ack to the
        * client when the mom replies */
-      issue_signal(&pjob, "SIGTERM", NULL, NULL, NULL);
+      issue_signal(&pjob, "SIGTERM", NULL, NULL, NULL, job_mutex);
       }
 
     if (pjob != NULL)
@@ -124,15 +119,15 @@ bool attempt_delete(
         }
       }
     else
-      pjob_mutex->set_unlock_on_exit(false);
+      job_mutex->set_unlock_on_exit(false);
     
     return(!skipped);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
 
-  delete_inactive_job(&pjob, NULL);
+  delete_inactive_job(&pjob, NULL, job_mutex);
   
   if (pjob == NULL)
-    pjob_mutex->set_unlock_on_exit(false);
+    job_mutex->set_unlock_on_exit(false);
 
   return(!skipped);
   } /* END attempt_delete() */
@@ -200,7 +195,7 @@ int req_deletearray(
  /* check authorization */
   get_jobowner(pa->ai_qs.owner, owner);
 
-  if (svr_authorize_req(preq, owner, pa->ai_qs.submit_host) == -1)
+  if (svr_authorize_req(preq, owner, pa->ai_qs.submit_host) != PBSE_NONE)
     {
     sprintf(log_buf, msg_permlog,
       preq->rq_type,
@@ -377,7 +372,7 @@ void array_delete_wt(
           /* job has restart file at mom, do end job processing */
           change_restart_comment_if_needed(pjob);
           
-          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE);
+          svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_EXITING, FALSE, job_mutex);
           
           pjob->ji_momhandle = -1;
           
@@ -394,14 +389,13 @@ void array_delete_wt(
       else if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_StagedIn) != 0)
         {
         /* job has staged-in file, should remove them */
-        remove_stagein(&pjob);
+        remove_stagein(&pjob, job_mutex);
         
         if (pjob != NULL)
           {
           /* job_abt() calls svr_job_purge which will try to lock the array again */
           array_mutex->unlock();
-          job_abt(&pjob, NULL);
-          job_mutex->set_unlock_on_exit(false);
+          job_abt(&pjob, NULL, job_mutex);
           pa = get_array(preq->rq_ind.rq_delete.rq_objname);
           if (pa != NULL)
             array_mutex->mark_as_locked();
@@ -415,9 +409,8 @@ void array_delete_wt(
         {
         /* job_abt() calls svr_job_purge which will try to lock the array again */
         array_mutex->unlock();
-        job_mutex->set_unlock_on_exit(false);
 
-        job_abt(&pjob, NULL);
+        job_abt(&pjob, NULL, job_mutex);
         pa = get_array(preq->rq_ind.rq_delete.rq_objname);
 
         if (pa != NULL)

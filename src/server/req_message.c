@@ -132,7 +132,12 @@ void *req_messagejob(
   if ((pjob = chk_job_request(preq->rq_ind.rq_message.rq_jid, preq)) == NULL)
     return(NULL);
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	log_err(rc, __func__, "failed to allocate managed mutex");
+	return(NULL);
+	}
 
   /* the job must be running */
 
@@ -145,7 +150,7 @@ void *req_messagejob(
 
   batch_request dup_req(*preq);
   
-  if ((rc = relay_to_mom(&pjob, &dup_req, NULL)) != PBSE_NONE)
+  if ((rc = relay_to_mom(&pjob, &dup_req, NULL, job_mutex)) != PBSE_NONE)
     {
     req_reject(rc, 0, preq, NULL, NULL); /* unable to get to MOM */
     }
@@ -153,10 +158,6 @@ void *req_messagejob(
     {
     post_message_req(&dup_req);
     }
-
-  /* After MOM acts and replies to us, we pick up in post_message_req() */
-  if (pjob == NULL)
-    job_mutex.set_unlock_on_exit(false);
 
   return(NULL);
   } /* END req_messagejob() */

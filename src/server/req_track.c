@@ -329,7 +329,8 @@ void track_save(
 
 void issue_track(
     
-  job *pjob)
+  job *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char          *pc;

@@ -165,8 +165,8 @@ int conn_qsub(const char *, long, char *);
 
 /* External functions */
 
-extern void cleanup_restart_file(job *);
-extern struct batch_request *setup_cpyfiles(struct batch_request *,job *,char*,char *,int,int);
+extern void cleanup_restart_file(job *, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern struct batch_request *setup_cpyfiles(struct batch_request *,job *,char*,char *,int,int, boost::shared_ptr<mutex_mgr>& job_mutex);
 extern int job_log_open(char *, char *);
 extern int log_job_record(const char *buf);
 extern void check_job_log(struct work_task *ptask);
@@ -200,7 +200,8 @@ extern char *job_log_file;
 static void send_qsub_delmsg(
 
   job  *pjob,  /* I */
-  const char *text)  /* I */
+  const char *text,  /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char          *phost;
@@ -397,11 +398,12 @@ void handle_aborted_job(
   job        **job_ptr, /* M */
   bool         dependentjob, /* I */
   long         KeepSeconds, /* I */
-  const char  *text) /* I */
+  const char  *text, /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   job *pjob = *job_ptr;
-  int  rc = svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_ABORT, FALSE);
+  int  rc = svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_ABORT, FALSE, job_mutex);
     
   if (rc == PBSE_UNKQUE)
     {
@@ -418,7 +420,8 @@ void handle_aborted_job(
   if ((!dependentjob) ||
       (!KeepSeconds))
     {
-    svr_job_purge(pjob);
+    svr_job_purge(pjob, job_mutex);
+	job_mutex->set_unlock_on_exit(false);
     *job_ptr = NULL;
     }
   else
@@ -479,6 +482,7 @@ int job_abt(
 
   struct job **pjobp, /* I (modified/freed) */
   const char  *text,  /* I (optional) */
+  boost::shared_ptr<mutex_mgr>& job_mutex,
   bool         dependentjob) /* I */
 
   {
@@ -506,13 +510,6 @@ int job_abt(
     return(rc);
     }
 
-  boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
-  if (rc != PBSE_NONE)
-	{
-	log_err(rc, __func__, "failed to allocate job mutex");
-	return(rc);
-	}
-
   long KeepSeconds = 0;
   int rc2 = get_svr_attr_l(SRV_ATR_KeepCompleted, &KeepSeconds);
   if ((rc2 != PBSE_NONE) || (KeepSeconds < 0))
@@ -532,8 +529,8 @@ int job_abt(
     {
     /* req_delete sends own mail and acct record */
 
-    account_record(PBS_ACCT_ABT, pjob, "");
-    svr_mailowner(pjob, MAIL_ABORT, MAIL_NORMAL, text);
+    account_record(PBS_ACCT_ABT, pjob, "", job_mutex);
+    svr_mailowner(pjob, MAIL_ABORT, MAIL_NORMAL, text, job_mutex);
 
     if ((pjob->ji_qs.ji_state == JOB_STATE_QUEUED) &&
         ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
@@ -541,15 +538,15 @@ int job_abt(
       {
       /* interactive and not yet running... send a note to qsub */
 
-      send_qsub_delmsg(pjob, text);
+      send_qsub_delmsg(pjob, text, job_mutex);
       }
     }
 
   if (old_state == JOB_STATE_RUNNING)
     {
-    svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_ABORT, FALSE);
+    svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_ABORT, FALSE, job_mutex);
 
-    if ((rc = issue_signal(&pjob, "SIGKILL", NULL, NULL, NULL)) != 0)
+    if ((rc = issue_signal(&pjob, "SIGKILL", NULL, NULL, NULL, job_mutex)) != 0)
       {
       if (pjob != NULL)
         {
@@ -563,15 +560,14 @@ int job_abt(
           
           pjob->ji_wattr[JOB_ATR_state].at_val.at_char = 'E';
           
-          issue_track(pjob);
+          issue_track(pjob, job_mutex);
           }
         
         if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
           {
-          if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
+          if (depend_on_term(pjob, job_mutex) == PBSE_JOBNOTFOUND)
             {
             pjob = NULL;
-            pjob_mutex->set_unlock_on_exit(false);
             }
           }
         
@@ -580,12 +576,12 @@ int job_abt(
             (pjob->ji_arraystructid[0] != '\0') &&
             (pjob->ji_is_array_template == false))
           {
-          job_array *pa = get_jobs_array(&pjob);
+          job_array *pa = get_jobs_array(&pjob, job_mutex);
           
           if (pjob != NULL)
             {
             job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-            pjob_mutex->unlock();
+            job_mutex->unlock();
              
             if (pa)
               {
@@ -595,12 +591,12 @@ int job_abt(
               }
 
             if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
-              pjob_mutex->mark_as_locked();
+              job_mutex->mark_as_locked();
             }
           }
       
         if (pjob != NULL)
-          handle_aborted_job(&pjob, dependentjob, KeepSeconds, text);
+          handle_aborted_job(&pjob, dependentjob, KeepSeconds, text, job_mutex);
         }
       }
     }
@@ -616,24 +612,23 @@ int job_abt(
     }
   else
     {
-    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_ABORT, FALSE);
+    svr_setjobstate(pjob, JOB_STATE_EXITING, JOB_SUBSTATE_ABORT, FALSE, job_mutex);
 
     if ((pjob->ji_qs.ji_svrflags & JOB_SVFLG_HERE) == 0)
       {
       /* notify creator that job is exited */
 
-      issue_track(pjob);
+      issue_track(pjob, job_mutex);
       }
 
     if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
       {
       strcpy(job_id, pjob->ji_qs.ji_jobid);
-      if (depend_on_term(pjob) == PBSE_JOBNOTFOUND)
+      if (depend_on_term(pjob, job_mutex) == PBSE_JOBNOTFOUND)
         {
         pjob = NULL;
-        pjob_mutex->set_unlock_on_exit(false);
         }
-      /* pjob_mutex managed mutex already points to pjob->ji_mutex. Nothing to do */
+      /* job_mutex managed mutex already points to pjob->ji_mutex. Nothing to do */
       }
 
     /* update internal array bookeeping values */
@@ -641,12 +636,12 @@ int job_abt(
         (pjob->ji_arraystructid[0] != '\0') &&
         (pjob->ji_is_array_template == false))
       {
-      job_array *pa = get_jobs_array(&pjob);
+      job_array *pa = get_jobs_array(&pjob, job_mutex);
 
       if (pjob != NULL)
         {
         job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-        pjob_mutex->unlock();
+        job_mutex->unlock();
         if (pa)
           {
           pa->update_array_values(old_state, aeTerminate, job_id, job_exit_status);
@@ -655,16 +650,14 @@ int job_abt(
           }
         
         if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
-          pjob_mutex->mark_as_locked();
+          job_mutex->mark_as_locked();
         }
       }
 
     if (pjob != NULL)
-      handle_aborted_job(&pjob, dependentjob, KeepSeconds, text);
+      handle_aborted_job(&pjob, dependentjob, KeepSeconds, text, job_mutex);
     }
 
-  if (pjob == NULL)
-    pjob_mutex->set_unlock_on_exit(false);
 
   return(rc);
   }  /* END job_abt() */
@@ -780,7 +773,8 @@ void free_all_of_job(
 void job_free(
 
   job *pj,
-  int  use_recycle)  /* I (modified) */
+  int  use_recycle,  /* I (modified) */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char              log_buf[LOCAL_LOG_BUF_SIZE];
@@ -788,6 +782,7 @@ void job_free(
   if (pj == NULL)
     {
     return;
+	job_mutex->set_unlock_on_exit(false);
     }
 
   if (LOGLEVEL >= 8)
@@ -797,7 +792,7 @@ void job_free(
     log_record(PBSEVENT_DEBUG,PBS_EVENTCLASS_JOB,pj->ji_qs.ji_jobid,log_buf);
     }
 
-  remove_job(&alljobs, pj, true);
+  remove_job(&alljobs, pj, job_mutex, true);
 
   /* move to the recycling structure - deleting right away can cause a race
    * condition where two threads are pending on the same job. Thread 1 gets 
@@ -806,12 +801,12 @@ void job_free(
    * ji_being_recycled flag to solve this problem --dbeer */
   if (use_recycle)
     {
-    insert_into_recycler(pj);
-    unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
+    insert_into_recycler(pj, job_mutex);
+	job_mutex->unlock();
     }
   else
     {
-    unlock_ji_mutex(pj, __func__, log_buf, LOGLEVEL);
+	job_mutex->unlock();
     free_all_of_job(pj);
     }
 
@@ -924,6 +919,9 @@ job *job_clone(
     return(NULL);
     }
 
+  int rc;
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pnewjob->ji_mutex, true, rc); 
+
   /* new job structure is allocated,
      now we need to copy the old job, but modify based on taskid */
   pnewjob->ji_modified = 1;   /* struct changed, needs to be saved */
@@ -935,7 +933,7 @@ job *job_clone(
   if ((oldid = strdup(template_job->ji_qs.ji_jobid)) == NULL)
     {
     log_err(ENOMEM, __func__, "no memory");
-    job_free(pnewjob, FALSE);
+    job_free(pnewjob, FALSE, job_mutex);
 
     return(NULL);
     }
@@ -993,7 +991,7 @@ job *job_clone(
       {
       if (errno == EEXIST)
         {
-        job_free(pnewjob, FALSE);
+        job_free(pnewjob, FALSE, job_mutex);
         return((job *)1); /* TODO: what is this magic for */
         }
       else
@@ -1001,7 +999,7 @@ job *job_clone(
         /* FAILURE */
 
         log_err(errno, __func__, "cannot create job file");
-        job_free(pnewjob, FALSE);
+        job_free(pnewjob, FALSE, job_mutex);
 
         return(NULL);
         }
@@ -1101,7 +1099,7 @@ job *job_clone(
     pa = get_array(template_job->ji_qs.ji_jobid);
     if (pa == NULL)
       {
-      job_free(pnewjob, FALSE);
+      job_free(pnewjob, FALSE, job_mutex);
       return(NULL);
       }
     }
@@ -1179,14 +1177,14 @@ int create_and_queue_array_subjob(
 	return(rc);
 	}
 
-  svr_evaljobstate(*pjobclone, newstate, newsub, 1);
+  svr_evaljobstate(*pjobclone, newstate, newsub, 1, clone_mgr);
 
   /* do this so that  svr_setjobstate() doesn't alter sv_jobstates,
    * these are set later in svr_enquejob() */
   pjobclone->ji_qs.ji_state = newstate;
   pjobclone->ji_qs.ji_substate = newsub;
 
-  svr_setjobstate(pjobclone, newstate, newsub, FALSE);
+  svr_setjobstate(pjobclone, newstate, newsub, FALSE, clone_mgr);
 
   pjobclone->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
   pjobclone->ji_wattr[JOB_ATR_qrank].at_flags |= ATR_VFLAG_SET;
@@ -1196,14 +1194,18 @@ int create_and_queue_array_subjob(
 
   array_mgr->unlock();
 
-  if ((rc = svr_enquejob(pjobclone, FALSE, prev_job_id.c_str(), false, false)))
+  if ((rc = svr_enquejob(pjobclone, FALSE, prev_job_id.c_str(), false, false, clone_mgr)))
     {
     /* XXX need more robust error handling */
-    clone_mgr->set_unlock_on_exit(false);
 
     if (rc != PBSE_JOB_RECYCLED)
       {
-      svr_job_purge(pjobclone);
+	  int rc;
+      rc = svr_job_purge(pjobclone, clone_mgr);
+	  if (rc == PBSE_NONE || rc == PBSE_JOBNOTFOUND)
+		{
+		clone_mgr->set_unlock_on_exit(false);
+		}
       }
 
     if ((pa = get_array(arrayid.c_str())) == NULL)
@@ -1218,7 +1220,7 @@ int create_and_queue_array_subjob(
     return(NONFATAL_ERROR);
     }
 
-  if ((pa = get_jobs_array(&pjobclone)) == NULL)
+  if ((pa = get_jobs_array(&pjobclone, clone_mgr)) == NULL)
     {
     if (pjobclone == NULL)
       {
@@ -1232,12 +1234,18 @@ int create_and_queue_array_subjob(
     
   array_mgr->mark_as_locked();
 
-  if (job_save(pjobclone, SAVEJOB_FULL, 0) != 0)
+  if (job_save(pjobclone, SAVEJOB_FULL, 0, clone_mgr) != 0)
     {
     /* XXX need more robust error handling */
     array_mgr->unlock();
-    svr_job_purge(pjobclone);
-    
+   
+    int rc;
+    rc = svr_job_purge(pjobclone, clone_mgr);
+	if (rc == PBSE_NONE || rc == PBSE_JOBNOTFOUND)
+	  {
+	  clone_mgr->set_unlock_on_exit(false);
+	  }
+
     if ((pa = get_array(arrayid.c_str())) == NULL)
       {
       return(FATAL_ERROR);
@@ -1328,8 +1336,8 @@ int perform_array_postprocessing(
         }
       
       pjob->ji_modified = TRUE;
-      svr_evaljobstate(*pjob, newstate, newsub, 1);
-      svr_setjobstate(pjob, newstate, newsub, FALSE);
+      svr_evaljobstate(*pjob, newstate, newsub, 1, job_mutex);
+      svr_setjobstate(pjob, newstate, newsub, FALSE, job_mutex);
 
        /*
        * if the job went into a Route (push) queue that has been started,
@@ -1337,7 +1345,7 @@ int perform_array_postprocessing(
        * to the user.
        */
 
-     if ((pque = get_jobs_queue(&pjob)) != NULL)
+     if ((pque = get_jobs_queue(&pjob, job_mutex)) != NULL)
        {
        boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex,true, rc);
 	   if (rc != PBSE_NONE)
@@ -1345,7 +1353,13 @@ int perform_array_postprocessing(
          char log_buf[LOCAL_LOG_BUF_SIZE];
          snprintf(log_buf, sizeof(log_buf), "Failed to allocate queue mutex. Cannot route job %s", pjob->ji_qs.ji_jobid);
          log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-         svr_job_purge(pjob);
+
+		 int rc;
+         rc = svr_job_purge(pjob, job_mutex);
+		 if (rc == PBSE_NONE || rc == PBSE_JOBNOTFOUND)
+			{
+			job_mutex->set_unlock_on_exit(false);
+			}
          }
 		
        if ((pque->qu_qs.qu_type == QTYPE_RoutePush) &&
@@ -1353,7 +1367,7 @@ int perform_array_postprocessing(
          { 
          /* job_route expects the queue to be unlocked */
          pque_mutex->unlock();
-         if ((rc = job_route(pjob)))
+         if ((rc = job_route(pjob, job_mutex)))
            {
            if (LOGLEVEL >= 6)
              {
@@ -1361,7 +1375,14 @@ int perform_array_postprocessing(
              snprintf(log_buf, sizeof(log_buf), "cannot route job %s", pjob->ji_qs.ji_jobid);
              log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
              }
-           svr_job_purge(pjob);
+
+		   int rc;
+           rc = svr_job_purge(pjob, job_mutex);
+		   if (rc == PBSE_NONE || rc == PBSE_JOBNOTFOUND)
+		 	{
+			job_mutex->set_unlock_on_exit(false);
+			}
+    
            pque_mutex->unlock();
            continue;
            }
@@ -1429,13 +1450,23 @@ void *job_clone_wt(
     }
 
   /* don't call get_jobs_array because the template job isn't part of the array */
-  if (((template_job = svr_find_job(jobid, TRUE)) == NULL) ||
-      ((pa = get_jobs_array(&template_job)) == NULL))
+  template_job = svr_find_job(jobid, TRUE);
+  if (template_job != NULL)
+	{
+	boost::shared_ptr<mutex_mgr> template_mutex = create_managed_mutex(template_job->ji_mutex, true, rc);
+	pa = get_jobs_array(&template_job, template_mutex);
+	}
+
+  if ((template_job  == NULL) ||
+      (pa  == NULL))
     {
     free(jobid);
 
     if (template_job != NULL)
-      unlock_ji_mutex(template_job, __func__, "1", LOGLEVEL);
+	  {
+	  boost::shared_ptr<mutex_mgr> template_mutex = create_managed_mutex(template_job->ji_mutex, true, rc);
+	  template_mutex->unlock();
+	  }
     pthread_setcancelstate(old_state, NULL);
     return(NULL);
     }
@@ -1523,7 +1554,8 @@ struct batch_request *cpy_checkpoint(
   struct batch_request *preq,
   job                  *pjob,
   enum job_atr          ati,  /* JOB_ATR_checkpoint_name or JOB_ATR_restart_name */
-  int                   direction)
+  int                   direction,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char            momfile[MAXPATHLEN+1];
@@ -1537,6 +1569,7 @@ struct batch_request *cpy_checkpoint(
   if (pjob == NULL)
   {
   log_err(PBSE_BAD_PARAMETER, __func__, "null input job pointer");
+  job_mutex->set_unlock_on_exit(false);
   return(NULL);
   }
 
@@ -1669,7 +1702,7 @@ struct batch_request *cpy_checkpoint(
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
     }
 
-  preq = setup_cpyfiles(preq, pjob, from, to, direction, JOBCKPFILE);
+  preq = setup_cpyfiles(preq, pjob, from, to, direction, JOBCKPFILE, job_mutex);
 
   return(preq);
   }  /* END cpy_checkpoint() */
@@ -1684,7 +1717,8 @@ struct batch_request *cpy_checkpoint(
 
 void remove_checkpoint(
 
-  job **pjob_ptr)  /* I */
+  job **pjob_ptr,  /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   batch_request *preq = NULL;
@@ -1705,7 +1739,7 @@ void remove_checkpoint(
     return;
     }
 
-  preq = cpy_checkpoint(preq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_IN);
+  preq = cpy_checkpoint(preq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_IN, job_mutex);
 
   if (preq != NULL)
     {
@@ -1723,7 +1757,7 @@ void remove_checkpoint(
     preq->rq_extra = NULL;
     /* The preq is freed in relay_to_mom (failure)
      * or in issue_Drequest (success) */
-    if (relay_to_mom(&pjob, preq, NULL) == PBSE_NONE)
+    if (relay_to_mom(&pjob, preq, NULL, job_mutex) == PBSE_NONE)
       {
       if (pjob != NULL)
         pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_CHECKPOINT_COPIED;
@@ -1755,7 +1789,8 @@ void remove_checkpoint(
 
 void cleanup_restart_file(
 
-  job *pjob)  /* I */
+  job *pjob,  /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   if (pjob == NULL)
@@ -1773,7 +1808,7 @@ void cleanup_restart_file(
   pjob->ji_wattr[JOB_ATR_restart_name].at_flags &= ~ATR_VFLAG_SET;
   pjob->ji_modified = 1;
   
-  job_save(pjob, SAVEJOB_FULL, 0);
+  job_save(pjob, SAVEJOB_FULL, 0, job_mutex);
 
   return;
   }  /* END cleanup_restart_file() */
@@ -1862,25 +1897,43 @@ int record_jobinfo(
     // get the adjusted path_jobs path  
     adjusted_path_jobs = get_path_jobdata(pjob->ji_qs.ji_jobid, path_jobs);
 
-    snprintf(namebuf, sizeof(namebuf), "%s%s%s",
-      adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+	// remove "-<array index>" if this is an array job
+	std::string filePrefix(pjob->ji_qs.ji_fileprefix);
+	std::size_t dot_pos = filePrefix.find_first_of(".");
+	std::string jobnum;
+	if (dot_pos != std::string::npos)
+	  {
+	  jobnum = filePrefix.substr(0, dot_pos);
+	  std::size_t dash = jobnum.find_first_of("-");
+	  if (dash != std::string::npos)
+		{
+		jobnum.resize(dash);
+		}
+	  }
+
+	  std::string adjustedFilePrefix(jobnum);
+	  adjustedFilePrefix  += ".";
+	  adjustedFilePrefix += filePrefix.substr(dot_pos+1, filePrefix.size());
+
+      snprintf(namebuf, sizeof(namebuf), "%s%s%s",
+        adjusted_path_jobs.c_str(), adjustedFilePrefix.c_str(), JOB_SCRIPT_SUFFIX);
     
-    if ((fd = open(namebuf, O_RDONLY)) >= 0)
-      {
-      memset(job_script_buf, 0, sizeof(job_script_buf));
-
-      while ((bytes_read = read_ac_socket(fd, job_script_buf, sizeof(job_script_buf) - 1)) > 0)
+      if ((fd = open(namebuf, O_RDONLY)) >= 0)
         {
-        bf += job_script_buf;
         memset(job_script_buf, 0, sizeof(job_script_buf));
-        }
 
-      close(fd);
-      }
-    else
-      {
-      bf += "unable to open script file\n";
-      }
+        while ((bytes_read = read_ac_socket(fd, job_script_buf, sizeof(job_script_buf) - 1)) > 0)
+          {
+          bf += job_script_buf;
+          memset(job_script_buf, 0, sizeof(job_script_buf));
+          }
+
+        close(fd);
+        }
+      else
+        {
+        bf += "unable to open script file\n";
+        }
    
     bf += "\t</job_script>\n";
     }
@@ -1908,6 +1961,7 @@ int record_jobinfo(
 int svr_job_purge(
 
   job *pjob,  /* I (modified) */
+  boost::shared_ptr<mutex_mgr>& job_mutex,
   int leaveSpoolFiles) /* I */
 
   {
@@ -1932,16 +1986,10 @@ int svr_job_purge(
     {
     rc = PBSE_BAD_PARAMETER;
     log_err(rc, __func__, "null input job pointer fail");
+	job_mutex->set_unlock_on_exit(false);
     return(rc);
     }
 
-  boost::shared_ptr<mutex_mgr> pjob_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
-  if ( rc != PBSE_NONE )
-	{
-	log_err(rc, __func__, "failed to allocate job mutex");
-	return(rc);
-	}
- 
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   strcpy(job_fileprefix, pjob->ji_qs.ji_fileprefix);
   job_substate = pjob->ji_qs.ji_substate;
@@ -1971,11 +2019,11 @@ int svr_job_purge(
       (job_is_array_template == true))
     {
     int rc2 = 0;
-    if ((rc2 = remove_job(&array_summary, pjob)) == PBSE_JOBNOTFOUND)
+    if ((rc2 = remove_job(&array_summary, pjob, job_mutex)) == PBSE_JOBNOTFOUND)
       {
       /* PBSE_JOBNOTFOUND means the job is gone.
        * remove_job alreadly unlocked pjob->ji_mutex */
-      pjob_mutex->set_unlock_on_exit(false); 
+      job_mutex->set_unlock_on_exit(false); 
       return(PBSE_NONE);
       }
     else if (rc2 == THING_NOT_FOUND && (LOGLEVEL >= 7))
@@ -1993,7 +2041,7 @@ int svr_job_purge(
     {
     /* pa->ai_mutex will come out locked after 
        the call to get_jobs_array */
-    pa = get_jobs_array(&pjob);
+    pa = get_jobs_array(&pjob, job_mutex);
 
     if (pjob != NULL)
       {
@@ -2011,7 +2059,6 @@ int svr_job_purge(
       }
     else
       {
-      pjob_mutex->set_unlock_on_exit(false);
       return(PBSE_JOBNOTFOUND);
       }
     }
@@ -2021,7 +2068,7 @@ int svr_job_purge(
     {
     /* set the state to complete so that svr_dequejob() will function properly */
     pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
-    rc = svr_dequejob(pjob, FALSE);
+    rc = svr_dequejob(pjob, FALSE, job_mutex);
 
     if (rc != PBSE_JOBNOTFOUND)
       {
@@ -2032,17 +2079,19 @@ int svr_job_purge(
       if ((pjob->ji_being_recycled == false) &&
           (rc != PBSE_JOB_NOT_IN_QUEUE))
         {
-        job_free(pjob, TRUE);
-        pjob_mutex->set_unlock_on_exit(false);  /* job_free will release lock */
+        job_free(pjob, TRUE, job_mutex);
         }
       else
-        pjob_mutex->unlock();
+        job_mutex->unlock();
       }
+	else
+	  {
+	  job_free(pjob, TRUE, job_mutex);
+	  }
     }
   else
     {
-    job_free(pjob, TRUE);
-    pjob_mutex->set_unlock_on_exit(false); /* job_free will release lock */
+    job_free(pjob, TRUE, job_mutex);
     }
 
   // get the adjusted path_jobs
@@ -2159,8 +2208,10 @@ void *svr_job_purge_task(
   void *vp)
 
   {
+  int rc;
   job *pjob = (job *)vp;
-  svr_job_purge(pjob);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  svr_job_purge(pjob, job_mutex);
   return(NULL);
   } // END svr_job_purge_task()
 
@@ -2174,7 +2225,8 @@ void *svr_job_purge_task(
 
 job_array *get_jobs_array(
 
-  job **pjob_ptr)
+  job **pjob_ptr,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char       log_buf[LOCAL_LOG_BUF_SIZE];
@@ -2196,16 +2248,6 @@ job_array *get_jobs_array(
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
     return(NULL);
     }
-
-  int rc;
-  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex,true, rc);
-  if (rc != PBSE_NONE)
-	{
-    log_err(rc, __func__, "Failed to allocate job mutex");
-    return(NULL);
-	}
-	
-  job_mutex->set_unlock_on_exit(false);
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
 
@@ -2233,6 +2275,10 @@ job_array *get_jobs_array(
 
       *pjob_ptr = NULL;
       }
+	  else
+		{
+		job_mutex->mark_as_locked();
+		}
     }
 
   return(pa);
@@ -2242,7 +2288,8 @@ job_array *get_jobs_array(
 
 struct pbs_queue *get_jobs_queue(
 
-  job **pjob_ptr)
+  job **pjob_ptr,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   job       *pjob = NULL;
@@ -2264,7 +2311,7 @@ struct pbs_queue *get_jobs_queue(
     return(NULL);
     }
 
-  pque = lock_queue_with_job_held(pjob->ji_qhdr, pjob_ptr);
+  pque = lock_queue_with_job_held(pjob->ji_qhdr, pjob_ptr, job_mutex);
 
   if (LOGLEVEL >= 10)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, "exit");
@@ -2475,7 +2522,8 @@ int change_external_job_name(
 
 int split_job(
 
-  job *pjob)
+  job *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   job            *external;
@@ -2489,7 +2537,7 @@ int split_job(
     external->ji_internal_id = job_mapper.get_new_id(external->ji_qs.ji_jobid);
     external->ji_parent_job = pjob;
     pjob->ji_external_clone = external;
-    unlock_ji_mutex(external, __func__, NULL, LOGLEVEL);
+	job_mutex->unlock();
     }
 
   if (pjob->ji_cray_clone == NULL)
@@ -2499,7 +2547,7 @@ int split_job(
     cray->ji_internal_id    = pjob->ji_internal_id;
     cray->ji_parent_job     = pjob;
     pjob->ji_cray_clone     = cray;
-    unlock_ji_mutex(cray, __func__, NULL, LOGLEVEL);
+	job_mutex->unlock();
     }
 
   return(PBSE_NONE);

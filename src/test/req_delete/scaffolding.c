@@ -72,7 +72,7 @@ int svr_job_purge(job *pjob, int leaveSpoolFiles)
   return(0);
   }
 
-void chk_job_req_permissions(job **pjob_ptr, struct batch_request *preq)
+void chk_job_req_permissions(job **pjob_ptr, struct batch_request *preq, boost::shared_ptr<mutex_mgr>& job_mutex)
   {
   }
 
@@ -130,7 +130,7 @@ int svr_chk_owner(struct batch_request *preq, job *pjob)
   return(0);
   }
 
-int job_abt(struct job **pjobp, const char *text, bool b=false)
+int job_abt(struct job **pjobp, const char *text, boost::shared_ptr<mutex_mgr>& job_mutex, bool b=false)
   {
   if (pjobp != NULL)
     *pjobp = NULL;
@@ -262,7 +262,7 @@ int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct w
   return(bad_relay);
   }
 
-void removeBeforeAnyDependencies(job **pjob_ptr) {}
+void removeBeforeAnyDependencies(job **pjob_ptr, boost::shared_ptr<mutex_mgr>& job_mutex) {}
 
 
 /*

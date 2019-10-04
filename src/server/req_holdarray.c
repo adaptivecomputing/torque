@@ -32,7 +32,8 @@ extern int LOGLEVEL;
 void hold_job(
 
   pbs_attribute *temphold, /* I */
-  void          *j)        /* I */
+  void          *j,        /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   long *hold_val;
@@ -45,7 +46,10 @@ void hold_job(
   job *pjob = (job *)j;
 
   if (pjob == NULL)
+	{
+	job_mutex->set_unlock_on_exit(false);
     return;
+	}
 
   hold_val = &pjob->ji_wattr[JOB_ATR_hold].at_val.at_long;
   old_hold = *hold_val;
@@ -69,9 +73,9 @@ void hold_job(
     
     pjob->ji_modified = 1;
 
-    svr_evaljobstate(*pjob, newstate, newsub, 0);
+    svr_evaljobstate(*pjob, newstate, newsub, 0, job_mutex);
 
-    svr_setjobstate(pjob, newstate, newsub, FALSE);
+    svr_setjobstate(pjob, newstate, newsub, FALSE, job_mutex);
     }
 
   } /* END hold_job() */
@@ -112,7 +116,7 @@ int req_holdarray(
 
   get_jobowner(pa->ai_qs.owner, owner);
 
-  if (svr_authorize_req(preq, owner, pa->ai_qs.submit_host) == -1)
+  if (svr_authorize_req(preq, owner, pa->ai_qs.submit_host) != PBSE_NONE)
     {
     sprintf(log_buf, msg_permlog,
       preq->rq_type, "Array", preq->rq_ind.rq_delete.rq_objname, preq->rq_user, preq->rq_host);
@@ -173,7 +177,7 @@ int req_holdarray(
 		  return rc;
 		  }
 
-        hold_job(&temphold, pjob);
+        hold_job(&temphold, pjob, job_mutex);
         }
       }
     }

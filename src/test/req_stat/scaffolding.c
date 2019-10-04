@@ -161,7 +161,7 @@ int status_job(
   exit(1);
   }
 
-int job_abt(struct job **pjobp, const char *text, bool b=false)
+int job_abt(struct job **pjobp, const char *text, boost::shared_ptr<mutex_mgr>& job_mutex, bool b=false)
   {
   abort_called++;
   return(0);

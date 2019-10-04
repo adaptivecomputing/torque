@@ -122,12 +122,12 @@
 #define ROUTE_RETRY_TIME 10
 
 /* External functions called */
-int svr_movejob(job *, char *, int *, struct batch_request *);
+int svr_movejob(job *, char *, int *, struct batch_request *, boost::shared_ptr<mutex_mgr>& job_mutex);
 long count_proc(const char *spec);
 
 /* Local Functions */
 
-int  job_route(job *);
+int  job_route(job *, boost::shared_ptr<mutex_mgr>&);
 
 /* Global Data */
 extern char *msg_routexceed;
@@ -144,7 +144,8 @@ extern int route_retry_interval;
 
 void add_dest(
 
-  job *jobp)
+  job *jobp,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   if (jobp == NULL)
@@ -168,7 +169,8 @@ void add_dest(
 bool is_bad_dest(
 
   job  *jobp,
-  char *dest)
+  char *dest,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   /* ji_rejectdest is set in add_dest if approved in ??? */
@@ -197,7 +199,8 @@ int default_router(
 
   job              *jobp,
   struct pbs_queue *qp,
-  long              retry_time)
+  long              retry_time,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   struct array_strings *dest_attr = NULL;
@@ -260,14 +263,14 @@ int default_router(
     else
       continue;
 
-    if (is_bad_dest(jobp, destination))
+    if (is_bad_dest(jobp, destination, job_mutex))
       continue;
 
-    switch (svr_movejob(jobp, destination, &local_errno, NULL))
+    switch (svr_movejob(jobp, destination, &local_errno, NULL, job_mutex))
       {
       case ROUTE_PERM_FAILURE: /* permanent failure */
 
-        add_dest(jobp);
+        add_dest(jobp, job_mutex);
 
         break;
 
@@ -318,7 +321,8 @@ int default_router(
 
 int job_route(
 
-  job *jobp)      /* job to route */
+  job *jobp,      /* job to route */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int               bad_state = 0;
@@ -335,7 +339,7 @@ int job_route(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
   
-  qp = get_jobs_queue(&jobp);
+  qp = get_jobs_queue(&jobp, job_mutex);
   
   if (jobp == NULL)
     {
@@ -465,11 +469,11 @@ int job_route(
   if (qp->qu_attr[QR_ATR_AltRouter].at_val.at_long == 0)
     {
     qp_mutex->unlock();
-    return(default_router(jobp, qp, retry_time));
+    return(default_router(jobp, qp, retry_time, job_mutex));
     }
 
   qp_mutex->unlock();
-  return(site_alt_router(jobp, qp, retry_time));
+  return(site_alt_router(jobp, qp, retry_time, job_mutex));
   }  /* END job_route() */
 
 
@@ -477,7 +481,8 @@ int job_route(
 
 int reroute_job(
 
-  job *pjob)
+  job *pjob,
+  boost::shared_ptr<mutex_mgr> job_mutex)
 
   {
   int        rc = PBSE_NONE;
@@ -489,14 +494,14 @@ int reroute_job(
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
     
-  rc = job_route(pjob);
+  rc = job_route(pjob, job_mutex);
 
   if (rc == PBSE_ROUTEREJ)
-    job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ));
+    job_abt(&pjob, pbse_to_txt(PBSE_ROUTEREJ), job_mutex, false);
   else if (rc == PBSE_ROUTEEXPD)
-    job_abt(&pjob, msg_routexceed);
+    job_abt(&pjob, msg_routexceed, job_mutex, false);
   else if (rc == PBSE_QUENOEN)
-    job_abt(&pjob, msg_err_noqueue);
+    job_abt(&pjob, msg_err_noqueue, job_mutex, false);
 
   return(rc);      
   } /* END reroute_job() */
@@ -515,7 +520,8 @@ int handle_rerouting(
     
   job       *pjob,
   pbs_queue *pque,
-  char      *queue_name)
+  char      *queue_name,
+  boost::shared_ptr<mutex_mgr> job_mutex)
 
   {
   int rc = PBSE_NONE;
@@ -524,14 +530,14 @@ int handle_rerouting(
    * req_commit have the first crack at routing always. */
   if (pjob->ji_commit_done == 0) /* when req_commit is done it will set ji_commit_done to 1 */
     {
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	job_mutex->unlock();
     return(rc);
     }
 
   /* queue must be unlocked when calling reroute_job */
   unlock_queue(pque, __func__, NULL, 10);
-  reroute_job(pjob);
-  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+  reroute_job(pjob, job_mutex);
+  job_mutex->unlock();
 
   /* need to relock queue when we go to call next_job */
   pque = find_queuebyname(queue_name);
@@ -621,7 +627,8 @@ void *queue_route(
 
     while ((pjob = next_job(pque->qu_jobs,iter)) != NULL)
       {
-      if (handle_rerouting(pjob, pque, queue_name) != PBSE_NONE)
+	  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+      if (handle_rerouting(pjob, pque, queue_name, job_mutex) != PBSE_NONE)
         {
         free(queue_name);
         delete iter;
@@ -639,13 +646,14 @@ void *queue_route(
 
     while ((pjob = next_job(pque->qu_jobs_array_sum, iter)) != NULL)
       {
+	  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
       if (pjob->ji_is_array_template == false)
         {
-        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+		job_mutex->unlock();
         continue;
         }
 
-      if (handle_rerouting(pjob, pque, queue_name) != PBSE_NONE)
+      if (handle_rerouting(pjob, pque, queue_name, job_mutex) != PBSE_NONE)
         {
         free(queue_name);
         delete iter;

@@ -137,11 +137,11 @@ extern struct server server;
 
 /* External Functions called */
 
-extern void cleanup_restart_file(job *);
-extern void rel_resc(job *);
+extern void cleanup_restart_file(job *, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern void rel_resc(job *, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 extern job  *chk_job_request(char *, struct batch_request *);
-extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
+extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 extern const char *get_correct_jobname(const char *jobid, std::string &correct);
 
@@ -266,7 +266,13 @@ void mom_cleanup_checkpoint_hold(
     }
   free(jobid);
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	sprintf(log_buf, "failed to create managed mutex");
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buf);
+	return;
+	}
 
   if (LOGLEVEL >= 7)
     {
@@ -289,7 +295,7 @@ void mom_cleanup_checkpoint_hold(
       
     strcpy(preq.rq_ind.rq_delete.rq_objname, pjob->ji_qs.ji_jobid);
     
-    if ((rc = relay_to_mom(&pjob, &preq, NULL)) != PBSE_NONE)
+    if ((rc = relay_to_mom(&pjob, &preq, NULL, job_mutex)) != PBSE_NONE)
       {
       if (pjob != NULL)
         {
@@ -299,9 +305,6 @@ void mom_cleanup_checkpoint_hold(
         
         log_err(rc, __func__, log_buf);
         }
-      else
-        job_mutex.set_unlock_on_exit(false);
-
       return;
       }
 
@@ -316,8 +319,6 @@ void mom_cleanup_checkpoint_hold(
     set_task(WORK_Timed, time_now + 1, mom_cleanup_checkpoint_hold, strdup(pjob->ji_qs.ji_jobid), FALSE);
     }
 
-  if (pjob == NULL)
-    job_mutex.set_unlock_on_exit(false);
   } /* END mom_cleanup_checkpoint_hold() */
 
 
@@ -330,7 +331,8 @@ void mom_cleanup_checkpoint_hold(
 void chkpt_xfr_hold(
 
   batch_request *preq,
-  job           *pjob)
+  job           *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char   log_buf[LOCAL_LOG_BUF_SIZE];
@@ -398,7 +400,8 @@ int modify_job(
   svrattrl       *plist,           /* I */
   batch_request  *preq,            /* I */
   int             checkpoint_req,  /* I */
-  int             flag)            /* I */
+  int             flag,			   /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex )            /* I */
 
   {
   int                    bad = 0;
@@ -456,7 +459,7 @@ int modify_job(
 
       pjob->ji_qs.ji_substate = JOB_SUBSTATE_RERUN;
 
-      job_save(pjob, SAVEJOB_QUICK, 0);
+      job_save(pjob, SAVEJOB_QUICK, 0, job_mutex);
 
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
 
@@ -464,7 +467,7 @@ int modify_job(
       
       if (pjob->ji_wattr[JOB_ATR_restart_name].at_flags & ATR_VFLAG_SET)
         {
-        cleanup_restart_file(pjob);
+        cleanup_restart_file(pjob, job_mutex);
         }
 
       }
@@ -569,7 +572,7 @@ int modify_job(
   plist = plist_hold;
   while (plist != NULL)
     {
-    rc = modify_job_attr(pjob, plist, preq->rq_perm, &bad);
+    rc = modify_job_attr(pjob, plist, preq->rq_perm, &bad, job_mutex);
 
     if (rc)
       {
@@ -594,17 +597,17 @@ int modify_job(
   pjob->ji_mod_time = time(NULL);
 
   /* Reset any defaults resource limit which might have been unset */
-  set_resc_deflt(pjob, NULL, FALSE);
+  set_resc_deflt(pjob, NULL, FALSE, job_mutex);
 
   /* if job is not running, may need to change its state */
   if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
     {
-    svr_evaljobstate(*pjob, newstate, newsubstate, 0);
-    svr_setjobstate(pjob, newstate, newsubstate, FALSE);
+    svr_evaljobstate(*pjob, newstate, newsubstate, 0, job_mutex);
+    svr_setjobstate(pjob, newstate, newsubstate, FALSE, job_mutex);
     }
   else
     {
-    job_save(pjob, SAVEJOB_FULL, 0);
+    job_save(pjob, SAVEJOB_FULL, 0, job_mutex);
     }
 
   sprintf(log_buf, msg_manager, msg_jobmod, preq->rq_user, preq->rq_host);
@@ -618,7 +621,7 @@ int modify_job(
     if (flag != NO_MOM_RELAY)
       {
       /* The last number is unused unless this is an array */
-      if ((rc = relay_to_mom(&pjob, preq, NULL)))
+      if ((rc = relay_to_mom(&pjob, preq, NULL, job_mutex)))
         {
         req_reject(rc, 0, preq, NULL, NULL);
 
@@ -640,7 +643,7 @@ int modify_job(
         if (pjob != NULL)
           {
           strcpy(jobid, pjob->ji_qs.ji_jobid);
-          unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+		  job_mutex->unlock();
           }
 
         post_modify_req(preq);
@@ -649,7 +652,13 @@ int modify_job(
           pjob = svr_find_job(jobid, TRUE);
 
         if (pjob == NULL)
+		  {
           *pjob_ptr = NULL;
+		  }
+		else
+		  {
+		  job_mutex->mark_as_locked();
+		  }
         }
       }
     else
@@ -665,14 +674,14 @@ int modify_job(
   if (copy_checkpoint_files)
     {
     struct batch_request *momreq = NULL;
-    momreq = cpy_checkpoint(momreq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_OUT);
+    momreq = cpy_checkpoint(momreq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_OUT, job_mutex);
 
     if (momreq != NULL)
       {
       /* have files to copy */
       momreq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
-      rc = relay_to_mom(&pjob, momreq, NULL);
+      rc = relay_to_mom(&pjob, momreq, NULL, job_mutex);
 
       if (rc != PBSE_NONE)
         {
@@ -688,7 +697,7 @@ int modify_job(
         return(PBSE_NONE);  /* come back when mom replies */
         }
       else if (checkpoint_req == CHK_HOLD)
-        chkpt_xfr_hold(momreq, pjob);
+        chkpt_xfr_hold(momreq, pjob, job_mutex);
       
       delete momreq;
       }
@@ -735,23 +744,31 @@ int modify_whole_array(
       }
     else
       {
+	  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	  if (rc != PBSE_NONE)
+		{
+		char log_buf[LOG_BUF_SIZE];
+		sprintf(log_buf, "failed to create managed mutex");
+		log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+		return(rc);
+		}
+
       /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
       batch_request array_req(*preq);
       array_req.update_object_id(i);
-      mutex_mgr job_mutex(pjob->ji_mutex, true);
       pthread_mutex_unlock(pa->ai_mutex);
       array_req.rq_noreply = true;
-      rc = modify_job((void **)&pjob, plist, &array_req, checkpoint_req, NO_MOM_RELAY);
+      rc = modify_job((void **)&pjob, plist, &array_req, checkpoint_req, NO_MOM_RELAY, job_mutex);
       if (rc != PBSE_NONE)
         {
         modify_job_rc = rc;
         }
-      pa = get_jobs_array(&pjob);
+      pa = get_jobs_array(&pjob, job_mutex);
       
       if (pa == NULL)
         {
         if (pjob == NULL)
-          job_mutex.set_unlock_on_exit(false);
+          job_mutex->set_unlock_on_exit(false);
 
         return(PBSE_JOB_RECYCLED);
         }
@@ -759,7 +776,7 @@ int modify_whole_array(
       if (pjob == NULL)
         {
         pa->job_ids[i] = NULL;
-        job_mutex.set_unlock_on_exit(false);
+        job_mutex->set_unlock_on_exit(false);
         continue;
         }
       }
@@ -874,10 +891,18 @@ void *modify_array_work(
     if ((pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq)) == NULL)
       return(NULL);
 
-    mutex_mgr job_mutex = mutex_mgr(pjob->ji_mutex, true);
+	boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+	if (rc != PBSE_NONE)
+	  {
+	  char log_buf[LOG_BUF_SIZE];
+	  sprintf(log_buf, "failed to create managed mutex");
+	  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	  return(NULL);
+	  }
+	  
 
     /* modify_job will reply to preq and free it */
-    modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
+    modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY, job_mutex);
     }
 
   return(NULL);
@@ -943,8 +968,16 @@ int modify_job_work(
     return(PBSE_JOBNOTFOUND);
     }
 
-  mutex_mgr job_mutex(pjob->ji_mutex, true);
-  
+  int rc;
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	char log_buf[LOG_BUF_SIZE];
+	sprintf(log_buf, "failed to create managed mutex");
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return(rc);
+	}
+
   /* pbs_mom sets the extend string to trigger copying of checkpoint files */
   if (preq->rq_extend != NULL)
     {
@@ -961,7 +994,7 @@ int modify_job_work(
   plist = (svrattrl *)GET_NEXT(preq->rq_ind.rq_modify.rq_attr);
 
   /* modify_job will free preq and respond to it */
-  modify_job((void **)&pjob, plist, preq, checkpoint_req, 0);
+  modify_job((void **)&pjob, plist, preq, checkpoint_req, 0, job_mutex);
 
   return(PBSE_NONE);
   } /* END modify_job_work() */
@@ -1056,7 +1089,8 @@ int modify_job_attr(
   job      *pjob,  /* I (modified) */
   svrattrl *plist, /* I */
   int       perm,
-  int      *bad)   /* O */
+  int      *bad,   /* O */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int            allow_unkn = -1;
@@ -1067,7 +1101,15 @@ int modify_job_attr(
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   pbs_queue     *pque;
 
-  if ((pque = get_jobs_queue(&pjob)) != NULL)
+  if (pjob == NULL)
+    {
+    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 5");
+	job_mutex->set_unlock_on_exit(false);
+    return(PBSE_JOBNOTFOUND);
+    }
+
+
+  if ((pque = get_jobs_queue(&pjob, job_mutex)) != NULL)
     {
     boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
 	if (rc != PBSE_NONE)
@@ -1079,12 +1121,6 @@ int modify_job_attr(
 
     if (pque->qu_qs.qu_type != QTYPE_Execution)
       allow_unkn = JOB_ATR_UNKN;
-    }
-
-  if (pjob == NULL)
-    {
-    log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 5");
-    return(PBSE_JOBNOTFOUND);
     }
 
   if (pjob->ji_parent_job != NULL)
@@ -1159,7 +1195,7 @@ int modify_job_attr(
 
       if (rc == 0)
         {
-        if ((pque = get_jobs_queue(&pjob)) != NULL)
+        if ((pque = get_jobs_queue(&pjob, job_mutex)) != NULL)
           {
           boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
 		  if (rc != PBSE_NONE)
@@ -1174,6 +1210,7 @@ int modify_job_attr(
         else if (pjob == NULL)
           {
           log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 6");
+		  job_mutex->set_unlock_on_exit(false);
           return(PBSE_JOBNOTFOUND);
           }
         else
@@ -1218,7 +1255,7 @@ int modify_job_attr(
       {
       /* need to reset execution uid and gid */
 
-      rc = set_jobexid(pjob, newattr, NULL);
+      rc = set_jobexid(pjob, newattr, NULL, job_mutex);
       }
 
     if ((rc == 0) &&
@@ -1241,7 +1278,7 @@ int modify_job_attr(
         newattr[JOB_ATR_outpath].at_val.at_str[strlen(newattr[JOB_ATR_outpath].at_val.at_str) - 1] = '\0';
         
         replace_attr_string(&newattr[JOB_ATR_outpath],
-          (strdup(add_std_filename(pjob, newattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds))));
+          (strdup(add_std_filename(pjob, newattr[JOB_ATR_outpath].at_val.at_str, (int)'o', ds, job_mutex))));
         }
       }
 
@@ -1265,7 +1302,7 @@ int modify_job_attr(
         newattr[JOB_ATR_errpath].at_val.at_str[strlen(newattr[JOB_ATR_errpath].at_val.at_str) - 1] = '\0';
         
         replace_attr_string(&newattr[JOB_ATR_errpath],
-          (strdup(add_std_filename(pjob, newattr[JOB_ATR_errpath].at_val.at_str,(int)'e', ds))));
+          (strdup(add_std_filename(pjob, newattr[JOB_ATR_errpath].at_val.at_str,(int)'e', ds, job_mutex))));
         }
       }
 

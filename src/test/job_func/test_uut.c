@@ -9,6 +9,7 @@
 #include <semaphore.h>
 #include "pbs_error.h"
 #include "completed_jobs_map.h"
+#include "mutex_mgr.hpp"
 
 extern sem_t *job_clone_semaphore;
 extern attribute_def job_attr_def[];
@@ -191,10 +192,10 @@ START_TEST(job_abt_test)
   int result = 0;
   struct job *null_job = NULL;
 
-  result = job_abt(NULL, NULL);
+  result = job_abt(NULL, NULL, nullPtr);
   fail_unless(result != 0, "NULL input check fail");
 
-  result = job_abt(&null_job, NULL);
+  result = job_abt(&null_job, NULL, nullPtr);
   fail_unless(result != 0, "NULL input check fail");
   }
 END_TEST

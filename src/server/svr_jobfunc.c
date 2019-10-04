@@ -307,7 +307,8 @@ int insert_into_alljobs_by_rank(
 
   all_jobs         *aj,
   job              *pjob,
-  char            *jobid)
+  char            *jobid,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   job  *pjcur;
@@ -316,7 +317,7 @@ int insert_into_alljobs_by_rank(
   long  job_qrank = pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long;
   std::string curJobid = "";
   
-  unlock_ji_mutex(pjob, __func__, "4", LOGLEVEL);
+  job_mutex->unlock();
 
   while ((pjcur = iter->get_next_item()) != NULL)
     {
@@ -362,8 +363,11 @@ int insert_into_alljobs_by_rank(
 
   if ((pjob = svr_find_job(jobid, FALSE)) == NULL)
     {
+	job_mutex->set_unlock_on_exit(false);
     return(PBSE_JOBNOTFOUND);
     }
+
+  job_mutex->mark_as_locked();
 
   aj->lock();
   if (curJobid.length() == 0)
@@ -405,7 +409,8 @@ int svr_enquejob(
   int         has_sv_qs_mutex,  /* I */
   const char *prev_job_id,      /* I */
   bool        have_reservation, /* I */
-  bool        being_recovered)  /* I */
+  bool        being_recovered,  /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   pbs_attribute *pattrjb;
@@ -431,17 +436,17 @@ int svr_enquejob(
   strcpy(job_id, pjob->ji_qs.ji_jobid);
   /* ji_qs.ji_queue now holds the name of the destination queue */
   strcpy(queue_name, pjob->ji_qs.ji_queue);
-  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+  job_mutex->unlock();
   pque = find_queuebyname(queue_name);
 
   if (pque == NULL)
     {
     /* job came in locked, so it must exit locked if possible */
-    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+	job_mutex->lock();
 
     if (pjob->ji_being_recycled == true)
       {
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+	  job_mutex->unlock();
       return(PBSE_JOB_RECYCLED);
       }
 
@@ -474,11 +479,11 @@ int svr_enquejob(
 
   /* This is called when a job is not yet in the queue,
    * so svr_find_job can not be used.... */
-  lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+  job_mutex->lock();
 
   if (pjob->ji_being_recycled == true)
     {
-    unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+	job_mutex->unlock();
     return(PBSE_JOB_RECYCLED);
     }
 
@@ -557,9 +562,9 @@ int svr_enquejob(
   if ((pjob->ji_is_array_template) ||
       (pjob->ji_arraystructid[0] == '\0'))
     {
-    if ((rc = has_job(&array_summary, pjob)) == FALSE)
+    if ((rc = has_job(&array_summary, pjob, job_mutex)) == FALSE)
       {
-      insert_job(&array_summary, pjob);
+      insert_job(&array_summary, pjob, job_mutex);
       }
     else if (rc == PBSE_JOB_RECYCLED)
       return(rc);
@@ -570,7 +575,7 @@ int svr_enquejob(
 
   if (!pjob->ji_is_array_template)
     {
-    rc = insert_into_alljobs_by_rank(pque->qu_jobs, pjob, job_id);
+    rc = insert_into_alljobs_by_rank(pque->qu_jobs, pjob, job_id, job_mutex);
     
     if ((rc == ALREADY_IN_LIST) ||
         (rc == PBSE_JOBNOTFOUND))
@@ -595,13 +600,13 @@ int svr_enquejob(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
-  increment_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
-  increment_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
+  increment_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob, job_mutex);
+  increment_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob, job_mutex);
 
   if ((pjob->ji_is_array_template) ||
       (pjob->ji_arraystructid[0] == '\0'))
     {
-    rc = insert_into_alljobs_by_rank(pque->qu_jobs_array_sum, pjob, job_id);
+    rc = insert_into_alljobs_by_rank(pque->qu_jobs_array_sum, pjob, job_id, job_mutex);
 
     if ((rc == ALREADY_IN_LIST) ||
         (rc == PBSE_JOBNOTFOUND))
@@ -638,17 +643,17 @@ int svr_enquejob(
 
     sprintf(log_buf, "queue=%s", pque->qu_qs.qu_name);
 
-    account_record(PBS_ACCT_QUEUE, pjob, log_buf);
+    account_record(PBS_ACCT_QUEUE, pjob, log_buf, job_mutex);
     }
 
   /*
    * set any "unspecified" resources which have default values,
    * first with queue defaults, then with server defaults
    */
-  set_resc_deflt(pjob, NULL, TRUE);
+  set_resc_deflt(pjob, NULL, TRUE, job_mutex);
 
   /* set any "unspecified" checkpoint with queue default values, if any */
-  set_chkpt_deflt(pjob, pque);
+  set_chkpt_deflt(pjob, pque, job_mutex);
 
   rc = PBSE_NONE;
 
@@ -703,6 +708,7 @@ int svr_enquejob(
     {
     try
       {
+	  job_mutex->unlock();
       rc = depend_on_que(&pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
       }
     catch (int pbs_errcode)
@@ -714,8 +720,11 @@ int svr_enquejob(
       return(rc);
     else if (rc != PBSE_NONE)
       rc = PBSE_BADDEPEND;
+	else
+	  job_mutex->lock();
     }
 
+  
   return(rc);
   }  /* END svr_enquejob() */
 
@@ -740,7 +749,8 @@ int svr_enquejob(
 int svr_dequejob(
 
   job *pjob,                    /* I, M */
-  int  parent_queue_mutex_held) /* I */
+  int  parent_queue_mutex_held, /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int            bad_ct = 0;
@@ -752,6 +762,7 @@ int svr_dequejob(
   /* make sure pjob isn't null */
   if (pjob == NULL)
     {
+	job_mutex->set_unlock_on_exit(false);
     return(PBSE_BAD_PARAMETER);
     }
 
@@ -763,15 +774,16 @@ int svr_dequejob(
     }
 
   /* remove job from server's all job list and reduce server counts */
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 4)
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, pjob->ji_qs.ji_jobid);
 
   if (parent_queue_mutex_held == FALSE)
     {
-    pque = get_jobs_queue(&pjob);
+    pque = get_jobs_queue(&pjob, job_mutex);
 
     if (pjob == NULL)
       {
+	  job_mutex->set_unlock_on_exit(false);
       log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 10");
       return(PBSE_JOBNOTFOUND);
       }
@@ -792,9 +804,9 @@ int svr_dequejob(
         (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE))
       {
       if (pjob->ji_qs.ji_state != JOB_STATE_COMPLETE)
-        decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
+        decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob, job_mutex);
 
-      rc = decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
+      rc = decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob, job_mutex);
       if (rc != PBSE_NONE)
         {
         snprintf(log_buf, sizeof(log_buf), "failed to decrement user job count: %s. %s", 
@@ -804,7 +816,7 @@ int svr_dequejob(
       }
 
     std::string jobid = pjob->ji_qs.ji_jobid;
-    if ((rc = remove_job(pque->qu_jobs, pjob)) == PBSE_NONE)
+    if ((rc = remove_job(pque->qu_jobs, pjob, job_mutex)) == PBSE_NONE)
       {
       if (--pque->qu_numjobs < 0)
         {
@@ -824,7 +836,7 @@ int svr_dequejob(
       return(rc);
       }
 
-    if (rc == THING_NOT_FOUND && (LOGLEVEL >= 8))
+    if (rc == THING_NOT_FOUND && (LOGLEVEL >= 4))
       {
       snprintf(log_buf,sizeof(log_buf),
          "Could not remove job %s from queue->qu_jobs\n", jobid.c_str());
@@ -837,11 +849,11 @@ int svr_dequejob(
         (pjob->ji_is_array_template))
       {
       int rc2;
-      if ((rc2 = remove_job(pque->qu_jobs_array_sum, pjob)) == PBSE_JOBNOTFOUND)
+      if ((rc2 = remove_job(pque->qu_jobs_array_sum, pjob, job_mutex)) == PBSE_JOBNOTFOUND)
         return(rc2);
 
       if ((rc2 == THING_NOT_FOUND) &&
-          (LOGLEVEL >= 8))
+          (LOGLEVEL >= 4))
         {
         snprintf(log_buf,sizeof(log_buf),
            "Could not remove job %s from qu_jobs_array_sum\n", jobid.c_str());
@@ -878,7 +890,7 @@ int svr_dequejob(
   /* the only error is if the job isn't present */
   if (!pjob->ji_is_array_template)
     {
-    if ((rc = remove_job(&alljobs, pjob)) == PBSE_NONE)
+    if ((rc = remove_job(&alljobs, pjob, job_mutex)) == PBSE_NONE)
       {
       lock_sv_qs_mutex(server.sv_qs_mutex, __func__);
 
@@ -905,7 +917,7 @@ int svr_dequejob(
       return(rc);
       }
     if ((rc == THING_NOT_FOUND) &&
-        (LOGLEVEL >= 8))
+        (LOGLEVEL >= 4))
       {
       snprintf(log_buf,sizeof(log_buf),
         "Could not remove job %s from alljobs\n", pjob->ji_qs.ji_jobid); 
@@ -914,8 +926,8 @@ int svr_dequejob(
     }
 
 #ifndef NDEBUG
-  snprintf(log_buf, sizeof(log_buf), "dequeuing from %s, state %s",
-    pque ? pque->qu_qs.qu_name : "unknown queue",
+  snprintf(log_buf, sizeof(log_buf), "dequeuing %s  from %s, state %s",
+    pjob->ji_qs.ji_jobid, pque ? pque->qu_qs.qu_name : "unknown queue",
     PJobState[pjob->ji_qs.ji_state]);
 
   log_event(PBSEVENT_DEBUG2, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
@@ -928,7 +940,7 @@ int svr_dequejob(
     strcpy(job_id, pjob->ji_qs.ji_jobid);
 
     /* this function will lock queues and jobs */
-    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+	job_mutex->unlock();
 
     if (parent_queue_mutex_held == TRUE)
       {
@@ -945,7 +957,11 @@ int svr_dequejob(
       }
 
     if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
+	  {
       return(PBSE_JOBNOTFOUND);
+	  }
+
+	job_mutex->mark_as_locked();
     }
 #endif /* NDEBUG */
 
@@ -964,12 +980,13 @@ int svr_dequejob(
 
 void release_node_allocation(
 
-  job &pjob)
+  job &pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
-  free_nodes(&pjob);
+  free_nodes(&pjob, NULL, job_mutex);
   
   // we need to leave the exec host list intact even though the nodes are no longer allocated to that job
   if ((pjob.ji_wattr[JOB_ATR_checkpoint].at_val.at_str != NULL) &&
@@ -997,12 +1014,13 @@ void release_node_allocation(
 void release_node_allocation_if_needed(
 
   job &pjob,
-  int  newstate)
+  int  newstate,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   if ((newstate == JOB_STATE_QUEUED) &&
       (pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL))
-    release_node_allocation(pjob);
+    release_node_allocation(pjob, job_mutex);
   } /* END release_node_allocation_if_needed() */
 
 
@@ -1017,7 +1035,8 @@ void set_jobstate_basic(
 
   job &pjob,
   int  newstate,
-  int  newsubstate)
+  int  newsubstate,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   pjob.ji_qs.ji_state = newstate;
@@ -1025,7 +1044,7 @@ void set_jobstate_basic(
 
   pjob.ji_wattr[JOB_ATR_substate].at_val.at_long = newsubstate;
 
-  set_statechar(&pjob);
+  set_statechar(&pjob, job_mutex);
   } /* END set_jobstate_basic() */
 
 
@@ -1041,23 +1060,26 @@ int set_subjob_state(
   job *pjob,            /* M */
   int  newstate,        /* I */
   int  newsubstate,     /* I */
-  int  has_queue_mutex) /* I */
+  int  has_queue_mutex, /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
+  int rc;
   char  jobid[PBS_MAXSVRJOBID + 1];
   job  *parent = pjob->ji_parent_job;
 
   strcpy(jobid, pjob->ji_qs.ji_jobid);
-  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-  lock_ji_mutex(parent, __func__, NULL, LOGLEVEL);
+  job_mutex->unlock();
+  boost::shared_ptr<mutex_mgr> parent_job_mutex = create_managed_mutex(parent->ji_mutex, false, rc);
 
-  svr_setjobstate(parent, newstate, newsubstate, has_queue_mutex);
-  unlock_ji_mutex(parent, __func__, NULL, LOGLEVEL);
+  svr_setjobstate(parent, newstate, newsubstate, has_queue_mutex, parent_job_mutex);
+  parent_job_mutex->unlock();
     
   if ((pjob = svr_find_job(jobid, TRUE)) != NULL)
     {
-    release_node_allocation_if_needed(*pjob, newstate);
-    set_jobstate_basic(*pjob,  newstate,  newsubstate);
+	job_mutex->mark_as_locked();
+    release_node_allocation_if_needed(*pjob, newstate, job_mutex);
+    set_jobstate_basic(*pjob,  newstate,  newsubstate, job_mutex);
 
     return(PBSE_NONE);
     }
@@ -1086,7 +1108,8 @@ bool is_valid_state_transition(
 
     job &pjob,
     int  newstate,
-    int  newsubstate)
+    int  newsubstate,
+    boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   switch (pjob.ji_qs.ji_state)
@@ -1142,7 +1165,8 @@ int svr_setjobstate(
   job *pjob,            /* I (modified) */
   int  newstate,        /* I */
   int  newsubstate,     /* I */
-  int  has_queue_mutex) /* I */
+  int  has_queue_mutex, /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   bool         changed = false;
@@ -1157,11 +1181,11 @@ int svr_setjobstate(
     return(PBSE_BAD_PARAMETER);
     }
 
-  if (is_valid_state_transition(*pjob, newstate, newsubstate) == false)
+  if (is_valid_state_transition(*pjob, newstate, newsubstate, job_mutex) == false)
     return(PBSE_BAD_JOB_STATE_TRANSITION);
 
   if (pjob->ji_parent_job != NULL)
-    return(set_subjob_state(pjob, newstate, newsubstate, has_queue_mutex));
+    return(set_subjob_state(pjob, newstate, newsubstate, has_queue_mutex, job_mutex));
 
   if (LOGLEVEL >= 2)
     {
@@ -1199,7 +1223,7 @@ int svr_setjobstate(
       changed = true;
 
       /* add a fail-safe for not having queued jobs with nodes assigned */
-      release_node_allocation_if_needed(*pjob, newstate);
+      release_node_allocation_if_needed(*pjob, newstate, job_mutex);
 
       /* the array job isn't actually a job so don't count it here */
       if (pjob->ji_is_array_template == false)
@@ -1216,7 +1240,7 @@ int svr_setjobstate(
         // that case, we don't want this function to fail.
         if (pjob->ji_qhdr != NULL)
           {
-          pque = get_jobs_queue(&pjob);
+          pque = get_jobs_queue(&pjob, job_mutex);
           if (pque == NULL)
             {
             sprintf(log_buf, "queue not found for jobid %s", jid.c_str());
@@ -1249,7 +1273,7 @@ int svr_setjobstate(
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
             }
 
-          decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
+          decrement_queued_jobs(&users, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob, job_mutex);
           }
 
         if (pque != NULL)
@@ -1270,7 +1294,7 @@ int svr_setjobstate(
                 sprintf(log_buf, "jobs queued job id %s for queue %s", jid.c_str(), pque->qu_qs.qu_name);
                 log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
                 }
-              decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob);
+              decrement_queued_jobs(pque->qu_uih, pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str, pjob, job_mutex);
               }
             }
 
@@ -1315,7 +1339,7 @@ int svr_setjobstate(
       }
     }    /* END if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_TRANSICM) */
 
-  set_jobstate_basic(*pjob, newstate, newsubstate);
+  set_jobstate_basic(*pjob, newstate, newsubstate, job_mutex);
 
   if (changed == true)
     pjob->ji_mod_time = time_now;
@@ -1323,12 +1347,12 @@ int svr_setjobstate(
   /* update the job file */
   if (pjob->ji_modified)
     {
-    return(job_save(pjob, SAVEJOB_FULL,0));
+    return(job_save(pjob, SAVEJOB_FULL,0, job_mutex));
     }
 
   if (changed == true)
     {
-    return(job_save(pjob, SAVEJOB_QUICK,0));
+    return(job_save(pjob, SAVEJOB_QUICK,0, job_mutex));
     }
 
   return(PBSE_NONE);
@@ -1350,7 +1374,8 @@ void svr_evaljobstate(
   job &pjob,
   int &newstate,  /* O recommended new state for job    */
   int &newsub,    /* O recommended new substate for job */
-  int  forceeval)
+  int  forceeval,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   // this should be a NO-OP for jobs that are exiting or completed unless
@@ -2110,14 +2135,15 @@ int chk_resc_limits(
 static int check_execution_uid_and_gid(
 
     struct job *const pjob,
-    char       *const EMsg)
+    char       *const EMsg,
+	boost::shared_ptr<mutex_mgr>& job_mutex)
   {
   int return_code = PBSE_NONE; /* Optimistic assumption */
 
   if (!(pjob->ji_wattr[JOB_ATR_euser].at_flags & ATR_VFLAG_SET) ||
       !(pjob->ji_wattr[JOB_ATR_egroup].at_flags & ATR_VFLAG_SET))
     {
-    return_code = set_jobexid(pjob, pjob->ji_wattr, EMsg); /* PBSE_BADUSER or GRP */
+    return_code = set_jobexid(pjob, pjob->ji_wattr, EMsg, job_mutex); /* PBSE_BADUSER or GRP */
     }
 
   return(return_code);
@@ -2491,7 +2517,8 @@ static int check_queue_job_limit(
 
   struct job       *const pjob,
   struct pbs_queue *const pque,
-  char             *const EMsg)
+  char             *const EMsg,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int return_code = PBSE_NONE; /* Optimistic assumption */
@@ -2520,13 +2547,13 @@ static int check_queue_job_limit(
   if ((pque->qu_attr[QA_ATR_MaxJobs].at_flags & ATR_VFLAG_SET))
     {
     int total_jobs = 0;
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	job_mutex->unlock();
     total_jobs = count_queued_jobs(pque, NULL);
 
-    lock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	job_mutex->lock();
     if (pjob->ji_being_recycled == true)
       {
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	  job_mutex->unlock();
       return(PBSE_JOB_RECYCLED);
       }
 
@@ -2553,14 +2580,14 @@ static int check_queue_job_limit(
 
     remove_server_suffix(uname);
     /* count number of jobs user has in queue */
-    unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+	job_mutex->unlock();
 
     user_jobs = count_queued_jobs(pque, uname.c_str());
 
-    lock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	job_mutex->lock();
     if (pjob->ji_being_recycled == true)
       {
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	  job_mutex->unlock();
       return(PBSE_JOB_RECYCLED);
       }
 
@@ -2856,7 +2883,8 @@ int svr_chkque(
   pbs_queue *pque,
   char      *hostname,
   int        mtype,     /* MOVE_TYPE_* type, see server_limits.h */
-  char      *EMsg)      /* O (optional,minsize=1024) */
+  char      *EMsg,      /* O (optional,minsize=1024) */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int failed_group_acl = 0;
@@ -2865,6 +2893,7 @@ int svr_chkque(
 
   if (pjob == NULL)
     {
+	job_mutex->set_unlock_on_exit(false);
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
     return PBSE_BAD_PARAMETER;
     }
@@ -2892,7 +2921,7 @@ int svr_chkque(
     int can_be_established = 0;
     int are_allowed = 0;
 
-    can_be_established = check_execution_uid_and_gid(pjob, EMsg);
+    can_be_established = check_execution_uid_and_gid(pjob, EMsg, job_mutex);
     if (can_be_established != PBSE_NONE)
         {
         return(can_be_established);
@@ -2963,7 +2992,7 @@ int svr_chkque(
       return(queue_enabled);
       }
 
-    queue_job_limit = check_queue_job_limit(pjob, pque, EMsg);
+    queue_job_limit = check_queue_job_limit(pjob, pque, EMsg, job_mutex);
     if (queue_job_limit != PBSE_NONE)
       {
       return(queue_job_limit);
@@ -3100,8 +3129,8 @@ void job_wait_over(
     // jobs that are running, exiting, or completed shouldn't be affected by this
     if (pjob->ji_qs.ji_state < JOB_STATE_RUNNING)
       {
-      svr_evaljobstate(*pjob, newstate, newsub, 0);
-      svr_setjobstate(pjob, newstate, newsub, FALSE);
+      svr_evaljobstate(*pjob, newstate, newsub, 0, job_mutex);
+      svr_setjobstate(pjob, newstate, newsub, FALSE, job_mutex);
       }
     }
 
@@ -3302,12 +3331,14 @@ const char *add_std_filename(
   job            *pjob,
   char           *path,
   int             key,
-  std::string&    ds)
+  std::string&    ds,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   if (pjob == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
+	job_mutex->set_unlock_on_exit(false);
     return(NULL);
     }
   if (path == NULL)
@@ -3601,7 +3632,8 @@ void set_resc_deflt(
 
   job           *pjob,            /* I (modified) */
   pbs_attribute *ji_wattr,        /* I (optional) decoded attributes  */
-  int            has_queue_mutex) /* I */
+  int            has_queue_mutex, /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   pbs_attribute *ja;
@@ -3630,9 +3662,10 @@ void set_resc_deflt(
 
   if (has_queue_mutex == FALSE)
     {
-    pque = get_jobs_queue(&pjob);
+    pque = get_jobs_queue(&pjob, job_mutex);
     if (pjob == NULL)
       {
+	  job_mutex->set_unlock_on_exit(false);
       log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 12");
       return;
       }
@@ -3725,13 +3758,14 @@ void set_resc_deflt(
       }
     }
   
-  if ((pque = get_jobs_queue(&pjob)) != NULL)
+  if ((pque = get_jobs_queue(&pjob, job_mutex)) != NULL)
     {
     if (has_queue_mutex == FALSE)
       unlock_queue(pque, __func__, NULL, LOGLEVEL);
     }
   else if (pjob == NULL)
     {
+	job_mutex->set_unlock_on_exit(false);
     log_err(PBSE_JOBNOTFOUND, __func__, "Job lost while acquiring queue 13");
     }
 
@@ -3759,7 +3793,8 @@ void set_resc_deflt(
 void set_chkpt_deflt(
 
   job       *pjob,     /* I (modified) */
-  pbs_queue *pque)     /* Input */
+  pbs_queue *pque,     /* Input */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char log_buf[LOCAL_LOG_BUF_SIZE];
@@ -3817,7 +3852,8 @@ void set_chkpt_deflt(
 
 void set_statechar(
 
-  job *pjob) /* *I* (modified) */
+  job *pjob, /* *I* (modified) */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   static const char *statechar = "TQHWREC";
@@ -3825,6 +3861,7 @@ void set_statechar(
   
   if (pjob == NULL)
     {
+	job_mutex->set_unlock_on_exit(false);
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input job pointer");
     return;
     }
@@ -4026,7 +4063,7 @@ int lock_ji_mutex(
   int  rc = PBSE_NONE;
   std::string err_msg;
 
-  if (logging >= 10)
+  if (logging >= 0)
     {
     err_msg = "locking ";
     err_msg += pjob->ji_qs.ji_jobid;
@@ -4042,7 +4079,7 @@ int lock_ji_mutex(
     {
     if (pthread_mutex_lock(pjob->ji_mutex) != 0)
       {
-      if (logging >= 20)
+      if (logging >= 0)
         {
         err_msg = "ALERT: cannot lock job ";
         err_msg += pjob->ji_qs.ji_jobid;
@@ -4075,7 +4112,7 @@ int unlock_ji_mutex(
   int  rc = PBSE_NONE;
   std::string err_msg;
 
-  if (logging >= 10)
+  if (logging >= 0)
     {
     err_msg = "unlocking ";
     err_msg += pjob->ji_qs.ji_jobid;
@@ -4089,9 +4126,11 @@ int unlock_ji_mutex(
 
   if (pjob->ji_mutex != NULL)
     {
-    if (pthread_mutex_unlock(pjob->ji_mutex) != 0)
+	int ret;
+    ret = pthread_mutex_unlock(pjob->ji_mutex);
+    if (ret != 0)
       {
-    if (logging >= 20)
+    if (logging >= 0)
         {
         err_msg = "ALERT: cannot unlock job ";
         err_msg += pjob->ji_qs.ji_jobid;

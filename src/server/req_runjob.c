@@ -128,9 +128,9 @@
 /* External Functions Called: */
 
 extern int   send_job_work(char *job_id, const char *,int,int *,struct batch_request *);
-extern void  set_resc_assigned(job *, enum batch_op);
+extern void  set_resc_assigned(job *, enum batch_op, boost::shared_ptr<mutex_mgr>& job_mutex);
 
-extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
+extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int, boost::shared_ptr<mutex_mgr>& job_mutex);
 void                         stream_eof(int, u_long, uint16_t, int);
 extern int                   job_set_wait(pbs_attribute *, void *, int);
 
@@ -140,14 +140,14 @@ extern int LOGLEVEL;
 
 /* Public Functions in this file */
 
-int  svr_startjob(job *, batch_request *, char *, char *);
+int  svr_startjob(job *, batch_request *, char *, char *, boost::shared_ptr<mutex_mgr>&);
 
 /* Private Functions local to this file */
 
-int  svr_stagein(job **, batch_request *, int, int);
-int  svr_strtjob2(job **, batch_request *);
+int  svr_stagein(job **, batch_request *, int, int, boost::shared_ptr<mutex_mgr>& job_mutex);
+int  svr_strtjob2(job **, batch_request *, boost::shared_ptr<mutex_mgr>& job_mutex);
 job *chk_job_torun(struct batch_request *, int);
-int  assign_hosts(job *, char *, int, char *, char *);
+int  assign_hosts(job *, char *, int, char *, char *, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 /* Global Data Items: */
 
@@ -176,7 +176,7 @@ job                    *DispatchJob[20];
 char                   *DispatchNode[20];
 
 extern job  *chk_job_request(char *, struct batch_request *);
-extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
+extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int, boost::shared_ptr<mutex_mgr>& job_mutex);
 void poll_job_task(work_task *);
 int  kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 
@@ -220,7 +220,7 @@ int check_and_run_job_work(
   if ((pjob->ji_arraystructid[0] != '\0') &&
       (pjob->ji_is_array_template == false))
     {
-    job_array *pa = get_jobs_array(&pjob);
+    job_array *pa = get_jobs_array(&pjob, job_mutex);
 
     if (pjob == NULL)
       {
@@ -275,7 +275,7 @@ int check_and_run_job_work(
           pa->ai_qs.slot_limit,
           pa->ai_qs.jobs_running);
 
-        free_nodes(pjob);
+        free_nodes(pjob, NULL, job_mutex);
        
         req_reject(PBSE_IVALREQ, 0, preq, NULL, log_buf);
         
@@ -288,11 +288,11 @@ int check_and_run_job_work(
 
   /* NOTE:  nodes assigned to job in svr_startjob() */
 
-  rc = svr_startjob(pjob, preq, failhost, emsg);
+  rc = svr_startjob(pjob, preq, failhost, emsg, job_mutex);
 
   if (rc != 0)
     {
-    free_nodes(pjob);
+    free_nodes(pjob, NULL, job_mutex);
 
     /* if the job has a non-empty rejectdest list, pass the first host into req_reject() */
     if (pjob->ji_rejectdest.size() > 0)
@@ -360,11 +360,20 @@ int req_runjob(
     return(PBSE_UNKJOBID);
     }
 
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	char log_buf[LOG_BUF_SIZE];
+	sprintf(log_buf, "failed to create managed mutex");
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return(rc);
+	}
+
   /* we don't currently allow running of an entire job array */
 
   if (strstr(pjob->ji_qs.ji_jobid,"[]") != NULL)
     {
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	job_mutex->unlock();
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "cannot run a job array");
     return(PBSE_IVALREQ);
     }
@@ -379,11 +388,11 @@ int req_runjob(
   log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
   if (preq->rq_type == PBS_BATCH_AsyrunJob)
-    svr_setjobstate(pjob, pjob->ji_qs.ji_state, JOB_SUBSTATE_ASYNCING, FALSE);
+    svr_setjobstate(pjob, pjob->ji_qs.ji_state, JOB_SUBSTATE_ASYNCING, FALSE, job_mutex);
 
   /* If async run, reply now; otherwise reply is handled in */
   /* post_sendmom or post_stagein */
-  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+  job_mutex->unlock();
 
   if (preq->rq_type == PBS_BATCH_AsyrunJob)
     {
@@ -465,7 +474,7 @@ void post_checkpointsend(
       {
       /* copy failed - hold job */
 
-      free_nodes(pjob);
+      free_nodes(pjob, NULL, job_mutex);
 
       pwait = &pjob->ji_wattr[JOB_ATR_exectime];
 
@@ -478,7 +487,7 @@ void post_checkpointsend(
         job_set_wait(pwait, pjob, 0);
         }
 
-      svr_setjobstate(pjob, JOB_STATE_WAITING, JOB_SUBSTATE_STAGEFAIL, FALSE);
+      svr_setjobstate(pjob, JOB_STATE_WAITING, JOB_SUBSTATE_STAGEFAIL, FALSE, job_mutex);
 
       if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
         {
@@ -493,7 +502,7 @@ void post_checkpointsend(
           pjob,
           MAIL_CHKPTCOPY,
           MAIL_FORCE,
-          preq->rq_reply.brp_un.brp_txt.brp_str);
+          preq->rq_reply.brp_un.brp_txt.brp_str, job_mutex);
         }
       }
     else
@@ -511,10 +520,10 @@ void post_checkpointsend(
 
       pjob->ji_modified = 1;
       
-      job_save(pjob, SAVEJOB_FULL, 0);
+      job_save(pjob, SAVEJOB_FULL, 0, job_mutex);
       
       /* continue to start job running */
-      svr_strtjob2(&pjob, preq);
+      svr_strtjob2(&pjob, preq, job_mutex);
       }
 
     if (pjob == NULL)
@@ -536,7 +545,8 @@ int svr_send_checkpoint(
   job           **pjob_ptr, /* I */
   batch_request  *preq,     /* I */
   int             state,    /* I */
-  int             substate) /* I */
+  int             substate, /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   batch_request *momreq = 0;
@@ -544,12 +554,12 @@ int svr_send_checkpoint(
   char           jobid[PBS_MAXSVRJOBID + 1];
   job           *pjob = *pjob_ptr;
 
-  momreq = cpy_checkpoint(momreq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_IN);
+  momreq = cpy_checkpoint(momreq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_IN, job_mutex);
 
   if (momreq == NULL)
     {
     /* no files to send, go directly to sending job to mom */
-    rc = svr_strtjob2(&pjob, preq);
+    rc = svr_strtjob2(&pjob, preq, job_mutex);
 
     return(rc);
     }
@@ -559,21 +569,27 @@ int svr_send_checkpoint(
 
   /* The momreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  if ((rc = relay_to_mom(&pjob, momreq, NULL)) == PBSE_NONE)
+  if ((rc = relay_to_mom(&pjob, momreq, NULL, job_mutex)) == PBSE_NONE)
     {
     jobid[0] = '\0';
     
     if (pjob != NULL)
       {
-      svr_setjobstate(pjob, state, substate, FALSE);
+      svr_setjobstate(pjob, state, substate, FALSE, job_mutex);
       strcpy(jobid, pjob->ji_qs.ji_jobid);
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	  job_mutex->unlock();
       }
 
     post_checkpointsend(momreq);
 
     if (jobid[0] != '\0')
+	  {
       *pjob_ptr = svr_find_job(jobid, FALSE);
+	  if (*pjob_ptr != NULL)
+		{
+		job_mutex->mark_as_locked();
+		}
+	  }
 
     /*
      * checkpoint copy started ok - reply to client as copy may
@@ -616,13 +632,22 @@ int req_stagein(
     return(PBSE_UNKJOBID);
     }
 
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	char log_buf[LOG_BUF_SIZE];
+	sprintf(log_buf, "failed to create managed mutex");
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return(rc);
+	}
+
   if ((pjob->ji_wattr[JOB_ATR_stagein].at_flags & ATR_VFLAG_SET) == 0)
     {
     log_err(-1, "req_stagein", "stage-in information not set");
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, NULL);
  
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	job_mutex->unlock();
 
     return(PBSE_IVALREQ);
     }
@@ -631,14 +656,14 @@ int req_stagein(
               &pjob,
                preq,
                JOB_STATE_QUEUED,
-               JOB_SUBSTATE_STAGEIN)))
+               JOB_SUBSTATE_STAGEIN, job_mutex)))
     {
-    free_nodes(pjob);
+    free_nodes(pjob, NULL, job_mutex);
 
     req_reject(rc, 0, preq, NULL, NULL);
     }
 
-  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+  job_mutex->unlock();
 
   return(rc);
   }  /* END req_stagein() */
@@ -688,7 +713,7 @@ void post_stagein(
       {
       /* stage in failed - hold job */
 
-      free_nodes(pjob);
+      free_nodes(pjob, NULL, job_mutex);
 
       pwait = &pjob->ji_wattr[JOB_ATR_exectime];
 
@@ -701,7 +726,7 @@ void post_stagein(
         job_set_wait(pwait, pjob, 0);
         }
 
-      svr_setjobstate(pjob, JOB_STATE_WAITING, JOB_SUBSTATE_STAGEFAIL, FALSE);
+      svr_setjobstate(pjob, JOB_STATE_WAITING, JOB_SUBSTATE_STAGEFAIL, FALSE, job_mutex);
 
       if (preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_Text)
         {
@@ -713,7 +738,7 @@ void post_stagein(
           pjob,
           MAIL_STAGEIN,
           MAIL_FORCE,
-          preq->rq_reply.brp_un.brp_txt.brp_str);
+          preq->rq_reply.brp_un.brp_txt.brp_str, job_mutex);
         }
       }
     else
@@ -731,19 +756,19 @@ void post_stagein(
               &pjob,
               preq,
               JOB_STATE_RUNNING,
-              JOB_SUBSTATE_CHKPTGO);
+              JOB_SUBSTATE_CHKPTGO, job_mutex);
           }
         else
           {
           /* continue to start job running */
-          svr_strtjob2(&pjob, preq);
+          svr_strtjob2(&pjob, preq, job_mutex);
           }
         }
       else
         {
-        svr_evaljobstate(*pjob, newstate, newsub, 0);
+        svr_evaljobstate(*pjob, newstate, newsub, 0, job_mutex);
 
-        svr_setjobstate(pjob, newstate, newsub, FALSE);
+        svr_setjobstate(pjob, newstate, newsub, FALSE, job_mutex);
         }
       }
 
@@ -767,7 +792,8 @@ int svr_stagein(
   job           **pjob_ptr, /* I */
   batch_request  *preq,     /* I */
   int             state,    /* I */
-  int             substate) /* I */
+  int             substate, /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   job                  *pjob = *pjob_ptr;
@@ -775,12 +801,12 @@ int svr_stagein(
   int                   rc;
   char                  jobid[PBS_MAXSVRJOBID + 1];
 
-  momreq = cpy_stage(momreq, pjob, JOB_ATR_stagein, STAGE_DIR_IN);
+  momreq = cpy_stage(momreq, pjob, JOB_ATR_stagein, STAGE_DIR_IN, job_mutex);
 
   if (momreq == NULL)
     {
     /* no files to stage, go directly to sending job to mom */
-    rc = svr_strtjob2(&pjob, preq);
+    rc = svr_strtjob2(&pjob, preq, job_mutex);
 
     return(rc);
     }
@@ -792,21 +818,31 @@ int svr_stagein(
 
   /* The momreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  if ((rc = relay_to_mom(&pjob, momreq, NULL)) == PBSE_NONE)
+  if ((rc = relay_to_mom(&pjob, momreq, NULL, job_mutex)) == PBSE_NONE)
     {
     jobid[0] = '\0';
 
     if (pjob != NULL)
       {
       strcpy(jobid, pjob->ji_qs.ji_jobid);
-      svr_setjobstate(pjob, state, substate, FALSE);
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+      svr_setjobstate(pjob, state, substate, FALSE, job_mutex);
+	  job_mutex->unlock();
       }
 
     post_stagein(momreq);
 
     if (jobid[0] != '\0')
       *pjob_ptr = svr_find_job(jobid, FALSE);
+
+	if (*pjob_ptr == NULL)
+	  {
+	  job_mutex->set_unlock_on_exit(false);
+	  rc = PBSE_JOBNOTFOUND;
+	  }
+	else
+	  {
+	  job_mutex->mark_as_locked();
+	  }
 
     /*
      * stage-in started ok - reply to client as copy may
@@ -979,7 +1015,8 @@ int svr_startjob(
   job           *pjob,     /* I job to run (modified) */
   batch_request *preq,     /* I Run Job batch request (optional) */
   char          *FailHost, /* O (optional,minsize=1024) */
-  char          *EMsg)     /* O (optional,minsize=1024) */
+  char          *EMsg,     /* O (optional,minsize=1024) */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int     f;
@@ -1025,7 +1062,7 @@ int svr_startjob(
            pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
            0,
            FailHost,
-           EMsg);
+           EMsg, job_mutex);
     }
   else if (f == 0)
     {
@@ -1036,7 +1073,7 @@ int svr_startjob(
            NULL,
            1,
            FailHost,
-           EMsg);  /* inside svr_startjob() */
+           EMsg, job_mutex);  /* inside svr_startjob() */
     }
 
   if (rc != 0)
@@ -1084,7 +1121,7 @@ int svr_startjob(
            &pjob,
            preq,
            JOB_STATE_RUNNING,
-           JOB_SUBSTATE_STAGEGO);
+           JOB_SUBSTATE_STAGEGO, job_mutex);
 
     /* note, the positive acknowledgment is done by svr_stagein */
     }
@@ -1096,13 +1133,13 @@ int svr_startjob(
            &pjob,
            preq,
            JOB_STATE_RUNNING,
-           JOB_SUBSTATE_CHKPTGO);
+           JOB_SUBSTATE_CHKPTGO, job_mutex);
     }
   else
     {
     /* No stage-in or already done, start job executing */
 
-    rc = svr_strtjob2(&pjob, preq);
+    rc = svr_strtjob2(&pjob, preq, job_mutex);
     }
 
   return(rc);
@@ -1142,13 +1179,12 @@ char *get_mail_text(
   return(mail_text);
   } // END get_mail_text()
 
-
-
 int send_job_to_mom(
- 
+
   job           **pjob_ptr,   /* M */
   batch_request  *preq,       /* I */
-  job            *parent_job) /* I - for heterogeneous jobs only */
+  job            *parent_job, /* I - for heterogeneous jobs only */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   job             *pjob = *pjob_ptr;
@@ -1162,27 +1198,27 @@ int send_job_to_mom(
   char            *mail_text = NULL;
 
   if (parent_job != NULL)
-    external = pjob == parent_job->ji_external_clone;
+    external = (pjob == parent_job->ji_external_clone);
 
   if (preq == NULL)
     {
     return(PBSE_BAD_PARAMETER);
     }
 
-  svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_PRERUN, FALSE);
+  svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_PRERUN, FALSE, job_mutex);
 
   /* if job start timeout pbs_attribute is set use its value */
   get_svr_attr_l(SRV_ATR_tcp_timeout, &tcp_timeout);
-  
+
   if ((get_svr_attr_l(SRV_ATR_JobStartTimeout, &job_timeout) == PBSE_NONE) &&
       (job_timeout > 0))
     {
     DIS_tcp_settimeout(job_timeout);
     }
-  
+
   job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
   strcpy(job_id, pjob->ji_qs.ji_jobid);
-  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+  job_mutex->unlock();
   *pjob_ptr = NULL;
   pjob = NULL;
 
@@ -1192,22 +1228,23 @@ int send_job_to_mom(
     {
     /* SUCCESS */
     DIS_tcp_settimeout(tcp_timeout);
-    
+
     if (parent_job == NULL)
       {
       if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
         {
         *pjob_ptr = pjob;
+		job_mutex->mark_as_locked();
         }
       }
 
-    if (pjob != NULL)
+  if (pjob != NULL)
       {
       svr_mailowner(
           pjob,
           MAIL_BEGIN,
           MAIL_NORMAL,
-          mail_text);
+          mail_text, job_mutex);
       }
 
     if (mail_text != NULL)
@@ -1220,7 +1257,17 @@ int send_job_to_mom(
     DIS_tcp_settimeout(tcp_timeout);
 
     if (parent_job == NULL)
+	  {
       pjob = svr_find_job(job_id, TRUE);
+	  if (pjob != NULL)
+		{
+		job_mutex->mark_as_locked();
+		}
+	  else
+		{
+		job_mutex->set_unlock_on_exit(false);
+		}
+	  }
     else
       {
       if (external == TRUE)
@@ -1240,10 +1287,10 @@ int send_job_to_mom(
 
     if (mail_text != NULL)
       free(mail_text);
-    
+
     return(my_err);
     }
-  } /* END send_job_to_mom() */
+ } /* END send_job_to_mom() */
 
 
 
@@ -1254,7 +1301,8 @@ int send_job_to_mom(
 
 int requeue_job(
 
-  job *pjob)
+  job *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   struct pbsnode *pnode = find_nodebyname(pjob->ji_qs.ji_destin);
@@ -1277,7 +1325,7 @@ int requeue_job(
   pnode->unlock_node(__func__, NULL, LOGLEVEL);
 
   /* set the job's state to queued */
-  svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
+  svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE, job_mutex);
 
   pjob->ji_qs.ji_destin[0] = '\0';
 
@@ -1289,7 +1337,8 @@ int requeue_job(
 int handle_heterogeneous_job_launch(
 
   job           *pjob,
-  batch_request *preq)
+  batch_request *preq,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   job           *external_clone = pjob->ji_external_clone;
@@ -1299,10 +1348,37 @@ int handle_heterogeneous_job_launch(
   batch_request *external_preq;
   batch_request *cray_preq;
   
-  unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-  lock_ji_mutex(external_clone, __func__, NULL, LOGLEVEL);
-  lock_ji_mutex(cray_clone, __func__, NULL, LOGLEVEL);
-  
+  if (pjob->ji_external_clone == NULL)
+	{
+	job_mutex->unlock();
+	return (PBSE_JOBNOTFOUND);
+	}
+
+  if (pjob->ji_cray_clone == NULL)
+	{
+	job_mutex->unlock();
+	return (PBSE_JOBNOTFOUND);
+	}
+
+  job_mutex->unlock();
+  boost::shared_ptr<mutex_mgr> external_job_mutex = create_managed_mutex(external_clone->ji_mutex, false, rc);
+  if (rc != PBSE_NONE)
+	{
+	char log_buf[LOG_BUF_SIZE];
+	sprintf(log_buf, "failed to create managed mutex");
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return(rc);
+	}
+
+  boost::shared_ptr<mutex_mgr> cray_job_mutex = create_managed_mutex(cray_clone->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	char log_buf[LOG_BUF_SIZE];
+	sprintf(log_buf, "failed to create managed mutex");
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return(rc);
+	}
+ 
   /* clone the batch requests to avoid double frees */
   external_preq = new batch_request(*preq);
   cray_preq     = new batch_request(*preq);
@@ -1311,12 +1387,12 @@ int handle_heterogeneous_job_launch(
   external_preq->rq_noreply = true;
   cray_preq->rq_noreply     = true;
   
-  if ((rc = send_job_to_mom(&external_clone, external_preq, pjob)) == PBSE_NONE)
+  if ((rc = send_job_to_mom(&external_clone, external_preq, pjob, external_job_mutex)) == PBSE_NONE)
     {
-    if ((rc = send_job_to_mom(&cray_clone, cray_preq, pjob)) != PBSE_NONE)
+    if ((rc = send_job_to_mom(&cray_clone, cray_preq, pjob, cray_job_mutex)) != PBSE_NONE)
       {
       /* requeue the external job */
-      requeue_job(external_clone);
+      requeue_job(external_clone, external_job_mutex);
       }
     else
       both_running = TRUE;
@@ -1326,16 +1402,16 @@ int handle_heterogeneous_job_launch(
   delete cray_preq;
   
   if (cray_clone != NULL)
-    unlock_ji_mutex(cray_clone, __func__, NULL, LOGLEVEL);
+	cray_job_mutex->unlock();
   
   if (external_clone != NULL)
-    unlock_ji_mutex(external_clone, __func__, NULL, LOGLEVEL);
+	external_job_mutex->unlock();
   
-  lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+  job_mutex->lock();
   
   if (both_running == TRUE)
     {
-    svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_RUNNING, FALSE);
+    svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_RUNNING, FALSE, job_mutex);
     reply_ack(preq);
     }
   else
@@ -1364,7 +1440,8 @@ int handle_heterogeneous_job_launch(
 int svr_strtjob2(
 
   job           **pjob_ptr, /* I */
-  batch_request  *preq)     /* I (modified - report status) */
+  batch_request  *preq,
+  boost::shared_ptr<mutex_mgr>& job_mutex)     /* I (modified - report status) */
 
   {
   job             *pjob = *pjob_ptr;
@@ -1397,9 +1474,9 @@ int svr_strtjob2(
   /* check if this is a special heterogeneous job */
   if ((cray_enabled == true) &&
       (pjob->ji_external_clone != NULL))
-    rc = handle_heterogeneous_job_launch(pjob, preq);
+    rc = handle_heterogeneous_job_launch(pjob, preq, job_mutex);
   else
-    rc = send_job_to_mom(&pjob, preq, NULL);
+    rc = send_job_to_mom(&pjob, preq, NULL, job_mutex);
 
   return(rc);
   }    /* END svr_strtjob2() */
@@ -1511,13 +1588,13 @@ void finish_sendmom(
       pjob->ji_qs.ji_stime = time_now;
       
       /* update resource usage attributes */        
-      set_resc_assigned(pjob, INCR);
+      set_resc_assigned(pjob, INCR, job_mutex);
       
       if ((pjob->ji_qs.ji_substate == JOB_SUBSTATE_PRERUN) ||
           (pjob->ji_qs.ji_substate == JOB_SUBSTATE_TRNOUTCM))
         {
         /* may be EXITING if job finished first */
-        svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_RUNNING, FALSE);
+        svr_setjobstate(pjob, JOB_STATE_RUNNING, JOB_SUBSTATE_RUNNING, FALSE, job_mutex);
 
         /* above saves job structure */
         }
@@ -1530,13 +1607,13 @@ void finish_sendmom(
       
       /* accounting log for start or restart */
       if (pjob->ji_qs.ji_svrflags & JOB_SVFLG_CHECKPOINT_FILE)
-        account_record(PBS_ACCT_RESTRT, pjob, "Restart from checkpoint");
+        account_record(PBS_ACCT_RESTRT, pjob, "Restart from checkpoint", job_mutex);
       else
-        account_jobstr(pjob);
+        account_jobstr(pjob, job_mutex);
       
       /* if any dependencies, see if action required */
       if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
-        depend_on_exec(pjob);
+        depend_on_exec(pjob, job_mutex);
 
       /* set up the poll task */
       pjob->ji_last_reported_time = time_now;
@@ -1556,7 +1633,7 @@ void finish_sendmom(
         job_id,
         "unable to run job, MOM rejected/timeout");
 
-      free_nodes(pjob);
+      free_nodes(pjob, NULL, job_mutex);
       
       if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_ABORT)
         {
@@ -1572,8 +1649,8 @@ void finish_sendmom(
             req_reject(PBSE_MOMREJECT, 0, preq, node_name, "connection to mom timed out");
           }
         
-        svr_evaljobstate(*pjob, newstate, newsub, 1);
-        svr_setjobstate(pjob, newstate, newsub, FALSE);
+        svr_evaljobstate(*pjob, newstate, newsub, 1, job_mutex);
+        svr_setjobstate(pjob, newstate, newsub, FALSE, job_mutex);
         }
       else
         {
@@ -1600,7 +1677,7 @@ void finish_sendmom(
       
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,job_id,log_buf);
       
-      free_nodes(pjob);
+      free_nodes(pjob, NULL, job_mutex);
       
       if (pjob->ji_qs.ji_substate != JOB_SUBSTATE_ABORT)
         {
@@ -1640,8 +1717,8 @@ void finish_sendmom(
           }
         else
           {
-          svr_evaljobstate(*pjob, newstate, newsub, 1);
-          svr_setjobstate(pjob, newstate, newsub, FALSE);
+          svr_evaljobstate(*pjob, newstate, newsub, 1, job_mutex);
+          svr_setjobstate(pjob, newstate, newsub, FALSE, job_mutex);
           }
         }
       else if (preq != NULL)
@@ -1750,7 +1827,7 @@ job *chk_job_torun(
     return(NULL);
     }
 
-  if ((pque = get_jobs_queue(&pjob)) != NULL)
+  if ((pque = get_jobs_queue(&pjob, job_mutex)) != NULL)
     {
     boost::shared_ptr<mutex_mgr> pque_mutex = create_managed_mutex(pque->qu_mutex, true, rc);
 	if (rc != PBSE_NONE)
@@ -1838,7 +1915,7 @@ job *chk_job_torun(
                   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str,
                   0,
                   FailHost,
-                  EMsg)) != 0)   /* O */
+                  EMsg, job_mutex)) != 0)   /* O */
         {
         req_reject(PBSE_EXECTHERE, 0, preq, FailHost, EMsg);
         
@@ -1863,11 +1940,11 @@ job *chk_job_torun(
       /* it is possible for the scheduler to pass a hostlist using the rq_extend 
        * field--we should use it as the given list as an alternative to rq_destin */
 
-      rc = assign_hosts(pjob, preq->rq_extend, 1, FailHost, EMsg);  /* inside chk_job_torun() */
+      rc = assign_hosts(pjob, preq->rq_extend, 1, FailHost, EMsg, job_mutex);  /* inside chk_job_torun() */
       }
     else
       {
-      rc = assign_hosts(pjob, prun->rq_destin, 1, FailHost, EMsg);  /* inside chk_job_torun() */
+      rc = assign_hosts(pjob, prun->rq_destin, 1, FailHost, EMsg, job_mutex);  /* inside chk_job_torun() */
       }
 
     if (rc != 0)
@@ -2170,7 +2247,8 @@ int assign_hosts(
   char *given,          /* I (optional) list of requested hosts */
   int   set_exec_host,  /* I (boolean) */
   char *FailHost,       /* O (optional,minsize=1024) */
-  char *EMsg)           /* O (optional,minsize=1024) */
+  char *EMsg,           /* O (optional,minsize=1024) */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   unsigned int  dummy;
@@ -2287,7 +2365,7 @@ int assign_hosts(
 
   if (svr_totnodes != 0)
     {
-    rc = set_nodes(pjob, hosttoalloc, procs, list, portlist, FailHost, EMsg);
+    rc = set_nodes(pjob, hosttoalloc, procs, list, portlist, FailHost, EMsg, job_mutex);
     
     set_exec_host = 1; /* maybe new VPs, must set */
     
@@ -2343,7 +2421,7 @@ int assign_hosts(
     if ((cray_enabled == true) &&
         (pjob->ji_wattr[JOB_ATR_external_nodes].at_val.at_str != NULL))
       {
-      split_job(pjob);
+      split_job(pjob, job_mutex);
       rc = set_job_exec_info(pjob->ji_external_clone, pjob->ji_external_clone->ji_qs.ji_destin);
       rc = set_job_exec_info(pjob->ji_cray_clone, pjob->ji_qs.ji_destin);
       }
@@ -2354,7 +2432,7 @@ int assign_hosts(
 
     if (rc != 0)
       {
-      free_nodes(pjob);
+      free_nodes(pjob, NULL, job_mutex);
       
       sprintf(log_buf, "ALERT:  job cannot allocate node '%s' (could not determine IP address for node)",
         pjob->ji_qs.ji_destin);

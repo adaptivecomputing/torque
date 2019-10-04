@@ -18,7 +18,8 @@ int site_alt_router(
     
   job *jobp,
   pbs_queue *qp,
-  long retry_time)
+  long retry_time,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
   {
 
   char log_buf[LOCAL_LOG_BUF_SIZE];
@@ -29,5 +30,5 @@ int site_alt_router(
     LOG_EVENT(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
-  return (default_router(jobp, qp, retry_time));
+  return (default_router(jobp, qp, retry_time, job_mutex));
   }

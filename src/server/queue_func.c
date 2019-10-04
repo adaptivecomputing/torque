@@ -556,7 +556,8 @@ int get_parent_dest_queues(
   char       *queue_dest_name,
   pbs_queue **parent,
   pbs_queue **dest,
-  job       **pjob_ptr)
+  job       **pjob_ptr,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   pbs_queue *pque_parent;
@@ -586,7 +587,7 @@ int get_parent_dest_queues(
   else
     return(-1);
 
-  unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+  job_mutex->unlock();
 
   unlock_queue(*parent, __func__, NULL, LOGLEVEL);
 
@@ -622,7 +623,13 @@ int get_parent_dest_queues(
   svr_queues.unlock();
 
   if ((*pjob_ptr = svr_find_job(jobid, TRUE)) == NULL)
-    rc = -1;
+	{
+    rc = PBSE_JOBNOTFOUND;
+	}
+  else
+	{
+	job_mutex->mark_as_locked();
+	}
 
   return(rc);
   } /* END get_parent_dest_queues() */
@@ -634,7 +641,8 @@ int get_parent_dest_queues(
 pbs_queue *lock_queue_with_job_held(
 
   pbs_queue  *pque,
-  job       **pjob_ptr)
+  job       **pjob_ptr,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char       jobid[PBS_MAXSVRJOBID + 1];
@@ -647,7 +655,7 @@ pbs_queue *lock_queue_with_job_held(
       {
       /* if fail */
       strcpy(jobid, pjob->ji_qs.ji_jobid);
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	  job_mutex->unlock();
       lock_queue(pque, __func__, NULL, LOGLEVEL);
 
       if ((pjob = svr_find_job(jobid, TRUE)) == NULL)
@@ -656,6 +664,10 @@ pbs_queue *lock_queue_with_job_held(
         pque = NULL;
         *pjob_ptr = NULL;
         }
+	  else
+		{
+		job_mutex->mark_as_locked();
+		}
       }
     else
       {

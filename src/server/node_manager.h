@@ -55,9 +55,9 @@ int get_bitmap(job *pjob, int ProcBMSize, char *ProcBMPtr);
 int node_satisfies_request(struct pbsnode *pnode, char *ProcBMStr);
 #endif /* GEOMETRY_REQUESTS */
 
-int add_job_to_gpu_subnode(struct pbsnode *pnode, struct gpusubn *gn, job *pjob);
+int add_job_to_gpu_subnode(struct pbsnode *pnode, struct gpusubn *gn, job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex);
 
-int set_nodes(job *pjob, char *spec, int procs, char **rtnlist, char **rtnportlist, char *FailHost, char *EMsg);
+int set_nodes(job *pjob, char *spec, int procs, char **rtnlist, char **rtnportlist, char *FailHost, char *EMsg, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 int procs_requested(char *spec);
 

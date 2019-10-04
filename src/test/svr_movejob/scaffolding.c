@@ -209,7 +209,7 @@ void svr_disconnect(int handle) {}
 
 void req_reject(int code, int aux, struct batch_request *preq, const char *HostName, const char *Msg) {}
 
-int job_abt(struct job **pjobp, const char *text, bool b=false)
+int job_abt(struct job **pjobp, const char *text, boost::shared_ptr<mutex_mgr>& job_mutex, bool b=false)
   {
   fprintf(stderr, "The call to job_abt to be mocked!!\n");
   exit(1);
@@ -346,7 +346,7 @@ int lock_queue(struct pbs_queue *the_queue, const char *method_name, const char 
   exit(1);
   }
 
-int get_parent_dest_queues(char *queue_parent_name, char *queue_dest_name, pbs_queue **parent, pbs_queue **dest, job **pjob_ptr)
+int get_parent_dest_queues(char *queue_parent_name, char *queue_dest_name, pbs_queue **parent, pbs_queue **dest, job **pjob_ptr, boost::shared_ptr<mutex_mgr>& job_mutex)
   {
   fprintf(stderr, "The call to get_parent_dest_queues to be mocked!!\n");
   exit(1);

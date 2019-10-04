@@ -17,6 +17,8 @@
 #include "work_task.h"
 #include "complete_req.hpp"
 #include "attr_req_info.hpp"
+#include "boost/shared_ptr.hpp"
+#include "mutex_mgr.hpp"
 
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 int chk_mppnodect(resource *mppnodect, pbs_queue *pque, long nppn, long mpp_width, char *EMsg);
@@ -583,6 +585,7 @@ START_TEST(job_set_wait_test)
   struct job test_job;
   struct pbs_attribute test_attribute;
   int result = -1;
+  int rc;
 
   memset(&test_job, 0, sizeof(test_job));
   memset(&test_attribute, 0, sizeof(test_attribute));
@@ -673,10 +676,13 @@ START_TEST(set_resc_deflt_test)
   memset(&test_job, 0, sizeof(test_job));
   memset(&test_attribute, 0, sizeof(test_attribute));
 
-  set_resc_deflt(NULL, &test_attribute, 0);
-  set_resc_deflt(&test_job, NULL, 0);
-  set_resc_deflt(&test_job, &test_attribute, 0);
-  set_resc_deflt(&test_job, &test_attribute, 1);
+  int rc;
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(test_job->ji_mutex, false, rc);
+
+  set_resc_deflt(NULL, &test_attribute, 0, nullPtr);
+  set_resc_deflt(&test_job, NULL, 0, job_mutex);
+  set_resc_deflt(&test_job, &test_attribute, 0, job_mutex);
+  set_resc_deflt(&test_job, &test_attribute, 1, job_mutex);
   }
 END_TEST
 
@@ -688,9 +694,18 @@ START_TEST(set_chkpt_deflt_test)
   memset(&test_job, 0, sizeof(test_job));
   memset(&test_queue, 0, sizeof(test_queue));
 
-  set_chkpt_deflt(NULL, &test_queue);
-  set_chkpt_deflt(&test_job, NULL);
-  set_chkpt_deflt(&test_job, &test_queue);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	char log_buf[LOG_BUF_SIZE];
+	sprintf(log_buf, "failed to create managed mutex");
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return(rc);
+	}
+
+  set_chkpt_deflt(NULL, &test_queue, job_mutex);
+  set_chkpt_deflt(&test_job, NULL, job_mutex);
+  set_chkpt_deflt(&test_job, &test_queue, job_mutex);
   }
 END_TEST
 

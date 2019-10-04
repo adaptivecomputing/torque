@@ -114,7 +114,7 @@ static void post_signal_req (batch_request *preq);
 
 extern int   LOGLEVEL;
 
-extern int   set_old_nodes (job *);
+extern int   set_old_nodes (job *, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 extern job  *chk_job_request(char *, struct batch_request *);
 
@@ -213,7 +213,7 @@ int req_signaljob(
   /* pass the request on to MOM */
   batch_request dup_req(*preq);
     
-  rc = relay_to_mom(&pjob, &dup_req, NULL);
+  rc = relay_to_mom(&pjob, &dup_req, NULL, job_mutex);
     
   if (pjob != NULL)
     job_mutex->unlock();
@@ -252,7 +252,8 @@ int issue_signal(
   const char  *signame,
   void       (*func)(struct batch_request *),
   void        *extra,
-  char        *extend)
+  char        *extend,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int            rc;
@@ -275,7 +276,7 @@ int issue_signal(
 
   /* The newreq is freed in relay_to_mom (failure)
    * or in issue_Drequest (success) */
-  rc = relay_to_mom(&pjob, &newreq, NULL);
+  rc = relay_to_mom(&pjob, &newreq, NULL, job_mutex);
 
   if ((rc == PBSE_NONE) &&
       (pjob != NULL))
@@ -284,11 +285,12 @@ int issue_signal(
       {
       strcpy(jobid, pjob->ji_qs.ji_jobid);
 
-      unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+	  job_mutex->unlock();
 
       func(&newreq);
 
       *pjob_ptr = svr_find_job(jobid, TRUE);
+	  job_mutex->mark_as_locked();
       }
     }
   else if ((extend != NULL) && 
@@ -296,9 +298,19 @@ int issue_signal(
     {
     if (pjob == NULL)
       {
+	  if (job_mutex->get_lock_state() == true)
+		{
+		job_mutex->unlock();
+		}
+
       *pjob_ptr = svr_find_job(jobid, TRUE);
-      pjob = *pjob_ptr;
+	  if (*pjob_ptr != NULL)
+		{
+		pjob = *pjob_ptr;
+		job_mutex->mark_as_locked();
+		}
       }
+
     /* The job state is normally set when the obit arrives. But since the 
        MOM is not responding we need to set the state here */
 
@@ -314,21 +326,21 @@ int issue_signal(
         /* non-migratable checkpoint (cray), leave there */
         /* and just requeue the job         */
 
-        rel_resc(pjob);
+        rel_resc(pjob, job_mutex);
 
         pjob->ji_qs.ji_svrflags |= JOB_SVFLG_HASRUN;
 
-        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
+        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE, job_mutex);
 
         pjob->ji_momhandle = -1;
 
-        unlock_ji_mutex(pjob, __func__, "8", LOGLEVEL);
+		job_mutex->unlock();
         *pjob_ptr = NULL;
 
         return(PBSE_SYSTEM);
         }
 
-      rel_resc(pjob); /* free resc assigned to job */
+      rel_resc(pjob, job_mutex); /* free resc assigned to job */
 
       /* Now re-queue the job */
       pjob->ji_modified = 1; /* force full job save */
@@ -336,8 +348,8 @@ int issue_signal(
       pjob->ji_momhandle = -1;
       pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_StagedIn;
 
-      svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE);
-      unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+      svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_QUEUED, FALSE, job_mutex);
+	  job_mutex->unlock();
 
       if (func != NULL)
         func(&newreq);
@@ -346,6 +358,14 @@ int issue_signal(
 
       // We need to re-acquire the lock or set the pointer to NULL
       *pjob_ptr = svr_find_job(jobid, TRUE);
+	  if (*pjob_ptr != NULL)
+		{
+		job_mutex->mark_as_locked();
+		}
+	  else
+		{
+		rc = PBSE_JOBNOTFOUND;
+		}
       }
     else
       rc = PBSE_JOBNOTFOUND;
@@ -353,7 +373,10 @@ int issue_signal(
   else
     {
     if (pjob == NULL)
+	  {
+	  job_mutex->set_lock_state(false);
       *pjob_ptr = NULL;
+	  }
     }
 
   return(rc);
@@ -419,13 +442,13 @@ void post_signal_req(
           {
           pjob->ji_qs.ji_svrflags |= JOB_SVFLG_Suspend;
           
-          set_statechar(pjob);
+          set_statechar(pjob, job_mutex);
           
-          job_save(pjob, SAVEJOB_QUICK, 0);
+          job_save(pjob, SAVEJOB_QUICK, 0, job_mutex);
           
           /* release resources allocated to suspended job - NORWAY */
           
-          free_nodes(pjob);
+          free_nodes(pjob, NULL, job_mutex);
           }
         }
       else if (strcmp(preq->rq_ind.rq_signal.rq_signame, SIG_RESUME) == 0)
@@ -434,13 +457,13 @@ void post_signal_req(
           {
           /* re-allocate assigned node to resumed job - NORWAY */
           
-          set_old_nodes(pjob);
+          set_old_nodes(pjob, job_mutex);
           
           pjob->ji_qs.ji_svrflags &= ~JOB_SVFLG_Suspend;
           
-          set_statechar(pjob);
+          set_statechar(pjob, job_mutex);
           
-          job_save(pjob, SAVEJOB_QUICK, 0);
+          job_save(pjob, SAVEJOB_QUICK, 0, job_mutex);
           }
         }
       }

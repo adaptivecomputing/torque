@@ -176,7 +176,7 @@ void free_server_attrs(tlist_head *attrl_ptr) {}
 struct batch_request *setup_cpyfiles(struct batch_request *preq, job *pjob, char *from, char *to, int direction, int tflag) {return NULL;}
 char *pbs_default(void) {return NULL;}
 pbs_net_t get_connectaddr(int sock, int mutex) {return -1;}
-void set_chkpt_deflt(job *pjob, pbs_queue *pque) {}
+void set_chkpt_deflt(job *pjob, pbs_queue *pque, boost::shared_ptr<mutex_mgr>& job_mutex) {}
 
 int attr_to_str(std::string& ds, attribute_def *attr_def,struct pbs_attribute attr, bool XML)
   {
@@ -192,7 +192,7 @@ void log_ext(int errnum, const char *routine, const char *text, int severity){}
 void account_record(int acctype, job *pjob, const char *text){}
 const char *prefix_std_file(job *pjob, std::string& ds, int key) {return "";}
 job *svr_find_job(const char *jobid, int get_subjob) {return NULL;}
-const char *add_std_filename(job *pjob, char *path, int key, std::string& ds) { return ""; }
+const char *add_std_filename(job *pjob, char *path, int key, std::string& ds, boost::shared_ptr<mutex_mgr>& job_mutex) { return ""; }
 int lock_sv_qs_mutex(pthread_mutex_t *sv_qs_mutex, const char *msg_string) {return(0);}
 struct pbs_queue *lock_queue_with_job_held(struct pbs_queue  *pque, job       **pjob_ptr){return(NULL);}
 pbs_net_t get_hostaddr(int *local_errno, const char *hostname) {return 0;}
@@ -248,7 +248,7 @@ int job_route(job *jobp) {return 0;}
 int svr_dequejob(job *pjob, int val) {return 0;}
 int encode_ll(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}
 int set_b(struct pbs_attribute *attr, struct pbs_attribute *new_attr, enum batch_op op) {return 0;}
-int insert_into_recycler(job *pjob) {return 0;}
+int insert_into_recycler(job *pjob, job_mutex) {return 0;}
 int get_fullhostname(char *shortname, char *namebuf, int bufsize, char *EMsg) {return 0;}
 int svr_save(struct server *ps, int mode) {return 0;}
 int encode_l(pbs_attribute *attr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm) {return 0;}

@@ -214,7 +214,7 @@ int svr_authorize_req(
     {
     /* request authorized */
 
-    return(0);
+    return(PBSE_NONE);
     }
 
   /* is requestor the job owner? */
@@ -223,12 +223,12 @@ int svr_authorize_req(
     {
     /* request authorized */
 
-    return(0);
+    return(PBSE_NONE);
     }
 
   /* not authorized */
 
-  return(-1);
+  return(PBSE_NO_PRIVILEGES);
   }
 
 
@@ -586,14 +586,15 @@ int authenticate_user(
 void chk_job_req_permissions(
 
   job                  **pjob_ptr, /* M */
-  struct batch_request  *preq) /* I */
+  struct batch_request  *preq, /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   job  *pjob = *pjob_ptr;
   char  tmpLine[MAXLINE];
   char  log_buf[LOCAL_LOG_BUF_SIZE];
 
-  if (svr_authorize_jobreq(preq, pjob) == -1)
+  if (svr_authorize_jobreq(preq, pjob) != PBSE_NONE)
     {
     sprintf(log_buf, msg_permlog,
       preq->rq_type,
@@ -606,7 +607,7 @@ void chk_job_req_permissions(
 
     req_reject(PBSE_PERM, 0, preq, NULL, "operation not permitted");
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	job_mutex->unlock();
 
     *pjob_ptr = NULL;
     }
@@ -639,7 +640,7 @@ void chk_job_req_permissions(
 
         req_reject(PBSE_BADSTATE, 0, preq, NULL, tmpLine);
 
-        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+		job_mutex->unlock();
 
         *pjob_ptr = NULL;
 
@@ -683,8 +684,22 @@ job *chk_job_request(
     return(NULL);
     }
 
+  int rc;
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	char log_buf[LOG_BUF_SIZE];
+	sprintf(log_buf, "failed to create managed mutex");
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return(NULL);
+	}
+
+
   /* if we aren't authorized, pjob will be set to NULL in chk_job_req_permissions */
-  chk_job_req_permissions(&pjob,preq);
+  chk_job_req_permissions(&pjob,preq, job_mutex);
+
+  /* The job should leave locked from this call */
+  job_mutex->set_unlock_on_exit(false);
 
   return(pjob);
   }  /* END chk_job_request() */

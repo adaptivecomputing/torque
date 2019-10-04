@@ -70,7 +70,7 @@ int svr_job_purge(job *pjob, int leaveSpoolFiles)
   return(0);
   }
 
-void set_chkpt_deflt(job *pjob, pbs_queue *pque)
+void set_chkpt_deflt(job *pjob, pbs_queue *pque, boost::shared_ptr<mutex_mgr>& job_mutex)
   {
   fprintf(stderr, "The call to set_chkpt_deflt to be mocked!!\n");
   exit(1);
@@ -431,7 +431,8 @@ const char *add_std_filename(
   job            *pjob,
   char           *path,
   int             key,
-  std::string&    ds)
+  std::string&    ds,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
   {
   return "stdfilename";
   }

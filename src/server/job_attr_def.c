@@ -94,9 +94,9 @@
 /* Extern functions (at_action) called */
 
 extern int job_set_wait (pbs_attribute *, void *, int);
+extern int depend_on_que (pbs_attribute *, void *, int);
 extern int action_resc (pbs_attribute *, void *, int);
 extern int ck_checkpoint (pbs_attribute *, void *, int);
-extern int depend_on_que (pbs_attribute *, void *, int);
 extern int comp_checkpoint (pbs_attribute *, pbs_attribute *);
 
 #define ATR_DFLAG_SSET  (ATR_DFLAG_SvWR | ATR_DFLAG_SvRD)

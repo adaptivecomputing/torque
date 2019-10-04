@@ -20,8 +20,13 @@ job::job() : ji_plugin_usage_info(), ji_momstat(0), ji_modified(0), ji_momhandle
   memset(this->ji_arraystructid, 0, sizeof(ji_arraystructid));
   memset(&this->ji_qs, 0, sizeof(this->ji_qs));
 
+  pthread_mutexattr_t mutex_attr;
+  pthread_mutexattr_init(&mutex_attr);
+  pthread_mutexattr_settype(&mutex_attr, PTHREAD_MUTEX_RECURSIVE);
+
   this->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(this->ji_mutex,NULL);
+  pthread_mutex_init(this->ji_mutex, &mutex_attr);
+//  pthread_mutex_init(this->ji_mutex, NULL);
   lock_ji_mutex(this, __func__, NULL, LOGLEVEL);
 
   this->ji_qs.qs_version = PBS_QS_VERSION;

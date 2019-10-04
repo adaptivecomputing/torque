@@ -145,7 +145,7 @@ extern pthread_mutex_t *netrates_mutex;
 int status_job(job *, struct batch_request *, svrattrl *, tlist_head *, bool, int *);
 int status_attrib(svrattrl *, attribute_def *, pbs_attribute *, int, int, tlist_head *, bool, int *, int);
 extern int  status_nodeattrib(svrattrl *, attribute_def *, struct pbsnode *, int, int, tlist_head *, int*);
-extern void rel_resc(job*);
+extern void rel_resc(job*, boost::shared_ptr<mutex_mgr>&);
 
 /* The following private support functions are included */
 
@@ -552,7 +552,8 @@ job *get_next_status_job(
 bool in_execution_queue(
 
   job       *pjob,
-  job_array *pa)
+  job_array *pa,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   if (pjob == NULL)
@@ -562,7 +563,7 @@ bool in_execution_queue(
   if (pa != NULL)
     unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
 
-  pbs_queue *pque = get_jobs_queue(&pjob);
+  pbs_queue *pque = get_jobs_queue(&pjob, job_mutex);
 
   if (pa != NULL)
     lock_ai_mutex(pa, __func__, "2", LOGLEVEL);
@@ -701,7 +702,7 @@ void req_stat_job_step2(
           if (cntl->sc_pque->qu_qs.qu_type != QTYPE_Execution)
             continue;
           }
-        else if (in_execution_queue(pjob, pa) == false)
+        else if (in_execution_queue(pjob, pa, job_mutex) == false)
           continue;
         }
 
@@ -930,21 +931,21 @@ void stat_update(
           pjob,
           sattrl,
           ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
-          &bad);
+          &bad, job_mutex);
 
         if (oldsid != pjob->ji_wattr[JOB_ATR_session_id].at_val.at_long)
           {
           /* first save since running job (or the sid has changed), */
           /* must save session id    */
 
-          job_save(pjob, SAVEJOB_FULL, 0);
+          job_save(pjob, SAVEJOB_FULL, 0, job_mutex);
           }
 
 #ifdef USESAVEDRESOURCES
         else
           {
           /* save so we can recover resources used */
-          job_save(pjob, SAVEJOB_FULL, 0);
+          job_save(pjob, SAVEJOB_FULL, 0, job_mutex);
           }
 #endif    /* USESAVEDRESOURCES */
 
@@ -995,10 +996,9 @@ void stat_update(
           preq->rq_ind.rq_status.rq_id, pjob->ji_last_reported_time);
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         
-        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
-        rel_resc(pjob);
-        job_mutex->set_unlock_on_exit(false);
-        job_abt(&pjob, "Job does not exist on node");
+        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE, job_mutex);
+        rel_resc(pjob, job_mutex);
+        job_abt(&pjob, "Job does not exist on node", job_mutex);
 
         /* TODO, if the job is rerunnable we should set its state back to queued */
         }

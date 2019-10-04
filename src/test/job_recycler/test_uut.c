@@ -19,21 +19,30 @@ START_TEST(test_insert_into_recycler)
   job *pj = job_alloc();
   initialize_recycler();
 
-  fail_unless(insert_into_recycler(pj) == PBSE_NONE);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  if (rc != PBSE_NONE)
+	{
+	char log_buf[LOG_BUF_SIZE];
+	sprintf(log_buf, "failed to create managed mutex");
+	log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+	return(rc);
+	}
+
+  fail_unless(insert_into_recycler(pj, job_mutex) == PBSE_NONE);
 
   fail_unless(recycler.rc_jobs.count() == 1);
 
   job *pj2 = job_alloc();
-  fail_unless(insert_into_recycler(pj2) == PBSE_NONE);
+  fail_unless(insert_into_recycler(pj2, job_mutex) == PBSE_NONE);
 
   fail_unless(recycler.rc_jobs.count() == 2);
 
   // make sure we can't insert the job again with or without the flag set
   pj->ji_being_recycled = 0;
-  fail_unless(insert_into_recycler(pj) != PBSE_NONE);
+  fail_unless(insert_into_recycler(pj, job_mutex) != PBSE_NONE);
   fail_unless(recycler.rc_jobs.count() == 2);
 
-  fail_unless(insert_into_recycler(pj) == PBSE_NONE);
+  fail_unless(insert_into_recycler(pj, job_mutex) == PBSE_NONE);
 
   fail_unless(recycler.rc_jobs.count() == 2);
   }
@@ -48,7 +57,9 @@ START_TEST(test_remove_some_recycle_jobs)
   for (int i = 0; i < 1000; i++)
     {
     pjobs[i] = job_alloc();
-    fail_unless(insert_into_recycler(pjobs[i]) == PBSE_NONE);
+	boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+
+    fail_unless(insert_into_recycler(pjobs[i], job_mutex) == PBSE_NONE);
 
     // make the first 700 get removed 
     if (i < 700)
@@ -84,7 +95,8 @@ START_TEST(test_pop_job_from_recycler)
   for (int i = 0; i < 10; i++)
     {
     pjobs[i] = job_alloc();
-    fail_unless(insert_into_recycler(pjobs[i]) == PBSE_NONE);
+	boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+    fail_unless(insert_into_recycler(pjobs[i], job_mutex) == PBSE_NONE);
     }
 
   for (unsigned int i = 0; i < 10; i++)
@@ -101,7 +113,9 @@ START_TEST(test_pop_job_from_recycler)
   for (int i = 0; i < 5; i++)
     {
     pjobs[i] = job_alloc();
-    fail_unless(insert_into_recycler(pjobs[i]) == PBSE_NONE);
+	boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+
+    fail_unless(insert_into_recycler(pjobs[i], job_mutex) == PBSE_NONE);
     }
 
   job *pjob = pop_job_from_recycler(&recycler.rc_jobs);

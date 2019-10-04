@@ -539,7 +539,8 @@ void svr_mailowner_with_message(
   int         mailpoint, /* note, single character  */
   int         force,     /* if set to MAIL_FORCE, force mail delivery */
   const char *text, /* text to mail. */
-  const char *msg)   /* Optional extra message */
+  const char *msg,   /* Optional extra message */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   if((text == NULL)||(*text == '\0'))
@@ -548,14 +549,14 @@ void svr_mailowner_with_message(
     }
   if((msg == NULL)||(*msg == '\0'))
     {
-    return svr_mailowner(pjob,mailpoint,force,text);
+    return svr_mailowner(pjob,mailpoint,force,text, job_mutex);
     }
 
   std::string newMsg(text);
   newMsg += "\n";
   newMsg += msg;
 
-  svr_mailowner(pjob, mailpoint, force, newMsg.c_str());
+  svr_mailowner(pjob, mailpoint, force, newMsg.c_str(), job_mutex);
   }
 
 
@@ -565,7 +566,8 @@ void svr_mailowner(
   job   *pjob,      /* I */
   int    mailpoint, /* note, single character  */
   int    force,     /* if set to MAIL_FORCE, force mail delivery */
-  const char  *text)      /* (optional) additional message text */
+  const char  *text,      /* (optional) additional message text */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char                  mailto[1024];

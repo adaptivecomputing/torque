@@ -21,7 +21,7 @@ int   is_joined(job *pjob, enum job_atr ati);
 batch_request *return_stdfile(batch_request *preq, job *pjob, enum job_atr ati);
 void rel_resc(job *pjob);
 int handle_exiting_or_abort_substate(job *pjob);
-int setrerun(job *pjob,const char *text);
+int setrerun(job *pjob,const char *text, boost::shared_ptr<mutex_mgr>& job_mutex);
 batch_request *setup_cpyfiles(batch_request *preq, job *pjob, char *from, char *to, int direction, int tflag);
 int handle_returnstd(job *pjob, batch_request *preq, int type);
 int mom_comm(job *pjob, void *(*func)(struct work_task *vp));
@@ -35,7 +35,7 @@ int handle_terminating_array_subjob(job *pjob);
 int handle_terminating_job(job *pjob, int alreadymailed, const char *mailbuf);
 int update_substate_from_exit_status(job *pjob, int *alreadymailed, const char *text);
 int handle_stageout(job *pjob, int type, batch_request *preq);
-int handle_stagedel(job *pjob,int type,batch_request *preq);
+int handle_stagedel(job *pjob,int type,batch_request *preq, boost::shared_ptr<mutex_mgr>& job_mutex);
 int get_used(job *pjob, std::string &data);
 void set_job_comment(job *pjob, const char *cmt);
 

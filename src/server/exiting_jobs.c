@@ -97,7 +97,7 @@
 
 
 void on_job_exit(batch_request *preq, char *jobid);
-void force_purge_work(job *pjob);
+void force_purge_work(job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 
 std::vector<job_exiting_retry_info>  exiting_jobs_info;
@@ -165,14 +165,19 @@ int remove_from_exiting_list_by_jobid(
 
 int remove_job_from_exiting_list(
 
-  job **pjob)
+  job **pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int internal_job_id = (*pjob)->ji_internal_id;
 
-  unlock_ji_mutex(*pjob,__func__, NULL, LOGLEVEL);
+  job_mutex->unlock();
   int rc = remove_from_exiting_list_by_jobid(internal_job_id);
   *pjob = svr_find_job_by_id(internal_job_id);
+  if (*pjob != NULL)
+	{
+	job_mutex->mark_as_locked();
+	}
   return rc;
   } /* END remove_job_from_exiting_list() */
 
@@ -233,7 +238,17 @@ int get_next_retryable_jobid(
               job_mapper.get_name(internal_job_id), MAX_EXITING_RETRY_ATTEMPTS);
             log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
 
-            force_purge_work(pjob);
+			int rc;
+			boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+ 			if (rc != PBSE_NONE)
+			  {
+			  char log_buf[LOG_BUF_SIZE];
+			  sprintf(log_buf, "failed to create managed mutex");
+			  log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
+			  return(rc);
+		   	  }
+
+            force_purge_work(pjob, job_mutex);
             }
     
           pthread_mutex_lock(exiting_jobs_info_mutex);

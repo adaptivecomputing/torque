@@ -78,6 +78,8 @@
 */
 
 #include <stdio.h>
+#include <string.h>
+#include <errno.h>
 #include <sstream>
 #include <pthread.h>
 #include <string>
@@ -179,12 +181,29 @@ using namespace std;
  
   mutex_mgr::~mutex_mgr()
     {
+	int rc;
+	char log_buf[LOG_BUF_SIZE];
+
     if (mutex_valid == false)
       return;
 
+	int level = 4;
+	if (level >= 7)
+	  {
+	  sprintf(log_buf, "~mutex_mgr: locked = %d: unlock_on_exit = %d", locked, unlock_on_exit);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+	  }
+
     if ((unlock_on_exit == true) && (locked == true))
-      pthread_mutex_unlock(managed_mutex);
-    }
+	  {
+      rc = pthread_mutex_unlock(managed_mutex);
+      if (rc != 0)
+        {
+        snprintf(log_buf, LOG_BUF_SIZE, "%s:%s", "UNLOCK error in ~mutex_mgr", strerror(errno));
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+        }
+      }
+ 	}
 
   /* unlock the managed mutex */
   int mutex_mgr::unlock()
@@ -198,8 +217,14 @@ using namespace std;
       return(PBSE_MUTEX_ALREADY_UNLOCKED);
     
     rc = pthread_mutex_unlock(managed_mutex);
-    if (rc != 0)
-      return(PBSE_SYSTEM);
+	if (rc != 0)
+	  {
+	  char log_buf[LOG_BUF_SIZE];
+	  snprintf(log_buf, LOG_BUF_SIZE, "%s:%s", "UNLOCK error in mutex_mgr::unlock", strerror(errno));
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+      return PBSE_SYSTEM;
+      }
+ 
     else
       {
       locked = false;
@@ -220,7 +245,13 @@ using namespace std;
 
     rc = pthread_mutex_lock(managed_mutex);
     if (rc != 0)
-      return(PBSE_SYSTEM);
+	  {
+	  char log_buf[LOG_BUF_SIZE];
+	  snprintf(log_buf, LOG_BUF_SIZE, "%s:%s", "UNLOCK error in mutex_mgr::lock", strerror(errno));
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+      return PBSE_SYSTEM;
+      }
+ 
     else
       {
       locked = true;
@@ -233,6 +264,11 @@ using namespace std;
     {
     locked = val;
     }
+
+  bool mutex_mgr::get_lock_state()
+	{
+	return locked;
+	}
 
   /* allows user to request a mutex not be
    * unlocked by the destructor

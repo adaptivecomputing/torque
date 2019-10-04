@@ -195,7 +195,7 @@ static int   *groups;
 static char  *output_retained = (char *)"Output retained on that host in: ";
 #endif /* !NO_SPOOL_OUTPUT */
 
-static char   rcperr[MAXPATHLEN]; /* file to contain rcp error */
+static char   rcperr[MAXPATHLEN*2]; /* file to contain rcp error */
 
 extern int  LOGLEVEL;
 extern char checkpoint_run_exe_name[]; 
@@ -3153,7 +3153,8 @@ static int sys_copy(
   int   rmtflg,  /* I */
   char *ag2,     /* I (is this source or destination?) */
   char *ag3,     /* I (is this source or destination?) */
-  int   conn)    /* I */
+  int   conn,	 /* I */
+  job	*pjob)    /* I */
 
   {
   const char *ag0;
@@ -3168,9 +3169,9 @@ static int sys_copy(
   quote_spaces(ag2_str);
   quote_spaces(ag3_str);
 
-  sprintf(rcperr, "%srcperr.%ld",
+  sprintf(rcperr, "%srcperr.%s",
           path_spool,
-          (long)getpid());
+          pjob->ji_qs.ji_jobid);
 
   if (rmtflg == 0)
     {
@@ -3509,12 +3510,13 @@ int copy_and_process(
   int    dir,
   char  *localname,
   char **bad_list,
-  int   &bad_files)
+  int   &bad_files,
+  job	*pjob)
 
   {
   int rc;
 
-  if ((rc = sys_copy(rmtflag, src, dest, conn)) != 0)
+  if ((rc = sys_copy(rmtflag, src, dest, conn, pjob)) != 0)
     {
     FILE *fp;
 
@@ -4138,7 +4140,8 @@ void req_cpyfile(
                                  dir,
                                  localname,
                                  &bad_list,
-                                 bad_files)) != PBSE_NONE)
+                                 bad_files,
+								 pjob)) != PBSE_NONE)
         {
         copy_file_cleanup(dir, from_spool, preq, pair, localname, sizeof(localname), &bad_list);
         exitcode = COPY_FILE_FAIL;

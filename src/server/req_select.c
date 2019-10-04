@@ -456,7 +456,7 @@ static void sel_step3(
   while (pjob != NULL)
     {
     if (query_others ||
-        (svr_authorize_jobreq(preq, pjob) == 0))
+        (svr_authorize_jobreq(preq, pjob) == PBSE_NONE))
       {
       /* either job owner or has special permission to look at job */
 

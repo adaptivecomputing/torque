@@ -150,7 +150,7 @@ void append_link(tlist_head *head, list_link *new_link, void *pobj)
   exit(1);
   }
 
-void set_resc_deflt(job *pjob, pbs_attribute *ji_wattr, int has_queue_mutex)
+void set_resc_deflt(job *pjob, pbs_attribute *ji_wattr, int has_queue_mutex, boost::shared_ptr<mutex_mgr>& job_mutex)
   {
   fprintf(stderr, "The call to set_resc_deflt to be mocked!!\n");
   exit(1);
@@ -186,7 +186,7 @@ void replace_attr_string(struct pbs_attribute *attr, char *newval)
   exit(1);
   }
 
-const char *add_std_filename(job *pjob, char *path, int key, std::string& ds) { return "stdfilename"; }
+const char *add_std_filename(job *pjob, char *path, int key, std::string& ds, boost::shared_ptr<mutex_mgr>& job_mutex) { return "stdfilename"; }
 
 int unlock_queue(struct pbs_queue *the_queue, const char *method_name, const char *msg, int logging)
   {

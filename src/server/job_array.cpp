@@ -456,6 +456,11 @@ void job_array::update_array_values(
         {
         case JOB_STATE_QUEUED:
         case JOB_STATE_HELD:
+ 	  this->ai_qs.num_failed++;
+          this->ai_qs.num_idle--;
+          this->create_job_if_needed();
+	  break;
+
         case JOB_STATE_WAITING:
 
           this->ai_qs.num_idle--;
@@ -510,7 +515,7 @@ void job_array::update_array_values(
             else
               {
 			  int rc;
-              boost::shared_ptr<mutex_mgr> pj_mutex = create_managed_mutex(pj->ji_mutex, true, rc);
+              boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pj->ji_mutex, true, rc);
 			  if ( rc != PBSE_NONE)
 				{
 				// @todo should throw
@@ -526,9 +531,9 @@ void job_array::update_array_values(
                   pj->ji_wattr[JOB_ATR_hold].at_flags &= ~ATR_VFLAG_SET;
                   }
                 
-                svr_evaljobstate(*pj, newstate, newsub, 1);
-                svr_setjobstate(pj, newstate, newsub, FALSE);
-                job_save(pj, SAVEJOB_FULL, 0);
+                svr_evaljobstate(*pj, newstate, newsub, 1, job_mutex);
+                svr_setjobstate(pj, newstate, newsub, FALSE, job_mutex);
+                job_save(pj, SAVEJOB_FULL, 0, job_mutex);
                 
                 break;
                 }

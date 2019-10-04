@@ -48,7 +48,7 @@ void check_node_jobs_existence(struct work_task *pwt);
 int  add_job_to_gpu_subnode(pbsnode *pnode, gpusubn &gn, job *pjob);
 int proplist(char **str, std::vector<prop> &plist, int *node_req, int *gpu_req, int *mic_req);
 int process_gpu_token(const char*, job*);
-int process_gpu_token_slotrange(const char*, const char*, job*);
+int process_gpu_token_slotrange(const char*, const char*, job*, boost::shared_ptr<mutex_mgr>& job_mutex);
 std::vector<std::string> split_str_on_character(const std::string&, char);
 int set_one_old(const char*, job*);
 int set_one_old_slotrange(const char*, const char*, job*);

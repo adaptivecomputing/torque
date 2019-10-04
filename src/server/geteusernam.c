@@ -175,7 +175,8 @@ static bool geteusernam(
 
   job           *pjob,
   pbs_attribute *pattr,
-  std::string&   ret_user) /* pointer to User_List pbs_attribute */
+  std::string&   ret_user, /* pointer to User_List pbs_attribute */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   bool  rule3 = false;
@@ -256,7 +257,6 @@ static bool geteusernam(
 
 bool getegroup(
 
-  job           *pjob,  /* I */
   pbs_attribute *pattr,
   std::string&   ret_group) /* I group_list pbs_attribute */
 
@@ -327,7 +327,8 @@ bool is_user_allowed_to_submit_jobs(
   job        *pjob,    /* I */
   const char *luser,   /* I */
   char       *EMsg,    /* O optional */
-  int         logging) /* I */
+  int         logging, /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char           *orighost;
@@ -548,7 +549,8 @@ int set_jobexid(
 
   job           *pjob,    /* I */
   pbs_attribute *attrry,  /* I */
-  char          *EMsg)    /* O (optional,minsize=1024) */
+  char          *EMsg,    /* O (optional,minsize=1024) */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int             addflags = 0;
@@ -627,7 +629,7 @@ int set_jobexid(
         free(pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str);
         pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str = usr_at_host;
         }
-      else if (geteusernam(pjob, pattr,puser) == false)
+      else if (geteusernam(pjob, pattr,puser, job_mutex) == false)
         {
         if (EMsg != NULL)
           snprintf(EMsg, 1024, "cannot locate user name in job");
@@ -653,7 +655,7 @@ int set_jobexid(
     else
       pattr = &pjob->ji_wattr[JOB_ATR_userlst];
 
-    if (geteusernam(pjob, pattr,puser) == false)
+    if (geteusernam(pjob, pattr,puser, job_mutex) == false)
       {
       if (EMsg != NULL)
         snprintf(EMsg, 1024, "cannot locate user name in job");
@@ -772,7 +774,7 @@ int set_jobexid(
       return(PBSE_BADUSER);
       }
 
-    if (is_user_allowed_to_submit_jobs(pjob, puser.c_str(), EMsg, LOGLEVEL) == false)
+    if (is_user_allowed_to_submit_jobs(pjob, puser.c_str(), EMsg, LOGLEVEL, job_mutex) == false)
       {
       free_pwnam(pwent, buf);
       return(PBSE_BADUSER);
@@ -845,7 +847,7 @@ int set_jobexid(
 
   /* extract user-specified egroup if it exists */
 
-  if (!getegroup(pjob, pattr,pgrpn))
+  if (!getegroup(pattr,pgrpn))
     {
     free_pwnam(pwent, buf);
     pwent = NULL;

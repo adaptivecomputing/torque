@@ -202,7 +202,7 @@ int                     default_gpu_mode = -1;
 #include <nvml.h>
 #endif
 
-int handle_complete_first_time(job *pjob);
+int handle_complete_first_time(job *pjob, boost::shared_ptr<mutex_mgr>& job_mutex);
 int is_compute_node(char *node_id);
 int node_satisfies_request(struct pbsnode *,char *);
 int reserve_node(struct pbsnode *, job *, char *, job_reservation_info &);
@@ -748,6 +748,7 @@ bool job_should_be_killed(
 
 
 
+// This appears to be a dead function
 void *finish_job(
 
   void *vp)
@@ -766,22 +767,20 @@ void *finish_job(
     }
 
   int rc;
-  boost::shared_ptr<mutex_mgr> job_mgr = create_managed_mutex(pjob->ji_mutex, true, rc);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
   if (rc != PBSE_NONE)
  	{
 	log_err(rc, __func__, "failed to allocate job mutex");
 	return NULL;
 	}
 
-  job_mgr->set_unlock_on_exit(false);
-
   free(jobid);
 
-  free_nodes(pjob);
+  free_nodes(pjob, NULL, job_mutex);
 
-  svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
+  svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE, job_mutex);
 
-  handle_complete_first_time(pjob);
+  handle_complete_first_time(pjob, job_mutex);
   /* pjob->ji_mutex is always returned unlocked from handle_complete_first_time */
 
   return(NULL);
@@ -3740,7 +3739,8 @@ int add_job_to_gpu_subnode(
     
   pbsnode *pnode,
   gpusubn &gn,
-  job     *pjob)
+  job     *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex )
 
   {
   gn.job_internal_id = pjob->ji_internal_id;
@@ -3760,7 +3760,8 @@ int add_job_to_mic(
 
   struct pbsnode *pnode,
   int             index,
-  job            *pjob)
+  job            *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int rc = -1;
@@ -3846,7 +3847,8 @@ int place_gpus_in_hostlist(
   struct pbsnode     *pnode,
   job                *pjob,
   node_job_add_info  &naji,
-  std::list<howl>    &gpu_list)
+  std::list<howl>    &gpu_list,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int             j;
@@ -3875,7 +3877,7 @@ int place_gpus_in_hostlist(
         (gn.state == gpu_unavailable))
       continue;
     
-    add_job_to_gpu_subnode(pnode,gn,pjob);
+    add_job_to_gpu_subnode(pnode, gn, pjob, job_mutex);
     naji.gpu_needed--;
     
     sprintf(log_buf,
@@ -3990,14 +3992,15 @@ int place_mics_in_hostlist(
   struct pbsnode    *pnode,
   job               *pjob,
   node_job_add_info &naji,
-  std::list<howl>   &mic_list)
+  std::list<howl>   &mic_list,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int i;
 
   for (i = 0; i < pnode->nd_nmics && naji.mic_needed > 0; i++)
     {
-    if (add_job_to_mic(pnode, i, pjob) == PBSE_NONE)
+    if (add_job_to_mic(pnode, i, pjob, job_mutex) == PBSE_NONE)
       {
       naji.mic_needed--;
       add_mic_to_list(mic_list, pnode, i);
@@ -4019,7 +4022,8 @@ void save_cgroup_string_attr(
   job         *pjob,
   const char  *node_name,
   std::string &value,
-  int          index)
+  int          index,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   if (pjob->ji_wattr[index].at_val.at_str == NULL)
@@ -4055,17 +4059,18 @@ void save_cpus_and_memory_cpusets(
 
   job         *pjob,
   const char  *node_name,
-  cgroup_info &cgi)
+  cgroup_info &cgi,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
-  save_cgroup_string_attr(pjob, node_name, cgi.cpu_string, JOB_ATR_cpuset_string);
-  save_cgroup_string_attr(pjob, node_name, cgi.mem_string, JOB_ATR_memset_string);
+  save_cgroup_string_attr(pjob, node_name, cgi.cpu_string, JOB_ATR_cpuset_string, job_mutex);
+  save_cgroup_string_attr(pjob, node_name, cgi.mem_string, JOB_ATR_memset_string, job_mutex);
 
   if (cgi.gpu_string.size() > 0)
-    save_cgroup_string_attr(pjob, node_name, cgi.gpu_string, JOB_ATR_gpus_reserved);
+    save_cgroup_string_attr(pjob, node_name, cgi.gpu_string, JOB_ATR_gpus_reserved, job_mutex);
 
   if (cgi.mic_string.size() > 0)
-    save_cgroup_string_attr(pjob, node_name, cgi.mic_string, JOB_ATR_mics_reserved);
+    save_cgroup_string_attr(pjob, node_name, cgi.mic_string, JOB_ATR_mics_reserved, job_mutex);
 
   } // END save_cpus_and_memory_cpusets()
 
@@ -4132,7 +4137,8 @@ void update_req_hostlist(
   job        *pjob,
   const char *host_name,
   int         req_index,
-  int         ppn_needed)
+  int         ppn_needed,
+  boost::shared_ptr<mutex_mgr>& job_mutex )
 
   {
   complete_req *cr;
@@ -4181,7 +4187,8 @@ void update_req_hostlist(
 
 void set_gpu_mode_if_needed(
 
-  job *pjob)
+  job *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char *default_gpu_mode = NULL;
@@ -4226,7 +4233,8 @@ int place_subnodes_in_hostlist(
   struct pbsnode       *pnode,
   node_job_add_info    &naji,
   job_reservation_info &node_info,
-  char                 *ProcBMStr)
+  char                 *ProcBMStr,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int  rc = PBSE_NONE;
@@ -4274,15 +4282,15 @@ int place_subnodes_in_hostlist(
     bool              legacy_vmem = false;
     get_svr_attr_b(SRV_ATR_LegacyVmem, &legacy_vmem);
 
-    set_gpu_mode_if_needed(pjob);
+    set_gpu_mode_if_needed(pjob, job_mutex);
 
     // We shouldn't be starting a job if the layout hasn't been set up yet.
     if (pnode->nd_layout.is_initialized() == false)
       return(-1);
 
-    update_req_hostlist(pjob, pnode->get_name(), naji.req_index, naji.ppn_needed);
+    update_req_hostlist(pjob, pnode->get_name(), naji.req_index, naji.ppn_needed, job_mutex);
 
-    rc = pnode->nd_layout.place_job(pjob, cgi, pnode->get_name(), legacy_vmem);
+    rc = pnode->nd_layout.place_job(pjob, cgi, pnode->get_name(), legacy_vmem, job_mutex);
     if (rc != PBSE_NONE)
       {
       snprintf(log_buf, sizeof(log_buf),
@@ -4317,7 +4325,7 @@ int place_subnodes_in_hostlist(
         cgi.mem_string = "0";
       }
 
-    save_cpus_and_memory_cpusets(pjob, pnode->get_name(), cgi);
+    save_cpus_and_memory_cpusets(pjob, pnode->get_name(), cgi, job_mutex);
     save_node_usage(pnode);
 #endif
 
@@ -4528,7 +4536,8 @@ int translate_job_reservation_info_to_string(
 int record_external_node(
 
   job            *pjob,
-  struct pbsnode *pnode)
+  struct pbsnode *pnode,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char         *external_nodes;
@@ -4571,7 +4580,8 @@ int build_hostlist_nodes_req(
   std::list<howl>                    &gpu_list,  /* O */
   std::list<howl>                    &mic_list,  /* O */
   std::list<node_job_add_info>       *naji_list, /* I */
-  char                               *ProcBMStr) /* I */
+  char                               *ProcBMStr, /* I */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   struct pbsnode                         *pnode = NULL;
@@ -4596,16 +4606,16 @@ int build_hostlist_nodes_req(
         int rc = PBSE_NONE;
 
         job_reservation_info host_single;
-        rc = place_subnodes_in_hostlist(pjob, pnode, *it, host_single, ProcBMStr);
+        rc = place_subnodes_in_hostlist(pjob, pnode, *it, host_single, ProcBMStr, job_mutex);
         if (rc == PBSE_NONE)
           {
           host_info.push_back(host_single);
-          place_gpus_in_hostlist(pnode, pjob, *it, gpu_list);
-          place_mics_in_hostlist(pnode, pjob, *it, mic_list);
+          place_gpus_in_hostlist(pnode, pjob, *it, gpu_list, job_mutex);
+          place_mics_in_hostlist(pnode, pjob, *it, mic_list, job_mutex);
         
           if (it->is_external == TRUE)
             {
-            record_external_node(pjob, pnode);
+            record_external_node(pjob, pnode, job_mutex);
             }
           }
         else
@@ -4836,7 +4846,8 @@ int locate_resource_request_20_nodes(
   std::list<node_job_add_info>  &naji_list,
   alps_req_data                **ard_array,
   int                           &num_reqs,
-  enum job_types                &job_type)
+  enum job_types                &job_type,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int rc = 1; // positive numbers mean success - this needs to return like node_spec()
@@ -4921,7 +4932,8 @@ int set_nodes(
   std::string &node_list,   /* O */
   std::string &rtnportlist, /* O */
   char        *FailHost,    /* O (optional,minsize=1024) */
-  char        *EMsg)        /* O (optional,minsize=1024) */
+  char        *EMsg,        /* O (optional,minsize=1024) */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   FUNCTION_TIMER
@@ -4964,7 +4976,7 @@ int set_nodes(
 
   ProcBMStr[0] = '\0';
 #ifdef GEOMETRY_REQUESTS
-  get_bitmap(pjob,sizeof(ProcBMStr),ProcBMStr);
+  get_bitmap(pjob, sizeof(ProcBMStr), ProcBMStr);
 #endif /* GEOMETRY_REQUESTS */
 
   if (pjob->ji_wattr[JOB_ATR_login_prop].at_flags & ATR_VFLAG_SET)
@@ -4977,7 +4989,7 @@ int set_nodes(
 #ifdef PENABLE_LINUX_CGROUPS
   if (!strcmp(spec, RESOURCE_20_FIND))
     {
-    i = locate_resource_request_20_nodes(pjob, naji_list, &ard_array, num_reqs, job_type);
+    i = locate_resource_request_20_nodes(pjob, naji_list, &ard_array, num_reqs, job_type, job_mutex);
     }
   else
     {
@@ -5042,16 +5054,18 @@ int set_nodes(
                                      gpu_list,
                                      mic_list,
                                      &naji_list,
-                                     ProcBMStr)) != PBSE_NONE)
+                                     ProcBMStr, 
+									 job_mutex)) != PBSE_NONE)
     {
-    free_nodes(pjob, spec);
+    free_nodes(pjob, spec, job_mutex);
     delete [] ard_array;
     return(rc);
     }
 
+  // build_hostlist_procs_req does not need a job_mutex
   if ((rc = build_hostlist_procs_req(pjob, procs, newstate, host_info)) != PBSE_NONE)
     {
-    free_nodes(pjob, spec);
+    free_nodes(pjob, spec, job_mutex);
     delete [] ard_array;
     return(rc);
     }
@@ -5069,7 +5083,7 @@ int set_nodes(
     if (EMsg != NULL)
       sprintf(EMsg, "no nodes can be allocated to job");
    
-    free_nodes(pjob, spec); 
+    free_nodes(pjob, spec, job_mutex); 
     delete [] ard_array;
 
     return(PBSE_RESCUNAV);
@@ -5081,7 +5095,7 @@ int set_nodes(
   rc = translate_job_reservation_info_to_string(host_info, &NCount, node_list, &exec_ports);
   if (rc != PBSE_NONE)
     {
-    free_nodes(pjob, spec); 
+    free_nodes(pjob, spec, job_mutex); 
     delete [] ard_array;
     return(rc);
     }
@@ -5105,7 +5119,7 @@ int set_nodes(
     {
     if ((rc = translate_howl_to_string(mic_list, EMsg, NCount, mic_str, NULL, false)) != PBSE_NONE)
       {
-      free_nodes(pjob, spec);
+      free_nodes(pjob, spec, job_mutex);
       delete [] ard_array;
       return(rc);
       }
@@ -5125,7 +5139,7 @@ int set_nodes(
     {
     if ((rc = translate_howl_to_string(gpu_list, EMsg, NCount, gpu_str, NULL, false)) != PBSE_NONE)
       {
-      free_nodes(pjob, spec);
+      free_nodes(pjob, spec, job_mutex);
       delete [] ard_array;
       return(rc);
       }
@@ -5172,6 +5186,7 @@ int set_nodes(
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
     }
 
+  // add_multi_reqs_to_job does not need job_mutex
   add_multi_reqs_to_job(pjob, num_reqs, ard_array);
   delete [] ard_array;
 
@@ -5690,7 +5705,8 @@ int remove_job_from_node(
 void free_nodes(
 
   job        *pjob, // M
-  const char *spec) // I
+  const char *spec,
+  boost::shared_ptr<mutex_mgr>& job_mutex) // I
 
   {
   FUNCTION_TIMER
@@ -5947,7 +5963,8 @@ int set_one_old_slotrange(
 int set_one_old(
 
   const char *name,
-  job  *pjob)
+  job  *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char *remainder;
@@ -5996,7 +6013,8 @@ int process_gpu_token_slotrange(
 
   const char *name,
   const char *slotrange_string,
-  job *pjob)
+  job *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char           *dash;
@@ -6024,7 +6042,7 @@ int process_gpu_token_slotrange(
       {
       gpusubn &gn = pnode->nd_gpusn[i];
 
-      add_job_to_gpu_subnode(pnode, gn, pjob);
+      add_job_to_gpu_subnode(pnode, gn, pjob, job_mutex);
       }
 
       // unlock node
@@ -6043,7 +6061,8 @@ int process_gpu_token_slotrange(
 int process_gpu_token(
 
   const char *gpu_token,
-  job  *pjob)
+  job  *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char *remainder;
@@ -6083,7 +6102,7 @@ int process_gpu_token(
   // process each <m>[-<n>] range
   for (std::vector<int>::size_type i = 0; i < rangestrings.size(); i++)
     {
-    if ((rc = process_gpu_token_slotrange(gpu_token, rangestrings[i].c_str(), pjob)) != PBSE_NONE)
+    if ((rc = process_gpu_token_slotrange(gpu_token, rangestrings[i].c_str(), pjob, job_mutex)) != PBSE_NONE)
       break;
     }
 
@@ -6098,7 +6117,8 @@ int process_gpu_token(
 
 int set_old_nodes(
 
-  job *pjob)  /* I (modified) */
+  job *pjob,  /* I (modified) */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   char     *old;
@@ -6120,7 +6140,7 @@ int set_old_nodes(
       // remove +
       *po++ = '\0';
 
-      if (process_gpu_token(po, pjob) != PBSE_NONE)
+      if (process_gpu_token(po, pjob, job_mutex) != PBSE_NONE)
         {
         free(old_str);
         return(PBSE_SYSTEM);
@@ -6129,7 +6149,7 @@ int set_old_nodes(
 
     if (old_str != NULL)
       {
-      if (process_gpu_token(old_str, pjob) != PBSE_NONE)
+      if (process_gpu_token(old_str, pjob, job_mutex) != PBSE_NONE)
         {
         free(old_str);
         return(PBSE_SYSTEM);
@@ -6154,14 +6174,14 @@ int set_old_nodes(
       {
       *po++ = '\0';
 
-      if ((rc = set_one_old(po, pjob)) != PBSE_NONE)
+      if ((rc = set_one_old(po, pjob, job_mutex)) != PBSE_NONE)
         {
         free(old);
         return(rc);
         }
       }
 
-    rc = set_one_old(old, pjob);
+    rc = set_one_old(old, pjob, job_mutex);
     free(old);
 
     if (rc != PBSE_NONE)
@@ -6172,7 +6192,7 @@ int set_old_nodes(
   if ((cray_enabled == true) &&
       (pjob->ji_wattr[JOB_ATR_login_node_id].at_flags & ATR_VFLAG_SET))
     {
-    rc = set_one_old(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, pjob);
+    rc = set_one_old(pjob->ji_wattr[JOB_ATR_login_node_id].at_val.at_str, pjob, job_mutex);
     }
 
   return(rc);

@@ -104,11 +104,19 @@ int decode_resc(struct pbs_attribute *patr, const char *name, const char *rescn,
   exit(1);
   }
 
+#ifdef PBS_MOM
 int action_resc(pbs_attribute *pattr, void *pobject, int actmode)
   {
   fprintf(stderr, "The call to action_resc needs to be mocked!!\n");
   exit(1);
   }
+#else
+int action_resc(pbs_attribute *pattr, void *pobject, int actmode)
+  {
+  fprintf(stderr, "The call to action_resc needs to be mocked!!\n");
+  exit(1);
+  }
+#endif
 
 int set_unkn(struct pbs_attribute *old, struct pbs_attribute *new_attr, enum batch_op op)
   {

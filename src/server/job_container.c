@@ -261,6 +261,9 @@ const char *get_correct_jobname(
 /*
  * Searches the array passed in for the job_id
  * @parent svr_find_job()
+ *
+ * @note If  the job_id is successfully found the job
+ * returned will have the ji_mutex element locked.
  */
 
 job *find_job_by_array(
@@ -294,21 +297,21 @@ job *find_job_by_array(
 
   if (pj != NULL)
     {
-    lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
+    lock_ji_mutex(pj, __func__, pj->ji_qs.ji_jobid, LOGLEVEL);
 
     if (get_subjob == TRUE)
       {
       if (pj->ji_cray_clone != NULL)
         {
         pj = pj->ji_cray_clone;
-        unlock_ji_mutex(pj->ji_parent_job, __func__, NULL, LOGLEVEL);
-        lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
+        unlock_ji_mutex(pj->ji_parent_job, __func__, pj->ji_qs.ji_jobid, LOGLEVEL);
+        //lock_ji_mutex(pj, __func__, NULL, LOGLEVEL);
         }
       }
 
     if (pj->ji_being_recycled == true)
       {
-      unlock_ji_mutex(pj, __func__, "1", LOGLEVEL);
+      unlock_ji_mutex(pj, __func__, pj->ji_qs.ji_jobid, LOGLEVEL);
       pj = NULL;
       }
     }
@@ -327,6 +330,8 @@ job *find_job_by_array(
  * @param jobid - get the job whose jobid matches jobid
  * @param get_subjob - whether or not we should return the sub
  * job (for heterogeneous jobs) if there is one
+ * @note If a job is found, the ji_mutex element of the job will
+ * be locked.
  */
 
 job *svr_find_job(
@@ -446,6 +451,11 @@ job *svr_find_job(
   return(pj);  /* may be NULL */
   }   /* END svr_find_job() */
 
+/*
+ * Find job by job id
+ *
+ * @note If a job is found the job's ji_mutex will be locked.
+ */
 job *svr_find_job_by_id(
 
   int internal_job_id)
@@ -471,11 +481,14 @@ job *svr_find_job_by_id(
  *
  * @param pjob - the job to be inserted
  * @return PBSE_NONE on success 
+ *
+ * @note the ji_mutex element of pjob is locked when insert_job is called.
  */
 int insert_job(
     
   all_jobs *aj,
-  job      *pjob)
+  job      *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int rc = -1;
@@ -678,7 +691,8 @@ int insert_job_first(
 int has_job(
 
   all_jobs *aj,
-  job      *pjob)
+  job      *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int  rc = -1;
@@ -701,14 +715,14 @@ int has_job(
 
   if (aj->trylock())
     {
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	job_mutex->unlock();
     aj->lock();
-    lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+	job_mutex->lock();
 
     if (pjob->ji_being_recycled == true)
       {
       aj->unlock();
-      unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	  job_mutex->unlock();
 
       return(PBSE_JOB_RECYCLED);
       }
@@ -741,6 +755,7 @@ int  remove_job(
    
   all_jobs *aj,
   job      *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex,
   bool      force_lock)
 
   {
@@ -769,18 +784,24 @@ int  remove_job(
     if (force_lock == false)
       snprintf(jobid, sizeof(jobid), "%s", pjob->ji_qs.ji_jobid);
 
-    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+	job_mutex->unlock();
 
     aj->lock();
 
     if (force_lock == true)
-      lock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+	  {
+      job_mutex->lock();
+	  }
     else
       {
       if ((pjob = find_job_by_array(aj, jobid, TRUE, true)) == NULL)
         {
         rc = PBSE_JOBNOTFOUND;
         }
+	  else
+		{
+		job_mutex->mark_as_locked();
+		}
       }
     }
 

@@ -464,7 +464,7 @@ void update_job_data(
             pjob,
             &tA,                              /* I: ATTR_sched_hint - svrattrl */
             ATR_DFLAG_MGWR | ATR_DFLAG_SvWR,
-            &bad);
+            &bad, job_mutex);
 
           attr_name = threadsafe_tokenizer(&jobdata_ptr, "=");
           }

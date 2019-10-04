@@ -126,7 +126,7 @@ struct work_task *set_task(enum work_type wt, long event, void (*func)(struct wo
   exit(1);
   }
 
-int svr_startjob(job *pjob, struct batch_request **preq, char *FailHost, char *EMsg)
+int svr_startjob(job *pjob, struct batch_request **preq, char *FailHost, char *EMsg, boost::shared_ptr<mutex_mgr>& job_mutex)
   {
   fprintf(stderr, "The call to svr_startjosvr_startjob needs to be mocked!!\n");
   exit(1);

@@ -147,7 +147,7 @@ int status_job(
   remove_procct(pjob);
 
   /* see if the client is authorized to status this job */
-  if (svr_authorize_jobreq(preq, pjob) == 0)
+  if (svr_authorize_jobreq(preq, pjob) == PBSE_NONE)
     IsOwner = 1;
 
   get_svr_attr_b(SRV_ATR_query_others, &query_others);

@@ -363,7 +363,7 @@ class Machine
     void place_all_execution_slots(req &r, allocation &master, const char *hostname);
     int  spread_place(req &r, allocation &master, int tasks_for_node, const char *hostname);
     int  spread_place_pu(req &r, allocation &master, int tasks_for_node, const char *hostname);
-    int  place_job(job *pjob, cgroup_info &cgi, const char *hostname, bool legacy_vmem);
+    int  place_job(job *pjob, cgroup_info &cgi, const char *hostname, bool legacy_vmem, boost::shared_ptr<mutex_mgr>& job_mutex);
     void setMemory(long long mem); 
     void addSocket(int count); // used for unit tests
     void setIsNuma(bool is_numa); // used for unit tests

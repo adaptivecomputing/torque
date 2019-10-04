@@ -8,7 +8,7 @@
 
 int encode_svrstate(pbs_attribute *pattr, tlist_head *phead, const char *atname, const char *rsname, int mode, int perm);
 
-void set_resc_assigned(job *pjob, enum batch_op op);
+void set_resc_assigned(job *pjob, enum batch_op op, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 int ck_checkpoint(pbs_attribute *pattr, void *pobject, int mode);
 

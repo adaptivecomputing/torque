@@ -1159,7 +1159,8 @@ int Machine::place_job(
   job         *pjob,
   cgroup_info &cgi,
   const char  *hostname,
-  bool         legacy_vmem)
+  bool         legacy_vmem,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int rc = PBSE_NONE;

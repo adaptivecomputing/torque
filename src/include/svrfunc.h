@@ -43,8 +43,8 @@ int is_svr_attr_set(int);
 int set_svr_attr(int, void *);
 
 #ifdef PBS_JOB_H
-extern int   set_nodes(job *, const char *, int, std::string &, std::string &, char *, char *);
-extern void  free_nodes(job *, const char *spec = NULL);
+extern int   set_nodes(job *, const char *, int, std::string &, std::string &, char *, char *, boost::shared_ptr<mutex_mgr>& job_mutex);
+extern void  free_nodes(job *, const char *spec, boost::shared_ptr<mutex_mgr>&);
 #endif /* PBS_JOB_H */
 
 #ifdef ATTRIBUTE_H

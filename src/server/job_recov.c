@@ -122,11 +122,13 @@
 #include "array.h"
 #include "../lib/Libutils/u_lock_ctl.h" /* lock_ss, unlock_ss */
 #include "job_func.h"
+#include "mutex_mgr.hpp"
 #else
 #include "../resmom/mom_job_func.h"
 #endif
 #include "array.h"
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 #include "job_recov.h"
 #include "policy_values.h"
 
@@ -167,6 +169,7 @@ int assign_tag_len_5(
   job     **pj,    /* M */ /* job information to fill into */
   xmlChar  *tag,     /* I */ /* xml tag */
   xmlChar  *content) /* I */  /* content of the xml node */
+
 
   {
   job *pjob = *pj;
@@ -548,7 +551,8 @@ int fill_resource_list(
         xmlFree(attr_flags);
         pal->al_flags = flags;
         }
-      decode_attribute(pal,pj,freeExisting);
+
+      decode_attribute(pal, pj, freeExisting);
       freeExisting = false;
       free(pal);
       }
@@ -613,7 +617,7 @@ int parse_attributes(
           pal->al_flags = flags;
           }
           
-        decode_attribute(pal, pj,true);
+        decode_attribute(pal, pj, true);
 
         free(pal);
         }
@@ -625,7 +629,7 @@ int parse_attributes(
       }
     
     }
-    
+
   if (rc == PBSE_NONE && resource_list_node) 
     rc = fill_resource_list(pj, resource_list_node, log_buf, buf_len, ATTR_l);
   if (rc == PBSE_NONE && resources_used_node)
@@ -727,7 +731,9 @@ int parse_job_dom(
   if (!rc && attributeNode)
     {
     if (!(rc = check_fileprefix(filename, pjob, log_buf, buf_len)))
+	  {
       rc = parse_attributes(pjob, attributeNode, log_buf, buf_len);  
+	  }
     }
   else if (!attributeNode && !rc)
     {
@@ -1196,6 +1202,7 @@ int saveJobToXML(
  *      RETURN:  0 - success, -1 - failure
  */
 
+#ifdef PBS_MOM
 int job_save(
 
   job *pjob,  /* pointer to job structure */
@@ -1211,48 +1218,23 @@ int job_save(
   const char   *tmp_ptr = NULL;
 
   time_t  time_now = time(NULL);
-#ifndef PBS_MOM
-  // get the adjusted path_jobs path
-  std::string   adjusted_path_jobs = get_path_jobdata(pjob->ji_qs.ji_jobid, path_jobs);
-#endif
 
 
-#ifdef PBS_MOM
   tmp_ptr = JOB_FILE_SUFFIX;
-#else
-  if (pjob->ji_is_array_template == true)
-    tmp_ptr = (char *)JOB_FILE_TMP_SUFFIX;
-  else
-    tmp_ptr = (char *)JOB_FILE_SUFFIX;
-#endif
 
   if (mom_port)
     {
-#ifdef PBS_MOM
     snprintf(namebuf1, MAXPATHLEN, "%s%s%d%s",
         path_jobs, pjob->ji_qs.ji_fileprefix, mom_port, tmp_ptr);
     snprintf(namebuf2, MAXPATHLEN, "%s%s%d%s",
         path_jobs, pjob->ji_qs.ji_fileprefix, mom_port, JOB_FILE_COPY);
-#else
-    snprintf(namebuf1, MAXPATHLEN, "%s%s%d%s",
-        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, mom_port, tmp_ptr);
-    snprintf(namebuf2, MAXPATHLEN, "%s%s%d%s",
-        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, mom_port, JOB_FILE_COPY);
-#endif
     }
   else
     {
-#ifdef PBS_MOM
     snprintf(namebuf1, MAXPATHLEN, "%s%s%s",
         path_jobs, pjob->ji_qs.ji_fileprefix, tmp_ptr);
     snprintf(namebuf2, MAXPATHLEN, "%s%s%s",
         path_jobs, pjob->ji_qs.ji_fileprefix, JOB_FILE_COPY);
-#else
-    snprintf(namebuf1, MAXPATHLEN, "%s%s%s",
-        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, tmp_ptr);
-    snprintf(namebuf2, MAXPATHLEN, "%s%s%s",
-        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, JOB_FILE_COPY);
-#endif
     }
 
   /* if ji_modified is set, ie an pbs_attribute changed, then update mtime */
@@ -1292,6 +1274,88 @@ int job_save(
   return(PBSE_NONE);
   }  /* END job_save() */
 
+#else // Not PBS_MOM
+
+
+int job_save(
+
+  job *pjob,  /* pointer to job structure */
+  int  updatetype, /* 0=quick, 1=full, 2=new     */
+  int  mom_port,   /* if 0 ignore otherwise append to end of job name. this is for multi-mom mode */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
+
+  {
+  int old_state = PTHREAD_CANCEL_ENABLE;
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
+
+  char    namebuf1[MAXPATHLEN];
+  char    namebuf2[MAXPATHLEN];
+  const char   *tmp_ptr = NULL;
+
+  time_t  time_now = time(NULL);
+  // get the adjusted path_jobs path
+  std::string   adjusted_path_jobs = get_path_jobdata(pjob->ji_qs.ji_jobid, path_jobs);
+
+
+  if (pjob->ji_is_array_template == true)
+    tmp_ptr = (char *)JOB_FILE_TMP_SUFFIX;
+  else
+    tmp_ptr = (char *)JOB_FILE_SUFFIX;
+
+  if (mom_port)
+    {
+    snprintf(namebuf1, MAXPATHLEN, "%s%s%d%s",
+        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, mom_port, tmp_ptr);
+    snprintf(namebuf2, MAXPATHLEN, "%s%s%d%s",
+        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, mom_port, JOB_FILE_COPY);
+    }
+  else
+    {
+    snprintf(namebuf1, MAXPATHLEN, "%s%s%s",
+        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, tmp_ptr);
+    snprintf(namebuf2, MAXPATHLEN, "%s%s%s",
+        adjusted_path_jobs.c_str(), pjob->ji_qs.ji_fileprefix, JOB_FILE_COPY);
+    }
+
+  /* if ji_modified is set, ie an pbs_attribute changed, then update mtime */
+
+  if (pjob->ji_modified)
+    {
+    pjob->ji_wattr[JOB_ATR_mtime].at_val.at_long = time_now;
+    }
+
+  if (!(saveJobToXML(pjob, namebuf2)))
+    {
+    unlink(namebuf1);
+
+    if (link(namebuf2, namebuf1) == -1)
+      {
+      log_event(
+        PBSEVENT_ERROR | PBSEVENT_SECURITY,
+        PBS_EVENTCLASS_JOB,
+        pjob->ji_qs.ji_jobid,
+        (char *)"Link in job_save failed");
+      }
+    else
+      {
+      unlink(namebuf2);
+      }
+    }
+  else /* saveJobToXML failed */
+    {
+    log_event(PBSEVENT_ERROR | PBSEVENT_SECURITY, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
+      "call to saveJobToXML in job_save failed");
+    pthread_setcancelstate(old_state, NULL);
+    return -1;
+    }
+
+  pthread_setcancelstate(old_state, NULL);
+
+  return(PBSE_NONE);
+  }  /* END job_save() */
+#endif
+
+
 
 #ifndef PBS_MOM
 /*
@@ -1308,7 +1372,8 @@ int job_save(
 job_array *ghost_create_jobs_array(
 
   job        *pjob,
-  const char *array_id)
+  const char *array_id,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   job_array   *pa = new job_array();
@@ -1413,7 +1478,8 @@ void check_and_reallocate_job_ids(
 void update_recovered_array_values(
 
   job_array *pa,
-  job       *pjob)
+  job       *pjob,
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   pa->ai_qs.num_jobs++;
@@ -1459,7 +1525,8 @@ int set_array_job_ids(
 
   job  **pjob,       /* M */
   char  *log_buf,    /* error Buffer */
-  size_t buflen)     /* error buffer length */
+  size_t buflen,     /* error buffer length */
+  boost::shared_ptr<mutex_mgr>& job_mutex)
 
   {
   int rc = PBSE_NONE;
@@ -1468,6 +1535,7 @@ int set_array_job_ids(
   job_array *pa;
   char       parent_id[PBS_MAXSVRJOBID + 1];
 
+  job_mutex->lock();
   // If this variable isn't set this job isn't actually an array subjob.
   if ((pj->ji_wattr[JOB_ATR_job_array_id].at_flags & ATR_VFLAG_SET) == 0)
     {
@@ -1496,12 +1564,12 @@ int set_array_job_ids(
       {
       if (ghost_array_recovery)
         {
-        pa = ghost_create_jobs_array(pj, parent_id);
+        pa = ghost_create_jobs_array(pj, parent_id, job_mutex);
         }
       else
         {
         snprintf(log_buf, buflen, "array struct missing for array job %s", pj->ji_qs.ji_jobid);
-        job_abt(&pj, "Array job missing array struct, aborting job");
+        job_abt(&pj, "Array job missing array struct, aborting job", job_mutex, false);
         return(-1);
         }
       }
@@ -1519,7 +1587,7 @@ int set_array_job_ids(
       if (pa->ai_ghost_recovered)
         {
         check_and_reallocate_job_ids(pa, pj->ji_wattr[JOB_ATR_job_array_id].at_val.at_long);
-        update_recovered_array_values(pa, pj);
+        update_recovered_array_values(pa, pj, job_mutex);
         }
 
       pa->job_ids[(int)pj->ji_wattr[JOB_ATR_job_array_id].at_val.at_long] = strdup(pj->ji_qs.ji_jobid);
@@ -1704,12 +1772,13 @@ int job_recov_binary(
         pj->ji_wattr,
         JOB_ATR_LAST,
         JOB_ATR_UNKN,
-        TRUE) != 0) 
+        TRUE) != 0)
     {
     snprintf(log_buf, buf_len, "unable to recover %s (file is likely corrupted)", filename);
     close(fds);
     return -1;
     }
+
 
 #ifdef PBS_MOM
   /* read in tm sockets and ips */
@@ -1744,6 +1813,7 @@ int job_recov_binary(
  *
  * Returns: job pointer to new job structure or a
  *   null pointer on an error.
+ * @note The ji_mutex of the returned job will not be locked.
 */
 
 job *job_recov(
@@ -1758,17 +1828,25 @@ job *job_recov(
   char namebuf[MAXPATHLEN];
 
   pj = mom_job_alloc();
-
-#else
-  pj = job_alloc(); /* allocate & initialize job structure space */
-#endif
-
   if (pj == NULL)
     {
     /* FAILURE - cannot alloc memory */
 
     return(NULL);
     }
+
+
+#else
+  pj = job_alloc(); /* allocate & initialize job structure space */
+   if (pj == NULL)
+    {
+    /* FAILURE - cannot alloc memory */
+
+    return(NULL);
+    }
+
+ boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pj->ji_mutex, true, rc);
+#endif
 
   size_t logBufLen = sizeof(log_buf);
 #ifdef PBS_MOM
@@ -1784,7 +1862,7 @@ job *job_recov(
     rc = job_recov_binary(filename, &pj, log_buf, logBufLen);
 
   if (rc == PBSE_NONE)
-    rc = set_array_job_ids(&pj, log_buf, logBufLen);
+    rc = set_array_job_ids(&pj, log_buf, logBufLen, job_mutex);
 #endif
 
 
@@ -1795,6 +1873,7 @@ job *job_recov(
       log_err(errno, __func__, log_buf);
 
 #ifndef PBS_MOM
+	  job_mutex->unlock();
       delete pj;
 #else
       free(pj);
@@ -1810,7 +1889,7 @@ job *job_recov(
 #ifdef PBS_MOM
   job_save(pj, SAVEJOB_FULL, (multi_mom == 0)?0:pbs_rm_port);
 #else
-  job_save(pj, SAVEJOB_FULL, 0);
+  job_save(pj, SAVEJOB_FULL, 0, job_mutex);
 #endif
 
   return(pj);

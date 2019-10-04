@@ -119,7 +119,7 @@ int svr_chk_owner(struct batch_request *preq, job *pjob)
   return(0);
   }
 
-int job_abt(struct job **pjobp, const char *text, bool b=false)
+int job_abt(struct job **pjobp, const char *text, boost::shared_ptr<mutex_mgr>& job_mutex, bool b=false)
   {
   *pjobp = NULL;
   job_aborted++;

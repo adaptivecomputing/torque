@@ -5,6 +5,6 @@
 #include "attribute.h" /* pbs_attribute */
 #include "batch_request.h"
 
-void hold_job(pbs_attribute *temphold, void *j);
+void hold_job(pbs_attribute *temphold, void *j, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 #endif /* _REQ_HOLDARRAY_H */

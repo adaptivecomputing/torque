@@ -300,6 +300,7 @@ PbsErrClient(PBSE_GPU_PROHIBITED_MODE, (char *)"Invalid gpu mode requested. Proh
 PbsErrClient(PBSE_NODE_DELETED,      (char *)"Node was deleted during work")
 PbsErrClient(PBSE_STATE_SLOT_LIMIT, (char *)"The requested state or substate can't be set from the job's current state (slot limit in effect).")
 PbsErrClient(PBSE_BAD_GROUP, (char *)"Bad group entry")
+PbsErrClient(PBSE_NO_PRIVILEGES, (char *)"No privileges. Access not allowed")
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
 #endif

@@ -220,20 +220,20 @@ int array_recov(const char *path, job_array **pa);
 
 int delete_array_range(job_array *pa, char *range, bool purge);
 int delete_whole_array(job_array *pa, bool purge);
-bool attempt_delete(void *);
+bool attempt_delete(void *, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 int hold_array_range(job_array *,char *,pbs_attribute *);
-void hold_job(pbs_attribute *,void *);
+void hold_job(pbs_attribute *,void *, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 int modify_array_range(job_array *,char *,svrattrl *,struct batch_request *,int);
-int modify_job(void **,svrattrl *,struct batch_request *,int, int);
+int modify_job(void **,svrattrl *,struct batch_request *,int, int, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 void update_slot_held_jobs(job_array *pa, int num_to_release);
 
 int register_array_depend(job_array*,struct batch_request *,int,int);
 bool set_array_depend_holds(job_array *);
 
-int release_job(struct batch_request *,void *, job_array *pa);
+int release_job(struct batch_request *,void *, job_array *pa, boost::shared_ptr<mutex_mgr>& job_mutex);
 int release_array_range(job_array *,struct batch_request *,char *);
 
 int first_job_index(job_array *);
@@ -244,9 +244,9 @@ int num_array_jobs(const char *);
 
 int        insert_array(job_array *);
 int        remove_array(job_array *);
-int        check_array_slot_limits(job *pjob, job_array *pa);
+int        check_array_slot_limits(job *pjob, job_array *pa, boost::shared_ptr<mutex_mgr>& job_mutex);
 job_array *next_array(all_arrays_iterator **);
 
-job_array *get_jobs_array(job **);
+job_array *get_jobs_array(job **, boost::shared_ptr<mutex_mgr>& job_mutex);
 
 #endif

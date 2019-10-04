@@ -7,9 +7,9 @@
 
 void add_dest(job *jobp);
 
-int default_router(job *jobp, struct pbs_queue *qp, long retry_time);
+int default_router(job *jobp, struct pbs_queue *qp, long retry_time, boost::shared_ptr<mutex_mgr>& job_mutex);
 
-int job_route(job *jobp);
+int job_route(job *jobp, boost::shared_ptr<mutex_mgr>&);
 
 int remove_procct(job *pjob);
 
