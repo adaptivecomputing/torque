@@ -345,6 +345,11 @@ int perform_job_delete_array_bookkeeping(
   {
   int rc = PBSE_NONE;
 
+  if (pjob == NULL)
+	{
+	return(PBSE_JOBNOTFOUND);
+	}
+
   if ((pjob->ji_arraystructid[0] != '\0') &&
       (pjob->ji_is_array_template == FALSE))
     {
