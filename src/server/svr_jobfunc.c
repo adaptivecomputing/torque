@@ -4078,7 +4078,7 @@ int lock_ji_mutex(
   int  rc = PBSE_NONE;
   char err_msg[MSG_LEN_LONG];
 
-  if (logging >= 0)
+  if (logging >= 10)
     {
     snprintf(err_msg, sizeof(err_msg), "locking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
@@ -4088,7 +4088,7 @@ int lock_ji_mutex(
     {
     if (pthread_mutex_lock(pjob->ji_mutex) != 0)
       {
-      if (logging >= 0)
+      if (logging >= 10)
         {
         snprintf(err_msg, sizeof(err_msg), "ALERT: cannot lock job %s mutex in method %s",
           pjob->ji_qs.ji_jobid, id);
@@ -4119,7 +4119,7 @@ int unlock_ji_mutex(
   int  rc = PBSE_NONE;
   char err_msg[MSG_LEN_LONG];
 
-  if (logging >= 0)
+  if (logging >= 10)
     {
     snprintf(err_msg, sizeof(err_msg), "unlocking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
@@ -4131,7 +4131,7 @@ int unlock_ji_mutex(
     ret = pthread_mutex_unlock(pjob->ji_mutex);
     if (ret != 0)
       {
-    if (logging >= 0)
+    if (logging >= 10)
         {
         snprintf(err_msg, sizeof(err_msg), "ALERT: cannot unlock job %s mutex in method %s",
           pjob->ji_qs.ji_jobid, id);
