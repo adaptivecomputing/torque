@@ -123,7 +123,6 @@ int build_var_list(
   attrs->lock();
   job_data_iterator *it = attrs->get_iterator();
   int       item_count = 0;
-  int       preexisting_var_list = FALSE;
 
   while ((atr = it->get_next_item()) != NULL)
     {
@@ -159,19 +158,12 @@ int build_var_list(
         var_list += ',';
         }
       var_list += atr->value;
-      preexisting_var_list = TRUE;
-      /* In this case, do not add an item (this is taken care or OUTSIDE this call) */
-      /* item_count++; */
+      item_count++;
       }
     }
 
   delete it;
   attrs->unlock();
-
-  if (preexisting_var_list == TRUE)
-    {
-    hash_del_item(attrs, (char *)ATTR_v);
-    }
 
   return(item_count);
   } /* END build_var_list() */
@@ -202,7 +194,8 @@ int encode_DIS_attropl_hash_single(
     /* Data pattern:
      * len of (name)(0 OR 1resource)(value)(op) */
     if ((strncmp(atr->name.c_str(), "pbs_o", 5) == 0)
-        || (strncmp(atr->name.c_str(), "PBS_O", 5) == 0))
+        || (strncmp(atr->name.c_str(), "PBS_O", 5) == 0)
+        || (strcmp(atr->name.c_str(), ATTR_v ) == 0 ))
       continue;
     if (is_res)
       {
