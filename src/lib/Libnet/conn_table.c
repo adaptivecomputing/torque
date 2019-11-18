@@ -29,9 +29,9 @@ int get_connection_entry(
   pthread_mutexattr_init(&t_attr);
   pthread_mutexattr_settype(&t_attr, PTHREAD_MUTEX_ERRORCHECK);
 
+  lock_conn_table();
   for (pos = 0; pos < PBS_NET_MAX_CONNECTIONS; pos++)
     { 
-    lock_conn_table();
     if (connection[pos].ch_mutex == NULL)
       { 
       if ((tmp_mut = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t))) == NULL)
@@ -42,7 +42,6 @@ int get_connection_entry(
         pthread_mutex_init(connection[pos].ch_mutex, &t_attr);
         }
       }
-    unlock_conn_table();
     
     if (pthread_mutex_trylock(connection[pos].ch_mutex) != 0)
       {
@@ -60,6 +59,7 @@ int get_connection_entry(
     else
       pthread_mutex_unlock(connection[pos].ch_mutex);
     }
+  unlock_conn_table();
 
   if (*conn_pos == -1)
     {

@@ -204,9 +204,9 @@ int req_stat_job(
    * first, validate the name of the requested object, either
    * a job, a queue, or the whole server.
    */
-  if (LOGLEVEL >= 7)
+  if (LOGLEVEL >= 6)
     {
-    sprintf(log_buf, "note");
+    sprintf(log_buf, "note:req_stat_job");
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
 
@@ -214,6 +214,11 @@ int req_stat_job(
   /* FORMAT:  name = { <JOBID> | <QUEUEID> | '' } */
 
   name = preq->rq_ind.rq_status.rq_id;
+  if (LOGLEVEL >= 6)
+    {
+    sprintf(log_buf, "jobid: %s", name);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+    }
 
   if (preq->rq_extend != NULL)
     {
@@ -290,6 +295,12 @@ int req_stat_job(
   if (rc != 0)
     {
     /* is invalid - an error */
+    if (LOGLEVEL >= 6)
+      {
+      sprintf(log_buf, "rc != 0: jobid: %s", name);
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+      }
+
     req_reject(rc, 0, preq, NULL, NULL);
 
     return(rc);
@@ -815,6 +826,13 @@ int stat_to_mom(
 
   /* get connection to MOM */
   node->unlock_node(__func__, "before svr_connect", LOGLEVEL);
+  if (LOGLEVEL >= 6)
+ 	{
+    char *tmp = netaddr_pbs_net_t(job_momaddr);
+    sprintf(log_buf, "sending update request to %s for job %s", tmp, pjob->ji_qs.ji_jobid);
+    log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,job_id,log_buf);
+	}
+
   handle = svr_connect(job_momaddr, job_momport, &rc, NULL, NULL);
 
   if (handle >= 0)
@@ -823,8 +841,16 @@ int stat_to_mom(
       {
       stat_update(&newrq, cntl);
       }
-    }
-  else
+	else
+	  {
+      if (LOGLEVEL >= 6)
+        {
+        snprintf(log_buf, sizeof(log_buf), "Call to issue_Drequest failed: %d", rc);
+        log_event(PBSEVENT_SYSTEM,PBS_EVENTCLASS_JOB,job_id,log_buf);
+        }
+	  }
+	}
+ else
     rc = PBSE_CONNECT;
 
   if (rc == PBSE_SYSTEM)

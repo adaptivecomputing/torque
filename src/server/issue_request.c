@@ -760,7 +760,7 @@ int send_request_to_remote_server(
 
   if ((tmp_rc = DIS_reply_read(chan, &request->rq_reply)) != PBSE_NONE)
     {
-    sprintf(log_buf, "DIS_reply_read failed: %d", tmp_rc);
+    sprintf(log_buf, "DIS_reply_read failed: %d, job %s", tmp_rc, request->rq_ind.rq_status.rq_id);
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
 
     if (chan->IsTimeout)
@@ -768,6 +768,7 @@ int send_request_to_remote_server(
     else
       request->rq_reply.brp_code = tmp_rc;
 
+	rc = PBSE_RESCUNAV;
     set_reply_type(&request->rq_reply, BATCH_REPLY_CHOICE_NULL);
     }
 

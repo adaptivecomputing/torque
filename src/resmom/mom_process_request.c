@@ -135,6 +135,8 @@ void *mom_process_request(
 
   if ((request = new batch_request(0)) == NULL)
     {
+    sprintf(log_buffer, "Failed to allocate new batch request");
+    log_err(PBSE_SOCKET_FAULT, __func__, log_buffer);
     mom_close_client(sfds);
     return NULL;
     }
@@ -144,6 +146,8 @@ void *mom_process_request(
 
   if ((chan = DIS_tcp_setup(sfds)) == NULL)
     {
+    sprintf(log_buffer, "DIS_tcp_setup failed");
+	log_err(PBSE_SOCKET_FAULT, __func__, log_buffer);
     mom_close_client(sfds);
     free_br(request);
     return NULL;
@@ -156,8 +160,10 @@ void *mom_process_request(
     {
     /* FAILURE */
     /* premature end of file */
+    sprintf(log_buffer, "dis_request_read failed");
+	log_err(PBSE_SOCKET_READ, __func__, log_buffer);
+    req_reject(PBSE_SOCKET_READ, 0, request, NULL, "cannot read request at mom");
     mom_close_client(chan->sock);
-    free_br(request);
     DIS_tcp_cleanup(chan);
     return NULL;
     }
@@ -167,6 +173,8 @@ void *mom_process_request(
     /* FAILURE */
     /* read error, likely cannot send reply so just disconnect */
     /* ??? not sure about this ??? */
+    sprintf(log_buffer, "dis_request_read failed");
+    log_err(rc, __func__, log_buffer);
     mom_close_client(chan->sock);
     free_br(request);
     DIS_tcp_cleanup(chan);

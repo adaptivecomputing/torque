@@ -119,8 +119,6 @@ int lock_conn_table()
     {
     if ((rc = lock_init()) == PBSE_NONE)
       {
-      lock_init();
-      
       if (pthread_mutex_lock(locks->conn_table) != 0)
         {
         log_err(-1,"mutex_lock","ALERT:   cannot lock conn_table mutex!\n");
@@ -128,6 +126,14 @@ int lock_conn_table()
         }
       }
     }
+  else
+	{
+      if (pthread_mutex_lock(locks->conn_table) != 0)
+        {
+        log_err(-1,"mutex_lock","ALERT: conn_table initialized:  cannot lock conn_table mutex!\n");
+        return(PBSE_MUTEX);
+        }
+	}
 
   return(rc);
   } /* END lock_conn_table() */

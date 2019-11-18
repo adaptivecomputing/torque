@@ -148,6 +148,8 @@ int connect_while_handling_mutex(
   struct pbsnode **pnode)
 
   {
+  char log_buf[LOCAL_LOG_BUF_SIZE];
+  char *tmp = netaddr_pbs_net_t(hostaddr);
   char nodename[MAXLINE];
   int  sock;
 
@@ -156,6 +158,13 @@ int connect_while_handling_mutex(
       (*pnode != NULL))
     {
     snprintf(nodename, sizeof(nodename), "%s", (*pnode)->get_name());
+
+	if (LOGLEVEL >= 6)
+	  {
+	  sprintf(log_buf, "node entering: %s: %s", nodename, tmp);	
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+	  }
+	
     (*pnode)->unlock_node(__func__, NULL, LOGLEVEL);
     }
 
@@ -166,8 +175,17 @@ int connect_while_handling_mutex(
   // may have been freed
   if ((pnode != NULL) &&
       (*pnode != NULL))
+  {
     *pnode = find_nodebyname(nodename);
+    snprintf(nodename, sizeof(nodename), "%s", (*pnode)->get_name());
 
+	if (LOGLEVEL >= 6)
+	  {
+	  sprintf(log_buf, "node exiting: %s: %s, socket number: %d", nodename, tmp, sock);	
+      log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+	  }
+  }
+	
   return(sock);
   } // END connect_while_handling_mutex()
 
