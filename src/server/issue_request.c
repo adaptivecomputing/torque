@@ -501,6 +501,12 @@ int send_request_to_remote_server(
   pthread_mutex_lock(connection[conn].ch_mutex);
   sock = connection[conn].ch_socket;
   pthread_mutex_unlock(connection[conn].ch_mutex);
+
+  if (LOGLEVEL >= 6)
+	{
+	sprintf(log_buf, "handle: %d - sock: %d", conn, sock);
+	log_record(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+	}
   
   request->rq_conn = sock;
   
@@ -768,14 +774,21 @@ int send_request_to_remote_server(
     else
       request->rq_reply.brp_code = tmp_rc;
 
-	rc = PBSE_RESCUNAV;
+	rc = PBSE_SOCKET_READ;
     set_reply_type(&request->rq_reply, BATCH_REPLY_CHOICE_NULL);
     }
 
   DIS_tcp_cleanup(chan);
 
   if (close_handle == true)
+	{
+	if (LOGLEVEL >= 6)
+	  {
+	  sprintf(log_buf, "closing handle %d for socket: %d and  job %s", conn, sock, request->rq_ind.rq_status.rq_id);
+      log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+	  }
     svr_disconnect(conn);
+	}
   
   pthread_setcancelstate(old_state, NULL);
 

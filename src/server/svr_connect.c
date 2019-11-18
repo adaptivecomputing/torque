@@ -248,6 +248,12 @@ int svr_connect(
     }
 
   sock = connect_while_handling_mutex(hostaddr, port, EMsg, &pnode);
+  if (LOGLEVEL >= 6)
+	{
+	char *tmp = netaddr_pbs_net_t(hostaddr);
+	sprintf(log_buf, "sock %d allocated for address %s", sock, tmp);
+    log_event(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+	}
 
   time(&ETime);
 

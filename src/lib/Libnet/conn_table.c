@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <license_pbs.h> /* See here for the software license */
 #include <pbs_config.h> /* needed for PTHREAD_MUTEX_ERRORCHECK */
 
@@ -7,10 +8,12 @@
 #include "pbs_error.h" /* PBSE_*, FALSE */
 #include "server_limits.h" /* PBS_NET_MAX_CONNECTIONS */
 #include "libpbs.h" /* connect_handle */
+#include "log.h"
 
 
 extern struct connect_handle connection[];
 extern struct connection     svr_conn[];
+int DEBUG_LOGLEVEL = 6;
 
 /*
  * finds and locks an entry in the connection table or returns an error
@@ -95,6 +98,13 @@ int socket_to_handle(
     }
   else
     {
+	if (DEBUG_LOGLEVEL >= 6)
+	  {
+	  char log_buf[LOCAL_LOG_BUF_SIZE];
+	  sprintf(log_buf, "conn_pos: %d - sock: %d", conn_pos, sock);
+	  log_record(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+	  }
+ 
     /* NOTE: get_connection_entry() locks connection[conn_pos] */
     connection[conn_pos].ch_stream = 0;
     connection[conn_pos].ch_inuse  = TRUE;
@@ -115,3 +125,17 @@ int socket_to_handle(
   return(rc);
   }  /* END socket_to_handle() */
 
+int handle_to_socket(
+
+  int handle,
+  int *local_errno)
+
+  {
+	int sock = -1;
+
+    pthread_mutex_lock(connection[handle].ch_mutex);
+	sock = connection[handle].ch_socket;
+    pthread_mutex_unlock(connection[handle].ch_mutex);
+
+	return sock;
+  }
