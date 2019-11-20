@@ -321,6 +321,7 @@ retry:  /* retry goto added (rentec) */
   if (local_port != FALSE)
     {
     /* set REUSEADDR (rentec) */
+	/* set SO_LINGER */
 
     setsockopt(
       sock,
@@ -328,6 +329,17 @@ retry:  /* retry goto added (rentec) */
       SO_REUSEADDR,
       (void *)&one,
       sizeof(one));
+
+	struct linger delay;
+	delay.l_onoff = 1; // Linger on
+	delay.l_linger = 1; // Linger for 1 second
+    setsockopt(
+      sock,
+      SOL_SOCKET,
+      SO_LINGER,
+      (void *)&delay,
+      sizeof(delay));
+
 
 #ifndef NOPRIVPORTS
 
