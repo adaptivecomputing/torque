@@ -98,13 +98,6 @@ int socket_to_handle(
     }
   else
     {
-	if (DEBUG_LOGLEVEL >= 6)
-	  {
-	  char log_buf[LOCAL_LOG_BUF_SIZE];
-	  sprintf(log_buf, "conn_pos: %d - sock: %d", conn_pos, sock);
-	  log_record(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
-	  }
- 
     /* NOTE: get_connection_entry() locks connection[conn_pos] */
     connection[conn_pos].ch_stream = 0;
     connection[conn_pos].ch_inuse  = TRUE;
