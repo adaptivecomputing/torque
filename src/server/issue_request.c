@@ -92,6 +92,9 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include "dis.h"
 #include "libpbs.h"
 #include "server_limits.h"
@@ -112,6 +115,7 @@
 #include "process_request.h" /* dispatch_request */
 #include "svr_connect.h" /* svr_disconnect_sock */
 #include "ji_mutex.h"
+#include "mutex_mgr.hpp"
 
 
 /* Global Data Items: */
@@ -490,6 +494,57 @@ int handle_local_request(
   } /* END handle_local_request() */
 
 
+/**
+ * validate_jobid_to_socket
+ * When sockets are set with SO_REUSEADDR the TCP/IP stack
+ * may allocate the same socket more than once. This routine 
+ * validates returning requests have come from the right address 
+ * in case the tcp/ip has allocated the socket handle more 
+ * than once. TRQ-4388
+ */
+int validate_jobid_to_socket(
+
+  char *job_id, 
+  struct tcp_chan *chan)
+
+  {
+  job 			*pjob = NULL;
+  int 			sock = chan->sock;
+  unsigned long job_momaddr;
+  socklen_t   	addressLength;
+  char 			*jobMomAddress;
+  char			*sockMomAddress;
+  struct sockaddr_in momAddrIn;
+  char              log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
+	return(PBSE_JOBNOTFOUND);
+
+  mutex_mgr job_mutex(pjob->ji_mutex, true);
+
+  job_momaddr = pjob->ji_qs.ji_un.ji_exect.ji_momaddr;
+  jobMomAddress = netaddr_pbs_net_t(job_momaddr);
+
+  addressLength = sizeof(struct sockaddr_in) + 1;
+  if (getpeername(sock, (struct sockaddr *)&momAddrIn, &addressLength))
+	{
+	return PBSE_NONE;
+	}
+
+  sockMomAddress = inet_ntoa(momAddrIn.sin_addr);
+  if (strcmp(jobMomAddress, sockMomAddress))
+	{
+	if (LOGLEVEL >= 6)
+	  {
+	  sprintf(log_buf, "job_id mom address %s does not match socket mom address %s", jobMomAddress, sockMomAddress);
+	  log_record(PBSEVENT_ADMIN, PBS_EVENTCLASS_SERVER, __func__, log_buf);
+	  }
+
+	return(PBSE_SOCKET_READ);
+	}
+
+  return PBSE_NONE;
+  }
 
 
 int send_request_to_remote_server(
@@ -512,7 +567,7 @@ int send_request_to_remote_server(
   pthread_mutex_lock(connection[conn].ch_mutex);
   sock = connection[conn].ch_socket;
   pthread_mutex_unlock(connection[conn].ch_mutex);
-  
+
   request->rq_conn = sock;
   
   pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
@@ -771,7 +826,7 @@ int send_request_to_remote_server(
 
   if ((tmp_rc = DIS_reply_read(chan, &request->rq_reply)) != PBSE_NONE)
     {
-    sprintf(log_buf, "DIS_reply_read failed: %d", tmp_rc);
+    sprintf(log_buf, "DIS_reply_read failed: %d, job %s", tmp_rc, request->rq_ind.rq_status.rq_id);
     log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
 
     if (chan->IsTimeout)
@@ -779,13 +834,18 @@ int send_request_to_remote_server(
     else
       request->rq_reply.brp_code = tmp_rc;
 
+	rc = PBSE_SOCKET_READ;
     set_reply_type(&request->rq_reply, BATCH_REPLY_CHOICE_NULL);
     }
+
+  rc = validate_jobid_to_socket(request->rq_ind.rq_status.rq_id, chan);
 
   DIS_tcp_cleanup(chan);
 
   if (close_handle == true)
+	{
     svr_disconnect(conn);
+	}
   
   pthread_setcancelstate(old_state, NULL);
 
