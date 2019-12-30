@@ -586,7 +586,7 @@ int check_pwd(
     }
 
   if ((pjob->ji_grpcache->gc_ngroup = init_groups( pwdp->pw_name,
-                           pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+                           pwdp->pw_gid,
                            NGROUPS_MAX,
                            pjob->ji_grpcache->gc_groups)) < 0)
     {
