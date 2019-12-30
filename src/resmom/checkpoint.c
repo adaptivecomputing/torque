@@ -58,7 +58,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-
+#include <string>
 
 #include "dis.h"
 #include "libpbs.h"
@@ -1419,7 +1419,7 @@ fail:
  * @param exit_code - exit code. 
  */
 
-void post_checkpoint(
+int post_checkpoint(
 
   mom_job *pjob,  /* I - may be purged */
   int  exit_code)    /* I */
@@ -1443,7 +1443,7 @@ void post_checkpoint(
     {
     pjob->set_svrflags(pjob->get_svrflags() | JOB_SVFLG_CHECKPOINT_FILE);
 
-    return;
+    return PBSE_NONE;
     }
 
   /* since checkpointing failed, clear out checkpoint name and time */
@@ -1458,7 +1458,7 @@ void post_checkpoint(
 
   if (abort == 0)
     {
-    return;
+    return PBSE_NONE;
     }
 
   /*
@@ -1480,7 +1480,7 @@ void post_checkpoint(
 
   if (dir == NULL)
     {
-    return;
+    return PBSE_NONE;
     }
 
   while ((pdir = readdir(dir)) != NULL)
@@ -1503,7 +1503,7 @@ void post_checkpoint(
 
   closedir(dir);
 
-  return;
+  return PBSE_NONE;
   }  /* END post_checkpoint() */
 
 
@@ -1758,9 +1758,9 @@ int blcr_restart_job(
   char           sid[20];
   const char    *arg[20];
   extern char    restart_script_name[MAXPATHLEN + 1];
-  char           buf[1024];
+  std::string    buf;
   char           namebuf[MAXPATHLEN + 1];
-  char           restartfile[MAXPATHLEN + 1];
+  std::string    restartfile;
   char           script_buf[MAXPATHLEN + 1];
 #ifdef USEJOBCREATE
 	uint64_t       job_id;
@@ -1856,11 +1856,12 @@ int blcr_restart_job(
       log_err(errno, __func__, log_buffer);
       }
 
-    snprintf(restartfile, sizeof(restartfile), "%s/%s",
-      namebuf, pjob->get_str_attr(JOB_ATR_checkpoint_name));
+		restartfile = namebuf;
+		restartfile += "/";
+		restartfile += pjob->get_str_attr(JOB_ATR_checkpoint_name);
    
     /* Change the owner of the checkpoint restart file to be the user */
-    if (chown(restartfile, pjob->get_exuid(), pjob->get_exgid()) == -1)
+    if (chown(restartfile.c_str(), pjob->get_exuid(), pjob->get_exgid()) == -1)
       {
       log_err(errno, __func__, (char *)"cannot change checkpoint restart file owner");
       }
@@ -1876,14 +1877,15 @@ int blcr_restart_job(
     arg[6] = SET_ARG(pjob->get_str_attr(JOB_ATR_checkpoint_name));
     arg[7] = NULL;
 
-    snprintf(buf, sizeof(buf), "restart args: %s %s %s %s %s %s %s",
-      restart_script_name, sid, pjob->get_jobid(),
-      SET_ARG(pjob->get_str_attr(JOB_ATR_euser)),
-      SET_ARG(pjob->get_str_attr(JOB_ATR_egroup)),
-      namebuf,
-      SET_ARG(pjob->get_str_attr(JOB_ATR_checkpoint_name)));
+		buf = "restart args: ";
+		buf += restart_script_name;
+		buf += sid, pjob->get_jobid();
+    buf += SET_ARG(pjob->get_str_attr(JOB_ATR_euser));
+    buf += SET_ARG(pjob->get_str_attr(JOB_ATR_egroup));
+    buf += namebuf;
+    buf += SET_ARG(pjob->get_str_attr(JOB_ATR_checkpoint_name));
 
-    log_ext(-1, __func__, buf, LOG_DEBUG);
+    log_ext(-1, __func__, buf.c_str(), LOG_DEBUG);
 
     log_close(0);
 

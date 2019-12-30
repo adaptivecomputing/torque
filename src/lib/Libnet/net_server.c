@@ -159,7 +159,7 @@ static u_long   *GlobalSocketAddrSet = NULL;
 static u_long   *GlobalSocketPortSet = NULL;
 pthread_mutex_t *global_sock_read_mutex = NULL;
 
-void *(*read_func[2])(void *);
+void (*read_func[2])(void *);
 
 pthread_mutex_t *nc_list_mutex  = NULL;
 
@@ -167,7 +167,7 @@ pbs_net_t        pbs_server_addr;
 
 /* Private function within this file */
 
-void *accept_conn(void *);
+void accept_conn(void *);
 
 
 static struct netcounter nc_list[60];
@@ -272,7 +272,7 @@ void netcounter_get(
 int init_network(
 
   unsigned int  port,
-  void        *(*readfunc)(void *))
+  void        (*readfunc)(void *))
 
   {
   int         i;
@@ -817,7 +817,7 @@ int wait_request(
 
       if (svr_conn[i].cn_active != Idle)
         {
-        void *(*func)(void *) = svr_conn[i].cn_func;
+        void (*func)(void *) = svr_conn[i].cn_func;
 
         netcounter_incr();
 
@@ -940,7 +940,7 @@ int wait_request(
  * NOTE: accept conn is called by functions that have a mutex on the socket already 
  */
 
-void *accept_conn(
+void accept_conn(
 
   void *new_conn)  /* main socket with connection request pending */
 
@@ -961,7 +961,7 @@ void *accept_conn(
     {
     pthread_mutex_unlock(num_connections_mutex);
 
-    return(NULL);
+    return;
     }
   pthread_mutex_unlock(num_connections_mutex);
 
@@ -1003,7 +1003,6 @@ void *accept_conn(
     }
 
 
-  return(NULL);
   }  /* END accept_conn() */
 
 
@@ -1058,7 +1057,7 @@ int add_connection(
   pbs_net_t      addr,    /* IP address of connected host */
   unsigned int   port,    /* port number (host order) on connected host */
   unsigned int   socktype, /* inet or unix */
-  void *(*func)(void *),  /* function to invoke on data rdy to read */
+  void (*func)(void *),  /* function to invoke on data rdy to read */
   int            add_wait_request) /* True to add into global poll set */
 
   {
@@ -1153,7 +1152,7 @@ int add_conn(
   pbs_net_t      addr,    /* IP address of connected host */
   unsigned int   port,    /* port number (host order) on connected host */
   unsigned int   socktype, /* inet or unix */
-  void *(*func)(void *))  /* function to invoke on data rdy to read */
+  void (*func)(void *))  /* function to invoke on data rdy to read */
 
   {
   return(add_connection(sock, type, addr, port, socktype, func, TRUE));
@@ -1180,7 +1179,7 @@ int add_scheduler_conn(
   pbs_net_t      addr,    /* IP address of connected host */
   unsigned int   port,    /* port number (host order) on connected host */
   unsigned int   socktype, /* inet or unix */
-  void *(*func)(void *))  /* function to invoke on data rdy to read */
+  void (*func)(void *))  /* function to invoke on data rdy to read */
 
   {
   return(add_connection(sock, type, addr, port, socktype, func, FALSE));
@@ -1254,7 +1253,7 @@ void close_conn(
   svr_conn[sd].cn_addr = 0;
   svr_conn[sd].cn_handle = -1;
   svr_conn[sd].cn_active = Idle;
-  svr_conn[sd].cn_func = (void *(*)(void *))0;
+  svr_conn[sd].cn_func = (void (*)(void *))0;
   svr_conn[sd].cn_authen = 0;
   svr_conn[sd].cn_stay_open = FALSE;
     
@@ -1322,7 +1321,7 @@ void clear_conn(
   svr_conn[sd].cn_addr = 0;
   svr_conn[sd].cn_handle = -1;
   svr_conn[sd].cn_active = Idle;
-  svr_conn[sd].cn_func = (void *(*)(void *))0;
+  svr_conn[sd].cn_func = (void (*)(void *))0;
   svr_conn[sd].cn_authen = 0;
   svr_conn[sd].cn_stay_open = FALSE;
     

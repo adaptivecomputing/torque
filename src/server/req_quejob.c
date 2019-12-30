@@ -143,7 +143,7 @@ extern int   svr_chkque(svr_job *, pbs_queue *, char *, int, char *);
 extern int   job_route(svr_job *);
 extern int   node_avail_complex(char *, int *, int *, int *, int*);
 extern void  set_chkpt_deflt(svr_job *, pbs_queue *);
-void        *job_clone_wt(void *);
+void         job_clone_wt(void *);
 
 /* Global Data Items: */
 
@@ -2145,7 +2145,7 @@ int req_mvjobfile(
   int   fds;
   char  namebuf[MAXPATHLEN];
   svr_job  *pj;
-  char  log_buf[LOCAL_LOG_BUF_SIZE];
+  char  log_buf[LOCAL_LOG_BUF_SIZE*2];
   int   rc = PBSE_NONE;
 
   pj = locate_new_job(NULL);

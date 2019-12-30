@@ -246,7 +246,7 @@ int process_pbs_server_port(
 
 
 
-void *start_process_pbs_server_port(
+void start_process_pbs_server_port(
     
   void *new_sock)
 
@@ -274,5 +274,4 @@ void *start_process_pbs_server_port(
   close_conn(sock, FALSE);
 
   /* Thread exit */
-  return(NULL);
   }

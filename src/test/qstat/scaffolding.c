@@ -142,7 +142,7 @@ int parse_destination_id(
   }
 
 
-int locate_job(char *job_id, char *parent_server, char *located_server)
+int locate_job(char *job_id, const char *parent_server, char *located_server)
   { 
   fprintf(stderr, "The call to locate_job needs to be mocked!!\n");
   return(PBSE_NONE);

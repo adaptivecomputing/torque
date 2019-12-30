@@ -314,7 +314,7 @@ void free_arst(struct pbs_attribute *attr)
   exit(1);
   }
 
-int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void* (*)(void*))
+int svr_connect(unsigned long, unsigned int, int*, pbsnode*, void (*)(void*))
   {
   if (conn_success == true)
     return(10);

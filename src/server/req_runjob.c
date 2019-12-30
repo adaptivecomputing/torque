@@ -89,6 +89,9 @@
 #include <ctype.h>
 #include <time.h>
 #include <pthread.h>
+
+#include <string>
+
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -140,14 +143,14 @@ extern int LOGLEVEL;
 
 /* Public Functions in this file */
 
-int  svr_startjob(svr_job *, batch_request *, char *, char *);
+int  svr_startjob(svr_job *, batch_request *, char *, std::string&);
 
 /* Private Functions local to this file */
 
 int  svr_stagein(svr_job **, batch_request *, int, int);
 int  svr_strtjob2(svr_job **, batch_request *);
 svr_job *chk_job_torun(struct batch_request *, int);
-int  assign_hosts(svr_job *, const char *, int, char *, char *);
+int  assign_hosts(svr_job *, const char *, int, char *, std::string&);
 
 /* Global Data Items: */
 
@@ -190,7 +193,7 @@ int check_and_run_job_work(
   svr_job         *pjob;
   int              rc = PBSE_NONE;
   char             failhost[MAXLINE];
-  char             emsg[MAXLINE];
+  std::string      emsg;
   int              job_exit_status;
   int              job_state;
   char             job_id[PBS_MAXSVRJOBID+1];
@@ -280,7 +283,7 @@ int check_and_run_job_work(
       }
     else
       {
-      req_reject(rc, 0, preq, failhost, emsg);
+      req_reject(rc, 0, preq, failhost, emsg.c_str());
       }
     }
 
@@ -289,7 +292,7 @@ int check_and_run_job_work(
 
 
 
-void *check_and_run_job(
+void check_and_run_job(
 
   void *vp)
 
@@ -299,8 +302,6 @@ void *check_and_run_job(
   check_and_run_job_work(preq);
 
   delete preq;
-
-  return(NULL);
   } /* END check_and_run_job() */
 
 
@@ -836,8 +837,7 @@ int verify_moms_up(
       if (FailHost != NULL)
         snprintf(FailHost, 1024, "%s", nodestr);
 
-      if (EMsg != NULL)
-        snprintf(EMsg, 1024, "%s", log_buf);
+			EMsg = log_buf;
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
 
@@ -862,8 +862,7 @@ int verify_moms_up(
       if (FailHost != NULL)
         snprintf(FailHost, 1024, "%s", nodestr);
 
-      if (EMsg != NULL)
-        snprintf(EMsg, 1024, "%s", log_buf);
+			EMsg = log_buf;
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
 
@@ -891,8 +890,7 @@ int verify_moms_up(
       if (FailHost != NULL)
         snprintf(FailHost, 1024, "%s", nodestr);
 
-      if (EMsg != NULL)
-        snprintf(EMsg, 1024, "%s", log_buf);
+			EMsg = log_buf;
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
 
@@ -930,7 +928,7 @@ int svr_startjob(
   svr_job       *pjob,     /* I job to run (modified) */
   batch_request *preq,     /* I Run Job batch request (optional) */
   char          *FailHost, /* O (optional,minsize=1024) */
-  char          *EMsg)     /* O (optional,minsize=1024) */
+  std::string&	 EMsg)     /* O (optional,minsize=1024) */
 
   {
   int     f;
@@ -938,9 +936,6 @@ int svr_startjob(
 
   if (FailHost != NULL)
     FailHost[0] = '\0';
-
-  if (EMsg != NULL)
-    EMsg[0] = '\0';
 
   /* if not already setup, transfer the control/script file basename */
   /* into an pbs_attribute accessible by MOM */
@@ -1621,7 +1616,7 @@ svr_job *chk_job_torun(
   pbs_queue        *pque;
   int               rc;
 
-  char              EMsg[1024];
+  std::string       EMsg;
   char              FailHost[1024];
   char             *exec_host;
   char             *ptr;
@@ -1663,8 +1658,12 @@ svr_job *chk_job_torun(
   if ((pjob->get_state() != JOB_STATE_QUEUED) &&
       (pjob->get_state() != JOB_STATE_HELD))
     {
-    sprintf(EMsg, "job %s state %s", pjob->get_jobid(), PJobState[pjob->get_state()]);
-    req_reject(PBSE_BADSTATE, 0, preq, NULL, EMsg);
+		EMsg = "job ";
+		EMsg += pjob->get_jobid();
+		EMsg += " state ";
+		EMsg += PJobState[pjob->get_state()];
+
+    req_reject(PBSE_BADSTATE, 0, preq, NULL, EMsg.c_str());
     return(NULL);
     }
 
@@ -1684,13 +1683,15 @@ svr_job *chk_job_torun(
          pque->qu_attr[QA_ATR_Started].at_val.at_bool == false)
       {
       if (pque->qu_attr[QA_ATR_Started].at_val.at_bool == false)
-        snprintf(EMsg, sizeof(EMsg), "attempt to start job in non-started queue");
+				EMsg =  "attempt to start job in non-started queue";
       else
+				{
         /* FAILURE - job must be in execution queue */
-        snprintf(EMsg, sizeof(EMsg), "attempt to start job in non-execution queue");
-      log_err(-1, __func__, EMsg);
+				EMsg = "attempt to start job in non-execution queue";
+				}
+      log_err(-1, __func__, EMsg.c_str());
   
-      req_reject(PBSE_IVALREQ, 0, preq, NULL, EMsg);
+      req_reject(PBSE_IVALREQ, 0, preq, NULL, EMsg.c_str());
   
       return(NULL);
       }
@@ -1759,7 +1760,7 @@ svr_job *chk_job_torun(
                   FailHost,
                   EMsg)) != 0)   /* O */
         {
-        req_reject(PBSE_EXECTHERE, 0, preq, FailHost, EMsg);
+        req_reject(PBSE_EXECTHERE, 0, preq, FailHost, EMsg.c_str());
         
         return(NULL);
         }
@@ -1788,7 +1789,7 @@ svr_job *chk_job_torun(
       {
       /* FAILURE - cannot assign correct hosts */
 
-      req_reject(rc, 0, preq, FailHost, EMsg);
+      req_reject(rc, 0, preq, FailHost, EMsg.c_str());
 
       return(NULL);
       }
@@ -2090,7 +2091,7 @@ int assign_hosts(
   const char *given,          /* I (optional) list of requested hosts */
   int         set_exec_host,  /* I (boolean) */
   char       *FailHost,       /* O (optional,minsize=1024) */
-  char       *EMsg)           /* O (optional,minsize=1024) */
+  std::string& EMsg)           /* O (optional,minsize=1024) */
 
   {
   unsigned int  dummy;
@@ -2104,9 +2105,6 @@ int assign_hosts(
   char          log_buf[LOCAL_LOG_BUF_SIZE];
   char         *def_node = NULL;
   char         *to_free = NULL;
-
-  if (EMsg != NULL)
-    EMsg[0] = '\0';
 
   if (FailHost != NULL)
     FailHost[0] = '\0';

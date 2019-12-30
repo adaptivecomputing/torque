@@ -92,6 +92,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <sstream>
+#include <string>
 
 #include "log.h"
 #include "mom_config.h"
@@ -210,7 +211,7 @@ static int          nconfig;
 struct config_list *config_list = NULL;
 char                varattr_delimiter[] = ";";
 
-extern char         PBSNodeMsgBuf[MAXLINE];
+extern std::string  PBSNodeMsgBuf;
 extern long         MaxConnectTimeout;
 extern char        *path_log;
 extern tlist_head   mom_varattrs; /* variable attributes */
@@ -2977,7 +2978,7 @@ const char *reqmsg(
     return(NULL);
     }
 
-  return(PBSNodeMsgBuf);
+  return(PBSNodeMsgBuf.c_str());
   }  /* END reqmsg() */
   
 

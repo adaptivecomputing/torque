@@ -1290,7 +1290,7 @@ void job_clone_task_wrapper(
  * job_clone_wt - worktask to clone jobs for job array
  */
 
-void *job_clone_wt(
+void job_clone_wt(
 
   void *cloned_id)
 
@@ -1313,7 +1313,6 @@ void *job_clone_wt(
     {
     log_err(ENOMEM, __func__, "Can't malloc");
     pthread_setcancelstate(old_state, NULL);
-    return(NULL);
     }
 
   /* don't call get_jobs_array because the template job isn't part of the array */
@@ -1325,7 +1324,6 @@ void *job_clone_wt(
     if (template_job != NULL)
       unlock_ji_mutex(template_job, __func__, "1", LOGLEVEL);
     pthread_setcancelstate(old_state, NULL);
-    return(NULL);
     }
 
   mutex_mgr array_mgr(pa->ai_mutex, true);
@@ -1337,7 +1335,6 @@ void *job_clone_wt(
     set_task(WORK_Timed, time(NULL) + ARRAY_ROUTING_RETRY_SECONDS, job_clone_task_wrapper, strdup(jobid), FALSE);
     free(jobid);
     pthread_setcancelstate(old_state, NULL);
-    return(NULL);
     }
 
   free(jobid);
@@ -1370,7 +1367,6 @@ void *job_clone_wt(
     if (rc == FATAL_ERROR)
       {
       pthread_setcancelstate(old_state, NULL);
-      return(NULL);
       }
 
     // If we are over the idle job limit, then stop cloning
@@ -1384,7 +1380,6 @@ void *job_clone_wt(
   perform_array_postprocessing(pa);
 
   pthread_setcancelstate(old_state, NULL);
-  return(NULL);
   }  /* END job_clone_wt */
 
 
@@ -2022,14 +2017,13 @@ int svr_job_purge(
 
 
 
-void *svr_job_purge_task(
+void svr_job_purge_task(
 
   void *vp)
 
   {
   svr_job *pjob = (svr_job *)vp;
   svr_job_purge(pjob);
-  return(NULL);
   } // END svr_job_purge_task()
 
 

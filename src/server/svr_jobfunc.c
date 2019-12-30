@@ -2089,12 +2089,13 @@ static int check_execution_uid_and_gid(
     struct svr_job *const pjob,
     char       *const EMsg)
   {
+	std::string eMsg; // dummy. EMsg is always NULL currently
   int return_code = PBSE_NONE; /* Optimistic assumption */
 
   if (!(pjob->is_attr_set(JOB_ATR_euser)) ||
       !(pjob->is_attr_set(JOB_ATR_egroup)))
     {
-    return_code = set_jobexid(pjob, pjob->get_attr(0), EMsg); /* PBSE_BADUSER or GRP */
+    return_code = set_jobexid(pjob, pjob->get_attr(0), eMsg); /* PBSE_BADUSER or GRP */
     }
 
   return(return_code);

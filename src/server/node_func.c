@@ -928,8 +928,8 @@ static int process_host_name_part(
   int                 totalipcount;
 
   char                hname[MAXLINE];
-  char                tmpHName[MAXLINE];
-  char               *hptr;
+  std::string         tmpHName;
+  const char          *hptr;
 
   static int          NodeSuffixIsSet = 0;
 
@@ -1022,17 +1022,24 @@ static int process_host_name_part(
     if (ptr != NULL)
       {
       *ptr = '\0';
+	  char next = *(ptr + 1);
       
-      snprintf(tmpHName, sizeof(tmpHName), "%s%s.%s",
-        hname,
-        NodeSuffix,
-        ptr + 1);
+	  tmpHName = hname;
+	  tmpHName += NodeSuffix;
+	  tmpHName += ".";
+	  tmpHName += next;
+//      snprintf(tmpHName, sizeof(tmpHName), "%s%s.%s",
+//        hname,
+//        NodeSuffix,
+//       ptr + 1);
       
       *ptr = '.';
       }
     else
       {
-      snprintf(tmpHName, sizeof(tmpHName), "%s%s", hname, NodeSuffix);
+	  tmpHName = hname;
+	  tmpHName += NodeSuffix;
+      //snprintf(tmpHName, sizeof(tmpHName), "%s%s", hname, NodeSuffix);
       }
     }
   
@@ -1044,7 +1051,7 @@ static int process_host_name_part(
       }
     else if (NodeSuffix != NULL)
       {
-      hptr = tmpHName;
+      hptr = tmpHName.c_str();
       }
     else
       {

@@ -9,7 +9,7 @@ int req_runjob(struct batch_request *preq);
 
 int req_stagein(struct batch_request *preq);
 
-int svr_startjob(svr_job *pjob, struct batch_request *preq, char *FailHost, char *EMsg);
+int svr_startjob(svr_job *pjob, struct batch_request *preq, char *FailHost, std::string& EMsg);
 
 void finish_sendmom(const char *job_id, struct batch_request *preq, long start_time, const char *node_name, int status, int);
 

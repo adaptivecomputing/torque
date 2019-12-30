@@ -79,7 +79,7 @@ extern char      tmpdir_basename[];  /* for $TMPDIR */
 float     max_load_val;
 int       MOMConfigDownOnError;
 int       mask_num;
-extern char      PBSNodeMsgBuf[];
+extern std::string    PBSNodeMsgBuf;
 int       MOMConfigRestart;
 attribute_def    job_attr_def[JOB_ATR_LAST];
 int       LOGKEEPDAYS;
@@ -563,7 +563,7 @@ void dep_main_loop_cycle(void)
   exit(1);
   }
 
-int init_network(unsigned int socket, void *(*readfunc)(void *))
+int init_network(unsigned int socket, void (*readfunc)(void *))
   {
   fprintf(stderr, "The call to init_network needs to be mocked!!\n");
   exit(1);
@@ -617,7 +617,7 @@ int task_save(task *ptask)
   exit(1);
   }
 
-void *mom_process_request(void *sock_num)
+void mom_process_request(void *sock_num)
   {
   fprintf(stderr, "The call to mom_process_request needs to be mocked!!\n");
   exit(1);

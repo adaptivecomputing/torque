@@ -308,7 +308,7 @@ int start_listener_addrinfo(
 
   char   *host_name,
   int     server_port,
-  void *(*process_meth)(void *))
+  void (*process_meth)(void *))
 
   {
   struct addrinfo    *adr_svr = NULL;

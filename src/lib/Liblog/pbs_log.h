@@ -22,7 +22,7 @@ void log_close(int msg);
 
 void job_log_close(int msg);
 
-int log_remove_old(char *DirPath, unsigned long ExpireTime); 
+int log_remove_old(const char *DirPath, unsigned long ExpireTime); 
 
 void log_roll(int max_depth);
 

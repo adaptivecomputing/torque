@@ -35,7 +35,7 @@ pbs_queue *next_queue_from_recycler(
 
 
 
-void *remove_some_recycle_queues(
+void remove_some_recycle_queues(
 
   void *vp)
 
@@ -53,7 +53,6 @@ void *remove_some_recycle_queues(
   delete iter;
 
   if (pq == NULL)
-    return NULL;
 
   remove_queue(&q_recycler.queues,pq);
   unlock_queue(pq, __func__, NULL, LOGLEVEL);
@@ -63,7 +62,6 @@ void *remove_some_recycle_queues(
   memset(pq, 254, sizeof(pbs_queue));
   free(pq);
 
-  return(NULL);
   } /* END remove_some_recycle_queues() */
 
 

@@ -18,7 +18,7 @@ int post_epilogue(mom_job *pjob, int ev);
 
 void *preobit_reply(void *new_sock);
 
-void *obit_reply(void *new_sock);
+void obit_reply(void *new_sock);
 
 int has_exec_host_and_port(mom_job *pjob);
 

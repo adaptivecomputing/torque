@@ -4,6 +4,7 @@
 #include <pwd.h> /* gid_t, uid_t */
 #include <sstream>
 #include <map>
+#include <string>
 
 #include "resource.h" /* resource_def */
 #include "log.h" /* LOG_BUF_SIZE */
@@ -23,7 +24,7 @@ int DEBUGMODE = 0;
 char *path_aux = strdup("/tmp");
 int reduceprologchecks;
 resource_def *svr_resc_def;
-char PBSNodeMsgBuf[MAXLINE];
+std:string PBSNodeMsgBuf;
 int MOMPrologFailureCount;
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char log_buffer[LOG_BUF_SIZE];

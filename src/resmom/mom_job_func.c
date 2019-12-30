@@ -608,7 +608,7 @@ void remove_tmpdir_file(
 
 
 
-void *delete_job_files(
+void delete_job_files(
 
   void *vp)
 
@@ -680,9 +680,13 @@ void *delete_job_files(
 
   if (unlink_ext(namebuf) < 0)
     {
-    snprintf(log_buf, sizeof(log_buf), "Failed to remove '%s' for job '%s'",
-      namebuf, jfdi->jobid);
-    log_err(errno, __func__, log_buf);
+		std::string local_log_buf;
+
+		local_log_buf = "Failed to remove '";
+		local_log_buf += namebuf;
+		local_log_buf += "' for job '";
+		local_log_buf += jfdi->jobid;
+    log_err(errno, __func__, local_log_buf.c_str());
     }
   else
     {
@@ -730,9 +734,13 @@ void *delete_job_files(
 
   if (unlink_ext(namebuf) < 0)
     {
-    snprintf(log_buf, sizeof(log_buf), "Failed to remove '%s' for job '%s'",
-      namebuf, jfdi->jobid);
-    log_err(errno, __func__, log_buf);
+		std::string local_log_buf;
+
+		local_log_buf = "Failed to remove '";
+		local_log_buf += namebuf;
+		local_log_buf += "' for job '";
+		local_log_buf += jfdi->jobid;
+    log_err(errno, __func__, local_log_buf.c_str());
     }
   else if (LOGLEVEL >= 6)
     {
@@ -751,7 +759,6 @@ void *delete_job_files(
     sem_wait(delete_job_files_sem);
     pthread_mutex_unlock(&delete_job_files_mutex);
     }
-  return(NULL);
   } /* END delete_job_files() */
 
 

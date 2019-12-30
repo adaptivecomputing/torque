@@ -244,7 +244,7 @@ int remove_job(all_jobs *aj, svr_job *pjob, bool b)
   return(PBSE_JOBNOTFOUND);
   }
 
-int set_jobexid(svr_job *pjob, pbs_attribute *attrry, char *EMsg)
+int set_jobexid(svr_job *pjob, pbs_attribute *attrry, std::string& EMsg)
   {
   return(0);
   }

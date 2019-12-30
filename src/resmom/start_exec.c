@@ -106,7 +106,9 @@ extern "C"
 #if IBM_SP2==2 /* IBM SP with PSSP 3.1 */
   #include <st_client.h>
 #endif /* IBM SP */
+
 #include <map>
+#include <string>
 
 #include "libpbs.h"
 #include "portability.h"
@@ -2649,7 +2651,7 @@ int TMomFinalizeJob2(
   int        *SC)     /* O */
 
   {
-  char                  buf[MAXPATHLEN + 2];
+  std::string           buf;
   pid_t                 cpid;
 #if SHELL_USE_ARGV == 0
   #if SHELL_INVOKE == 1
@@ -2753,15 +2755,20 @@ int TMomFinalizeJob2(
 
   if (multi_mom)
     {
-    snprintf(buf, sizeof(buf), "%s%s%d%s",
-      path_jobs, pjob->get_fileprefix(), pbs_rm_port, JOB_SCRIPT_SUFFIX);
+		buf = path_jobs;
+		buf += pjob->get_fileprefix();
+		buf += std::to_string(pbs_rm_port);
+		buf += JOB_SCRIPT_SUFFIX;
     }
   else
-    snprintf(buf, sizeof(buf), "%s%s%s",
-      path_jobs, pjob->get_fileprefix(), JOB_SCRIPT_SUFFIX);
+		{
+		buf = path_jobs;
+		buf += pjob->get_fileprefix();
+		buf += JOB_SCRIPT_SUFFIX;
+		}
 
   if (chown(
-        buf,
+        buf.c_str(),
         pjob->get_exuid(),
         pjob->get_exgid()) == -1)
     {
@@ -2784,11 +2791,9 @@ int TMomFinalizeJob2(
 
     if (exec_with_exec)
       {
-      if (strlen(buf)+5 <= sizeof(buf))
-        {
-        memmove(buf + 5, buf, strlen(buf) + 1);
-        strncpy(buf, "exec ", 5);
-        }
+			std::string tmpString = "exec ";
+			tmpString += buf;
+			buf = tmpString;
       }
 
     /* pass name of shell script on pipe */
@@ -2798,22 +2803,20 @@ int TMomFinalizeJob2(
     /* Did the user submit arguments with the -F option in qsub? */
     if (pjob->is_attr_set(JOB_ATR_arguments))
       {
-      if (sizeof(buf) - strlen(buf) > strlen(pjob->get_str_attr(JOB_ATR_arguments)) + 1)
-        {
-        strcat(buf, " ");
-        strcat(buf, pjob->get_str_attr(JOB_ATR_arguments));
-        }
+			buf += " ";
+			buf += pjob->get_str_attr(JOB_ATR_arguments);
       }
 
-    if (sizeof(buf) - strlen(buf) > 1)
-      strcat(buf, "\n");  /* setup above */
+		buf += "\n";
 
-    i = strlen(buf);
+    i = buf.size();
     j = 0;
 
+		std::string subString;
     while (j < i)
       {
-      if ((k = write_ac_socket(TJE->pipe_script[1], buf + j, i - j)) < 0)
+			subString = buf.substr(j, i-j);
+      if ((k = write_ac_socket(TJE->pipe_script[1], subString.c_str(), i - j)) < 0)
         {
         if (errno == EINTR)
           continue;

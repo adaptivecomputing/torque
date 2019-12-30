@@ -763,7 +763,7 @@ int modify_whole_array(
 
 
 
-void *modify_array_work(
+void modify_array_work(
 
   void *vp)
 
@@ -782,7 +782,6 @@ void *modify_array_work(
   if (pa == NULL)
     {
     req_reject(PBSE_UNKARRAYID, 0, preq, NULL, "unable to find array");
-    return(NULL);
     }
 
   mutex_mgr array_mutex(pa->ai_mutex, true);
@@ -838,12 +837,10 @@ void *modify_array_work(
         (rc != PBSE_RELAYED_TO_MOM))
       {
       req_reject(PBSE_IVALREQ,0,preq,NULL,"Error reading array range");
-      return(NULL);
       }
     else
       reply_ack(preq);
 
-    return(NULL);
     }
   else 
     {
@@ -853,12 +850,10 @@ void *modify_array_work(
         (rc != PBSE_RELAYED_TO_MOM))
       {
       req_reject(PBSE_IVALREQ, 0, preq, NULL, "At least one array element did not modify successfully. Use qstat -f to verify changes");
-      return(NULL);
       }
 
     /* we modified the job array. We now need to update the job */
     if ((pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq)) == NULL)
-      return(NULL);
 
     mutex_mgr job_mutex = mutex_mgr(pjob->ji_mutex, true);
 
@@ -866,7 +861,6 @@ void *modify_array_work(
     modify_job((void **)&pjob, plist, preq, checkpoint_req, NO_MOM_RELAY);
     }
 
-  return(NULL);
   } /* END modify_array_work() */
 
 
@@ -912,7 +906,7 @@ void *req_modifyarray(
 
 
 
-int modify_job_work(
+void modify_job_work(
 
   batch_request *preq) /* I */
 
@@ -926,7 +920,6 @@ int modify_job_work(
   if (pjob == NULL)
     {
     req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
-    return(PBSE_JOBNOTFOUND);
     }
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
@@ -949,7 +942,6 @@ int modify_job_work(
   /* modify_job will free preq and respond to it */
   modify_job((void **)&pjob, plist, preq, checkpoint_req, 0);
 
-  return(PBSE_NONE);
   } /* END modify_job_work() */
 
 
@@ -1021,7 +1013,7 @@ void *req_modifyjob(
 
     new_preq->rq_noreply = true; /* set for no more replies */
 
-    enqueue_threadpool_request((void *(*)(void *))modify_job_work, preq, async_pool);
+    enqueue_threadpool_request((void (*)(void *))modify_job_work, preq, async_pool);
     }
   else
     modify_job_work(preq);
@@ -1190,7 +1182,8 @@ int modify_job_attr(
       {
       /* need to reset execution uid and gid */
 
-      rc = set_jobexid(pjob, newattr, NULL);
+	  std::string emptyString;
+      rc = set_jobexid(pjob, newattr, emptyString);
       }
 
     if ((rc == 0) &&

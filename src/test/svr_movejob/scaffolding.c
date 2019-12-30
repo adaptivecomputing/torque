@@ -238,7 +238,7 @@ void attrl_fixlink(tlist_head *phead)
   exit(1);
   }
 
-int svr_connect(pbs_net_t hostaddr, unsigned int port, int *err, struct pbsnode *pnode, void *(*func)(void *))
+int svr_connect(pbs_net_t hostaddr, unsigned int port, int *err, struct pbsnode *pnode, void (*func)(void *))
   {
   static int retries = 0;
   if (retry != 0)

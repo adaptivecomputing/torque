@@ -159,7 +159,7 @@ const char *PSchedCmdType[] =
  * contact_sched - open connection to the scheduler and send it a command
  */
 
-void *contact_sched(
+void contact_sched(
 
   void *new_cmd)  /* I */
 
@@ -188,7 +188,6 @@ void *contact_sched(
     {
     /* Thread exit */
 
-    return(NULL);
     }
 
   add_scheduler_conn(
@@ -220,14 +219,12 @@ void *contact_sched(
     close_conn(sock, FALSE);
 
     /* Thread exit */
-    return(NULL);
     }
 
   close_conn(sock, FALSE);
   scheduler_close();
 
   /* Thread exit */
-  return(NULL);
   }  /* END contact_sched() */
 
 
@@ -317,15 +314,14 @@ int schedule_jobs(void)
 
 
 
-void *start_process_request(void *vp)
+void start_process_request(void *vp)
   {
   int sock = *(int *)vp;
   struct tcp_chan *chan = NULL;
   if ((chan = DIS_tcp_setup(sock)) == NULL)
-    return NULL;
+    return;
   process_request(chan);
   DIS_tcp_cleanup(chan);
-  return(NULL);
   }
 
 /*
@@ -339,7 +335,7 @@ static int contact_listener(
   {
   int   sock;
 
-  char  tmpLine[1024];
+  char  tmpLine[2048];
   char  EMsg[1024];
 
   char  log_buf[LOCAL_LOG_BUF_SIZE];

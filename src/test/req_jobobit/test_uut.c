@@ -24,7 +24,7 @@ int handle_exiting_or_abort_substate(svr_job *pjob);
 int setrerun(svr_job *pjob,const char *text);
 batch_request *setup_cpyfiles(batch_request *preq, svr_job *pjob, char *from, char *to, int direction, int tflag);
 int handle_returnstd(svr_job *pjob, batch_request *preq, int type);
-int mom_comm(svr_job *pjob, void *(*func)(struct work_task *vp));
+int mom_comm(svr_job *pjob, void (*func)(struct work_task *vp));
 int handle_complete_first_time(svr_job *pjob);
 int handle_complete_second_time(struct work_task *ptask);
 int handle_complete_subjob(svr_job *pjob);

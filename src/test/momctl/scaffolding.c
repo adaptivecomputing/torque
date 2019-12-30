@@ -18,7 +18,7 @@ int openrm(char  *host, unsigned int port)
   }
 }
 
-int pbs_connect(char *server_name_ptr)
+int pbs_connect(const char *server_name_ptr)
   {
   return(0);
   }

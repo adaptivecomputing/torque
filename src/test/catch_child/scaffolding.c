@@ -805,7 +805,7 @@ int kill_job(mom_job *pjob, int sig, const char *killer_id_name, const char *why
   return 0;
   }
 
-int mom_open_socket_to_jobs_server_with_retries(mom_job *pjob, const char *caller_id, void *(*message_handler)(void *), int retry_limit)
+int mom_open_socket_to_jobs_server_with_retries(mom_job *pjob, const char *caller_id, void (*message_handler)(void *), int retry_limit)
   {
   called_open_socket++;
   int sock = 1;

@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string>
 #include "list_link.h"
 #include "attribute.h"
 #include "server_limits.h"
@@ -36,7 +37,7 @@ static int      acct_auto_switch = 0;
 
 /* Global Data */
 
-extern char     path_acct[];
+extern std::string     path_acct;
 
 /*
  * token_acct_open() - open the acct file for append.
@@ -60,7 +61,7 @@ int token_acct_open(char *filename)
     now = time(0);
     ptm = localtime(&now);
     (void)sprintf(filen, "%s/%04d%02d%02d",
-                  path_acct,
+                  path_acct.c_str(),
                   ptm->tm_year + 1900, ptm->tm_mon + 1, ptm->tm_mday);
     filename = filen;
     acct_auto_switch = 1;

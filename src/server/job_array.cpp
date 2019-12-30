@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <algorithm>
+#include <string>
 
 #include "array.h"
 #include "list_link.h"
@@ -356,7 +357,7 @@ void job_array::create_job_if_needed()
       mutex_mgr array_mgr(this->ai_mutex, true);
 
       char  old_id[PBS_MAXSVRJOBID + 1];
-      char  prev_job_id[PBS_MAXSVRJOBID + 1];
+      std::string  prev_job_id;
       char *hostname_extension;
       char *bracket;
 
@@ -368,10 +369,20 @@ void job_array::create_job_if_needed()
         *bracket = '\0';
 
       if (hostname_extension != NULL)
-        snprintf(prev_job_id, sizeof(prev_job_id), "%s[%d]%s",
-          old_id, this->ai_qs.highest_id_created, hostname_extension);
+				{
+				prev_job_id = old_id;
+				prev_job_id += "[";
+				prev_job_id += std::to_string(this->ai_qs.highest_id_created);
+				prev_job_id += "]";
+				prev_job_id += hostname_extension;
+				}
       else
-        snprintf(prev_job_id, sizeof(prev_job_id), "%s[%d]", old_id, this->ai_qs.highest_id_created);
+				{
+				prev_job_id = old_id;
+				prev_job_id += "[";
+				prev_job_id += std::to_string(this->ai_qs.highest_id_created);
+				prev_job_id += "]";
+				}
 
       std::string prev_id(prev_job_id);
       

@@ -2902,7 +2902,7 @@ void check_state(
       {
       /* inadequate disk space in spool directory */
 
-      strcpy(PBSNodeMsgBuf, "ERROR: torque spool filesystem full");
+      PBSNodeMsgBuf = "ERROR: torque spool filesystem full";
 
       /* NOTE:  adjusting internal state may not be proper behavior, see note below */
 
@@ -2926,8 +2926,6 @@ void check_state(
       /* clear node state and node messages */
 
       internal_state &= ~INUSE_DOWN;
-
-      PBSNodeMsgBuf[0] = '\0';
 
       if (MUReadPipe(
             PBSNodeCheckPath,
@@ -2976,9 +2974,7 @@ void check_state(
     if (tmpPBSNodeMsgBuf[0] != '\0')
       {
       /* update node msg buffer */
-      snprintf(PBSNodeMsgBuf, sizeof(PBSNodeMsgBuf), "%s", tmpPBSNodeMsgBuf);
-
-      PBSNodeMsgBuf[sizeof(PBSNodeMsgBuf) - 1] = '\0';
+      PBSNodeMsgBuf = tmpPBSNodeMsgBuf;
       }
     }      /* END if (PBSNodeCheckPath[0] != '\0') */
 
@@ -3203,7 +3199,7 @@ int mom_open_socket_to_jobs_server(
 
   mom_job        *pjob,
   const char *caller_id,
-  void       *(*message_handler)(void *))
+  void       (*message_handler)(void *))
 
   {
   const char *svrport = NULL;
@@ -3308,7 +3304,7 @@ int mom_open_socket_to_jobs_server_with_retries(
 
   mom_job        *pjob,
   const char *caller_id,
-  void       *(*message_handler)(void *),
+  void       (*message_handler)(void *),
   int         retry_limit)
 
   {

@@ -194,7 +194,7 @@ typedef struct task_recycler
 
 void initialize_task_recycler();
 work_task *next_task_from_recycler(all_tasks *at, std::vector<work_task *>::iterator& iter);
-void *remove_some_recycle_tasks(void *vp);
+void remove_some_recycle_tasks(void *vp);
 int insert_task_into_recycler(struct work_task *ptask);
 
 

@@ -1490,7 +1490,7 @@ char *get_ms_name(
  *  2 failed but try again
  */
 
-void *send_job(
+void send_job(
 
   void *vp) /* I: jobid, hostaddr, port, move_type, and data */
 
@@ -1530,7 +1530,6 @@ void *send_job(
 
   free(job_id);
 
-  return(NULL);
   }  /* END send_job() */
 
 

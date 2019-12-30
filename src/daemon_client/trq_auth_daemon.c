@@ -116,7 +116,6 @@ int init_trqauth_log(const char *server_port)
   int eventclass = PBS_EVENTCLASS_TRQAUTHD;
   char path_log[MAXPATHLEN + 1];
   char *log_file=NULL;
-  char  error_buf[MAX_BUF];
   int  rc;
 
   rc = log_init(NULL, NULL);
@@ -140,13 +139,19 @@ int init_trqauth_log(const char *server_port)
     }
   if ((mkdir(path_log, 0755) == -1) && (errno != EEXIST))
     {
-       openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
-       syslog(LOG_ALERT, "Failed to create client_logs directory: %s errno: %d error message: %s", path_log, errno, strerror(errno));
-       sprintf(error_buf,"Failed to create client_logs directory: %s, error message: %s",path_log,strerror(errno));
-       log_err(errno,__func__,error_buf);
-       closelog();
-       return(PBSE_SYSTEM);
+		std::string error_buf;	
+
+    openlog("daemonize_trqauthd", LOG_PID | LOG_NOWAIT, LOG_DAEMON);
+    syslog(LOG_ALERT, "Failed to create client_logs directory: %s errno: %d error message: %s", path_log, errno, strerror(errno));
+    error_buf = "Failed to create client_logs directory: ";
+		error_buf += path_log;
+		error_buf += " error message: ";
+		error_buf += strerror(errno);
+    log_err(errno, __func__, error_buf.c_str());
+    closelog();
+    return(PBSE_SYSTEM);
     }
+
     pthread_mutex_lock(&log_mutex);
     rc = log_open(log_file, path_log);
     pthread_mutex_unlock(&log_mutex);

@@ -166,7 +166,7 @@ extern struct config   *config_array;
 extern char             extra_parm[];
 extern char             no_parm[];
 extern int              rm_errno;
-extern char             PBSNodeMsgBuf[1024];
+extern std::string      PBSNodeMsgBuf;
 extern int              MOMConfigUseSMT; /* 0: off, 1: on */
 extern int              memory_pressure_threshold;
 extern short            memory_pressure_duration;

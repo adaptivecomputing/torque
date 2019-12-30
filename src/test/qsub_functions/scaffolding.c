@@ -117,7 +117,7 @@ int hash_add_hash(job_data_container *dest, job_data_container *src, int overwri
   exit(1);
   }
 
-int locate_job(char *job_id, char *parent_server, char *located_server)
+int locate_job(char *job_id, const char *parent_server, char *located_server)
   {
   fprintf(stderr, "The call to locate_job to be mocked!!\n");
   exit(1);

@@ -30,7 +30,7 @@ int send_ms(mom_job *pjob, int com);
 
 struct hnodent *find_node(mom_job *pjob, int stream, tm_node_id nodeid);
 
-void job_start_error(mom_job *pjob, int code, char *nodename);
+void job_start_error(mom_job *pjob, int code, const char *nodename);
 
 void arrayfree(char **array);
 

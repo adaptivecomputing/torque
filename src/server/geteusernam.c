@@ -90,8 +90,8 @@
 #include <udb.h>
 #endif /* _CRAY */
 #include "svrfunc.h" /* get_svr_attr_* */
-#include <string>
 #include <pthread.h>
+#include <string>
 
 #include "server_limits.h"
 #include "list_link.h"
@@ -325,7 +325,7 @@ bool is_user_allowed_to_submit_jobs(
 
   svr_job        *pjob,    /* I */
   const char *luser,   /* I */
-  char       *EMsg,    /* O optional */
+  std::string&  EMsg,    /* O optional */
   int         logging) /* I */
 
   {
@@ -350,9 +350,6 @@ bool is_user_allowed_to_submit_jobs(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
     }
     
-  if (EMsg != NULL)
-    EMsg[0] = '\0';
-
   if (at_pos != std::string::npos)
     user.erase(at_pos);
 
@@ -364,8 +361,7 @@ bool is_user_allowed_to_submit_jobs(
 
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), msg_orighost);
 
-    if (EMsg != NULL)
-      strcpy(EMsg, "source host not specified");
+	EMsg = "source host not specified";
 
     return(false);
     }
@@ -478,11 +474,7 @@ bool is_user_allowed_to_submit_jobs(
     {
     /* rc == 0 means we did not find a match.
        this is a failure */
-    if (EMsg != NULL)
-      {
-      snprintf(EMsg, 1024, "could not authorize user %s from %s",
-        user.c_str(), orighost);
-      }
+    EMsg = "could not authorize user " + user + " from " + orighost;
     rc = -1; /* -1 is what set_jobexid is expecting for a failure*/
     }
   else
@@ -507,9 +499,7 @@ bool is_user_allowed_to_submit_jobs(
      * callers might not fill this message in the case of their errors and
      * very misleading error message will go into the logs.
      */
-    if (EMsg != NULL)
-      snprintf(EMsg, 1024, "ruserok failed validating %s/%s from %s",
-        user.c_str(), luser, orighost);
+    EMsg = "ruserok failed validating " + user + "/" + luser + " from " + orighost;
     rc = -1;
     }
 #endif
@@ -547,7 +537,7 @@ int set_jobexid(
 
   svr_job       *pjob,    /* I */
   pbs_attribute *attrry,  /* I */
-  char          *EMsg)    /* O (optional,minsize=1024) */
+  std::string&  EMsg)    /* O (optional,minsize=1024) */
 
   {
   int             addflags = 0;
@@ -577,8 +567,6 @@ int set_jobexid(
   bool            disable_id_check = false;
   bool            CheckID = true;  
   
-  if (EMsg != NULL)
-    EMsg[0] = '\0';
 
   /* use the passed User_List if set, may be a newly modified one     */
   /* if not set, fall back to the job's actual User_List, may be same */
@@ -627,8 +615,7 @@ int set_jobexid(
         }
       else if (geteusernam(pjob, pattr,puser) == false)
         {
-        if (EMsg != NULL)
-          snprintf(EMsg, 1024, "cannot locate user name in job");
+        EMsg =  "cannot locate user name in job";
 
         return(PBSE_BADUSER);
         }
@@ -653,8 +640,7 @@ int set_jobexid(
 
     if (geteusernam(pjob, pattr,puser) == false)
       {
-      if (EMsg != NULL)
-        snprintf(EMsg, 1024, "cannot locate user name in job");
+      EMsg = "cannot locate user name in job";
 
       return(PBSE_BADUSER);
       }
@@ -670,9 +656,7 @@ int set_jobexid(
         puser.c_str());
 
       log_err(errno, __func__, log_buf);
-
-      if (EMsg != NULL)
-        snprintf(EMsg,1024,"%s",log_buf);
+	  EMsg = log_buf;
 
       return(PBSE_BADUSER);
       }
@@ -699,8 +683,7 @@ int set_jobexid(
 
           log_err(errno, __func__, log_buf);
 
-          if (EMsg != NULL)
-            snprintf(EMsg,1024,"%s",log_buf);
+		  EMsg = log_buf;
 
           return(PBSE_BADUSER);
           }
@@ -730,9 +713,7 @@ int set_jobexid(
         {
         if (acl_check_my_array_string(pas, pjob->get_str_attr(JOB_ATR_job_owner), ACL_User) == 0)
           {
-          if (EMsg != NULL)
-            snprintf(EMsg, 1024, "root user %s fails ACL check",
-                     puser.c_str());
+          EMsg = "root user " + puser + " fails ACL check";
 
           free_pwnam(pwent, buf);
           return(PBSE_BADUSER); /* root not allowed */
@@ -740,9 +721,7 @@ int set_jobexid(
         }
       else if (pwent->pw_uid == 0)
         {
-        if (EMsg != NULL)
-          snprintf(EMsg, 1024, "root user %s not allowed",
-                   puser.c_str());
+        EMsg =  "root user " + puser + " not allowed",
           
         free_pwnam(pwent, buf);
         return(PBSE_BADUSER); /* root not allowed */
@@ -751,18 +730,10 @@ int set_jobexid(
     else if (pjob->is_attr_set(JOB_ATR_proxy_user))
       {
       /* cannot submit a proxy job if not root or a manager */
-      if (EMsg != NULL)
-        {
-        snprintf(EMsg, 1024,
-          "User '%s' is attempting to submit a proxy job for user '%s' but is not a manager",
-          puser.c_str(),
-          pjob->get_str_attr(JOB_ATR_proxy_user));
-        }
+		std::string proxy_user = pjob->get_str_attr(JOB_ATR_proxy_user);
+        EMsg = "User '" + puser + "' is attempting to submit a proxy job for user '";
+		EMsg += proxy_user +"' but is not a manager";
 
-      snprintf(log_buf, 1024,
-        "User '%s' is attempting to submit a proxy job for user '%s' but is not a manager",
-        puser.c_str(),
-        pjob->get_str_attr(JOB_ATR_proxy_user));
       log_err(PBSE_BADUSER, __func__, log_buf);
 
       free_pwnam(pwent, buf);
@@ -796,9 +767,7 @@ int set_jobexid(
 
     if (pudb == UDB_NULL)
       {
-      if (EMsg != NULL)
-        snprintf(EMsg, 1024, "user %s not located in user data base",
-                 puser.c_str());
+      EMsg = "user " + puser + " not located in user data base";
 
       free_pwnam(pwent, buf);
       return(PBSE_BADUSER);
@@ -876,8 +845,7 @@ int set_jobexid(
       {
       log_err(errno, __func__, "getpwnam failed");
 
-      if (EMsg != NULL)
-        snprintf(EMsg, 1024, "user does not exist in server password file");
+      EMsg = "user does not exist in server password file";
 
       free_pwnam(pwent, buf);
       return(PBSE_BADUSER);
@@ -907,9 +875,7 @@ int set_jobexid(
 
     if (gpent == NULL)
       {
-      if (EMsg != NULL)
-        snprintf(EMsg, 1024, "cannot locate group %s in server group file",
-          pgrpn.c_str());
+      EMsg =  "cannot locate group " + pgrpn + " in server group file";
 
       free_pwnam(pwent, buf);
       return(PBSE_BADGRP);  /* no such group */
@@ -938,9 +904,7 @@ int set_jobexid(
           pgrpn.c_str());
 
         log_err(-1, __func__, log_buf);
-
-        if (EMsg != NULL)
-          snprintf(EMsg, 1024, "%s",log_buf);
+		EMsg = log_buf;
 
         free_pwnam(pwent, buf);
         free_grname(gpent, grp_buf);

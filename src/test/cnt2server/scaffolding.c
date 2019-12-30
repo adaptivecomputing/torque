@@ -11,13 +11,13 @@ extern bool global_silence;
 
 extern "C"
 {
-int pbs_connect(char *server_name_ptr)
+int pbs_connect(const char *server_name_ptr)
   {
   fprintf(stderr, "The call to pbs_connect needs to be mocked!!\n");
   exit(1);
   }
 
-int pbs_connect_ext(char *server_name_ptr, bool silence)
+int pbs_connect_ext(const char *server_name_ptr, bool silence)
   {
   // set global silence
   global_silence = silence;

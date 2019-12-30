@@ -818,7 +818,7 @@ int log_path(
 
   {
   static char buf[512];
-  static char cmd[512 + 20];
+  static char cmd[512 + 50];
   char        pbuf[512 + 10];
   int         filecount = 0;
   FILE       *fp;

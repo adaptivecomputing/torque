@@ -121,7 +121,7 @@ int  req_stat_job(struct batch_request *preq);
  * NOTE: the caller functions hold the mutex for the connection
  */
 
-void *mom_process_request(
+void mom_process_request(
 
   void *sock_num) /* file descriptor (socket) to get request */
 
@@ -136,7 +136,7 @@ void *mom_process_request(
   if ((request = new batch_request(0)) == NULL)
     {
     mom_close_client(sfds);
-    return NULL;
+    return;
     }
 
   request->rq_conn = sfds;
@@ -146,7 +146,7 @@ void *mom_process_request(
     {
     mom_close_client(sfds);
     free_br(request);
-    return NULL;
+    return;
     }
 
   /* Read in the request and decode it to the internal request structure.  */
@@ -159,7 +159,7 @@ void *mom_process_request(
     mom_close_client(chan->sock);
     free_br(request);
     DIS_tcp_cleanup(chan);
-    return NULL;
+    return;
     }
 
   if ((rc == PBSE_SYSTEM) || (rc == PBSE_INTERNAL) || (rc == PBSE_SOCKET_CLOSE))
@@ -170,7 +170,7 @@ void *mom_process_request(
     mom_close_client(chan->sock);
     free_br(request);
     DIS_tcp_cleanup(chan);
-    return NULL;
+    return;
     }
 
   if (rc != PBSE_NONE)
@@ -185,7 +185,7 @@ void *mom_process_request(
     req_reject(rc, 0, request, NULL, "cannot decode message");
     mom_close_client(chan->sock);
     DIS_tcp_cleanup(chan);
-    return NULL;
+    return;
     }
 
   if (get_connecthost(chan->sock, request->rq_host, PBS_MAXHOSTNAME) != 0)
@@ -205,7 +205,7 @@ void *mom_process_request(
     req_reject(PBSE_BADHOST, 0, request, NULL, tmpLine);
     mom_close_client(chan->sock);
     DIS_tcp_cleanup(chan);
-    return NULL;
+    return;
     }
 
   if (LOGLEVEL >= 1)
@@ -247,7 +247,7 @@ void *mom_process_request(
       req_reject(PBSE_BADHOST, 0, request, NULL, "request not authorized");
       mom_close_client(chan->sock);
       DIS_tcp_cleanup(chan);
-      return NULL;
+      return;
       }
 
     if (auth_hosts.is_authorized(svr_conn[chan->sock].cn_addr) == false)
@@ -260,7 +260,7 @@ void *mom_process_request(
       req_reject(PBSE_BADHOST, 0, request, NULL, "request not authorized");
       mom_close_client(chan->sock);
       DIS_tcp_cleanup(chan);
-      return NULL;
+      return;
       }
 
     if (LOGLEVEL >= 3)
@@ -293,7 +293,6 @@ void *mom_process_request(
 
   DIS_tcp_cleanup(chan);
 
-  return NULL;
   }  /* END mom_process_request() */
 
 

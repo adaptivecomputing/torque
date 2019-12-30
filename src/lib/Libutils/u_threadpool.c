@@ -223,7 +223,7 @@ static void *work_thread(
   threadpool_t     *tp = (threadpool_t *)a;
   int               rc = PBSE_NONE;
 
-  void             *(*func)(void *);
+  void             (*func)(void *);
   void             *arg;
   tp_work_t        *mywork;
   tp_working_t      working;
@@ -412,7 +412,7 @@ int initialize_threadpool(
 
 int enqueue_threadpool_request(
 
-  void         *(*func)(void *),
+  void         (*func)(void *),
   void         *arg,
   threadpool_t *tp)
 

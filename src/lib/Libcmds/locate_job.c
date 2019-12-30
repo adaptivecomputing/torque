@@ -99,7 +99,7 @@
 int locate_job(
 
   char *job_id,
-  char *parent_server,
+  const char *parent_server,
   char *located_server)
 
   {

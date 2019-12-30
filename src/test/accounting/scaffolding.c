@@ -8,7 +8,7 @@
 #include "queue.h"
 
 char *acct_file;
-char path_acct[_POSIX_PATH_MAX];
+std::string path_acct;
 attribute_def job_attr_def[10];
 int LOGLEVEL=0;
 bool cray_enabled;

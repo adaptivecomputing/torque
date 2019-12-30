@@ -410,7 +410,7 @@ void cleanup_from_sending_email(
  * the message on standard in.
  *
  */
-void *send_the_mail(
+void send_the_mail(
 
   void *vp)
 
@@ -435,7 +435,6 @@ void *send_the_mail(
     
     delete mi;
     free(mailptr);
-    return(NULL);
     }
 
   // We are the parent at this point, the child exits inside fork_and_exec_child()
@@ -447,7 +446,6 @@ void *send_the_mail(
 
   delete mi;
 
-  return(NULL);
   } /* END send_the_mail() */
              
 

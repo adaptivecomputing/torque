@@ -43,7 +43,7 @@ task *pbs_task_create(mom_job *pjob, tm_task_id taskid)
  exit(1);
  }
 
-int pbs_connect(char *server_name_ptr)
+int pbs_connect(const char *server_name_ptr)
  {
  if (connect_fail == true)
    return(-1);
@@ -302,7 +302,7 @@ int socket_to_handle(int sock, int *my_err)
     return(5);
   }
 
-int mom_open_socket_to_jobs_server(mom_job *pjob, const char *caller, void *(*message_handler)(void *))
+int mom_open_socket_to_jobs_server(mom_job *pjob, const char *caller, void (*message_handler)(void *))
   {
   return(0);
   }

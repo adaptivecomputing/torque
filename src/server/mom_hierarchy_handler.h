@@ -51,7 +51,7 @@ private:
 
 public:
 
-  void *sendHierarchyThreadTask(void *vp);
+  void sendHierarchyThreadTask(void *vp);
 
   bool isHiearchyLoaded(void)
     {

@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <string>
+
 #include "pbs_error.h"
 #include "mom_server.h"
 #include "resmon.h"
@@ -17,7 +19,7 @@ extern void sort_paths();
 
 int mom_server_update_stat(mom_server *pms, std::vector<std::string> &strings);
 
-char PBSNodeMsgBuf[MAXLINE];
+std::string PBSNodeMsgBuf;
 char PBSNodeCheckPath[MAXLINE];
 int  PBSNodeCheckInterval = 2;
 u_long pbsclient;
@@ -80,14 +82,13 @@ START_TEST(test_check_state)
 
   /* call check_state with no node health check script. i.e. PBSNodeCheckPath is NULL */
   PBSNodeCheckPath[0] = '\0';
-  memset(PBSNodeMsgBuf, 0, MAXLINE);
   check_state(force);
-  fail_unless(PBSNodeMsgBuf[0] == '\0', "check_state force with  no check script failed");
+  fail_unless(PBSNodeMsgBuf.empty()', "check_state force with  no check script failed");
 
   PBSNodeCheckPath[0] = '\0';
   memset(PBSNodeMsgBuf, 0, MAXLINE);
   check_state(no_force);
-  fail_unless(PBSNodeMsgBuf[0] == '\0', "check_state no force with  no check script failed");
+  fail_unless(PBSNodeMsgBuf.empty(), "check_state no force with  no check script failed");
 
   strcpy(PBSNodeCheckPath, "/var/spool/torque/mom_priv/nhc");
 
@@ -96,23 +97,23 @@ START_TEST(test_check_state)
   memset(PBSNodeMsgBuf, 0, MAXLINE);
   /* No error returned by node health script */
   check_state(force);
-  fail_unless(PBSNodeMsgBuf[0] == '\0', "check_state force failed");
+  fail_unless(PBSNodeMsgBuf.empty(), "check_state force failed");
   
   /* ERROR returned by node health script */
   no_error = false;
   check_state(force);
-  fail_unless(!strcmp(PBSNodeMsgBuf, "ERROR"), "check_state with error failed");
+  fail_unless(!PBSNodeMsgBuf.compare("ERROR"), "check_state with error failed");
 
   /* no force */
   no_error = false;
   check_state(no_force);
-  fail_unless(!strcmp(PBSNodeMsgBuf, "ERROR"), "check_state with error failed");
+  fail_unless(!PBSNodeMsgBuf.compare("ERROR"), "check_state with error failed");
 
   /* EVENT: returned by node health check script */
   no_error = true;
   no_event = false;
   check_state(force);
-  fail_unless(!strcmp(PBSNodeMsgBuf, "EVENT:"), "check_state failed for EVENT:");
+  fail_unless(!PBSNodeMsgBuf.compare("EVENT:"), "check_state failed for EVENT:");
 
   /* clear PBSNodeMsgBuf. Simulates momctl -q clearmsg */
   /* call check_state with no force. the ICount should keep the node
@@ -120,7 +121,7 @@ START_TEST(test_check_state)
      PBSNodeMsgBuf should still be empty after call to check_state */
   memset(PBSNodeMsgBuf, 0, MAXLINE);
   check_state(no_force);
-  fail_unless(PBSNodeMsgBuf[0] == '\0', "check_state failed after clearing message buffer");
+  fail_unless(PBSNodeMsgBuf.empty(), "check_state failed after clearing message buffer");
 
   }
 END_TEST

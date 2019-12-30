@@ -59,7 +59,7 @@ bool islocalhostaddr(struct sockaddr_in*);
 /* from file server_core.c */
 int start_listener(const char *server_ip, int server_port, void *(*process_meth)(void *));
 int start_domainsocket_listener(const char *socket_name, void *(*process_meth)(void *));
-int start_listener_addrinfo(char *host_name, int server_port, void *(*process_meth)(void *));
+int start_listener_addrinfo(char *host_name, int server_port, void (*process_meth)(void *));
 
 /* from file net_client.c */
 #ifdef __APPLE__
@@ -73,7 +73,7 @@ int client_to_svr(pbs_net_t hostaddr, unsigned int port, int local_port, char *E
 void netcounter_incr(void);
 int get_num_connections();
 void netcounter_get(int netrates[]);
-int init_network(unsigned int port, void *(*readfunc)(void *));
+int init_network(unsigned int port, void (*readfunc)(void *));
 int check_network_port(unsigned int port);
 int check_trqauthd_unix_domain_port(const char *);
 int ping_trqauthd(const char *);
@@ -81,8 +81,8 @@ int wait_request(time_t waittime, long *SState);
 /* static void accept_conn(void *new_conn); */
 void globalset_add_sock(int sock);
 void globalset_del_sock(int sock);
-int add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
-int add_scheduler_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void *(*func)(void *));
+int add_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void (*func)(void *));
+int add_scheduler_conn(int, enum conn_type, pbs_net_t, unsigned int, unsigned int, void (*func)(void *));
 void net_close(int but);
 pbs_net_t get_connectaddr(int sock, int mutex);
 int get_connecthost(int sock, char *namebuf, int size);
@@ -98,4 +98,4 @@ int connect_local_xsocket(u_int dnr);
 int x11_connect_display(char *display, long alsounused, char *EMsg);
 
 char * netaddr_long(long ap, char *out);
-char * netaddr(struct sockaddr_in *ap);
+const char * netaddr(struct sockaddr_in *ap);

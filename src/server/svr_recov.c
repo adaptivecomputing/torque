@@ -579,8 +579,8 @@ int save_acl(
   {
   static const char *this_function_name = "save_acl";
   int          fds;
-  char         filename1[MAXPATHLEN];
-  char         filename2[MAXPATHLEN];
+  std::string  filename1;
+  std::string  filename2;
   tlist_head   head;
   int          i;
   svrattrl    *pentry;
@@ -593,26 +593,28 @@ int save_acl(
 
   attr->at_flags &= ~ATR_VFLAG_MODIFY;
 
-  snprintf(filename1, sizeof(filename1), "%s%s/%s",
-    path_priv, subdir, name);
+	filename1 = path_priv;
+	filename1 += subdir;
+	filename1 += "/";
+	filename1 += name;
 
   if ((attr->at_flags & ATR_VFLAG_SET) == 0)
     {
     /* has been unset, delete the file */
 
-    unlink(filename1);
+    unlink(filename1.c_str());
 
     return(0);
     }
 
-  snprintf(filename2, sizeof(filename2), "%s.new",
-    filename1);
+	filename2 = filename1;
+	filename2 += ".new";
 
-  fds = open(filename2, O_WRONLY | O_CREAT | O_TRUNC | O_Sync, 0600);
+  fds = open(filename2.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_Sync, 0600);
 
   if (fds < 0)
     {
-    snprintf(log_buf, sizeof(log_buf), "unable to open acl file '%s'", filename2);
+    snprintf(log_buf, sizeof(log_buf), "unable to open acl file '%s'", filename2.c_str());
 
     log_err(errno, this_function_name, log_buf);
 
@@ -629,7 +631,7 @@ int save_acl(
 
     close(fds);
 
-    unlink(filename2);
+    unlink(filename2.c_str());
 
     return(-1);
     }
@@ -649,7 +651,7 @@ int save_acl(
 
       close(fds);
 
-      unlink(filename2);
+      unlink(filename2.c_str());
 
       return(-1);
       }
@@ -659,16 +661,16 @@ int save_acl(
 
   close(fds);
 
-  unlink(filename1);
+  unlink(filename1.c_str());
 
-  if (link(filename2, filename1) < 0)
+  if (link(filename2.c_str(), filename1.c_str()) < 0)
     {
     log_err(errno, this_function_name, (char *)"unable to relink file");
 
     return(-1);
     }
 
-  unlink(filename2);
+  unlink(filename2.c_str());
 
   attr->at_flags &= ~ATR_VFLAG_MODIFY; /* clear modified flag */
 

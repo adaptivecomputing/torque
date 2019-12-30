@@ -960,6 +960,7 @@ xmlNodePtr add_resource_list_attribute(
 
 
 #ifndef PBS_MOM
+extern struct dependnames dependnames[];
 /*
  * translate_dependency_to_string
  *
@@ -976,7 +977,6 @@ void translate_dependency_to_string(
 
   {
   struct depend             *dep;
-  extern struct dependnames  dependnames[];
   struct dependnames        *dp_name;
 
 

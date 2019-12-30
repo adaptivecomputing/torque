@@ -25,10 +25,10 @@ extern bool  socket_read_code;
 extern nfds_t global_poll_nfds;
 extern int global_poll_timeout_sec;
 
-int add_connection(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void *(*func)(void *), int add_wait_request);
-void *accept_conn(void *new_conn);
+int add_connection(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void (*func)(void *), int add_wait_request);
+void accept_conn(void *new_conn);
 
-int init_network(unsigned int port, void *(*readfunc)(void *));
+int init_network(unsigned int port, void (*readfunc)(void *));
 void globalset_add_sock(int, u_long, u_long);
 void globalset_del_sock(int);
 

@@ -178,7 +178,7 @@ extern char *acct_file;
 extern char *log_file;
 extern char *job_log_file;
 extern char *path_home;
-extern char *path_acct;
+extern std::string path_acct;
 extern char  path_log[];
 extern char *path_priv;
 extern char *path_arrays;
@@ -924,7 +924,7 @@ int initialize_paths()
 
   rc |= chk_file_sec(path_queues, 1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
   rc |= chk_file_sec(path_spool, 1, 1, S_IWOTH,        0, EMsg);
-  rc |= chk_file_sec(path_acct,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
+  rc |= chk_file_sec(path_acct.c_str(),  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
   rc |= chk_file_sec(path_credentials,  1, 0, S_IWGRP | S_IWOTH, 0, EMsg);
 
   if (use_path_home == true)

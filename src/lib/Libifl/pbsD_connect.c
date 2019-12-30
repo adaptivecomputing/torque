@@ -663,7 +663,7 @@ int validate_socket(
   {
   int            rc = PBSE_NONE;
   char           tmp_buf[LOCAL_LOG_BUF];
-  char           write_buf[1024];
+  char           write_buf[2048];
   char          *read_buf = NULL;
   long long      read_buf_len = 0;
   uid_t          myrealuid;
@@ -1588,7 +1588,7 @@ void print_server_port_to_stderr(
 
 int pbs_connect(
     
-  char *server_name_ptr)    /* I (optional) */
+  const char *server_name_ptr)    /* I (optional) */
 
   {
   return(pbs_connect_ext(server_name_ptr, false));
@@ -1606,7 +1606,7 @@ int pbs_connect(
 
 int pbs_connect_ext(
     
-  char *server_name_ptr,    /* I (optional) */
+  const char *server_name_ptr,    /* I (optional) */
   bool silence)             /* I */
 
   {

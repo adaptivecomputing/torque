@@ -9,7 +9,7 @@ int job_abt(svr_job **pjobp, const char *text, bool depedentjob=0);
 
 svr_job *job_clone(svr_job *template_job, job_array *pa, int taskid);
 
-void *job_clone_wt(void *vp);
+void job_clone_wt(void *vp);
 
 struct batch_request *cpy_checkpoint(struct batch_request *preq, svr_job *pjob, enum job_atr ati, int direction);
 

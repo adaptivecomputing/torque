@@ -17,6 +17,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+
+#include <string>
+
 #include "libpbs.h"
 #include "dis.h"
 #include "log.h"
@@ -45,8 +48,7 @@ extern char *msg_daemonname;
 static void set_err_msg(
 
   int   code,
-  char *msgbuf,
-  int   len)
+  std::string& msgbuf)
 
   {
   char *msg = NULL;
@@ -54,18 +56,20 @@ static void set_err_msg(
 
   /* see if there is an error message associated with the code */
 
-  *msgbuf = '\0';
-
   if (code == PBSE_SYSTEM)
     {
-    snprintf(msgbuf, len, "%s%s", msg_daemonname, pbse_to_txt(PBSE_SYSTEM));
+		msgbuf = msg_daemonname;
+		msgbuf += pbse_to_txt(PBSE_SYSTEM);
+    //snprintf(msgbuf, len, "%s%s", msg_daemonname, pbse_to_txt(PBSE_SYSTEM));
 
     msg_tmp = strerror(errno);
 
     if (msg_tmp)
-      safe_strncat(msgbuf, strerror(errno), len - strlen(msgbuf));
+			msgbuf += strerror(errno);
+      //safe_strncat(msgbuf, strerror(errno), len - strlen(msgbuf));
     else
-      safe_strncat(msgbuf, "Unknown error", len - strlen(msgbuf));
+			msgbuf += "Unknown error";
+      //safe_strncat(msgbuf, "Unknown error", len - strlen(msgbuf));
     }
   else if (code > PBSE_)
     {
@@ -78,7 +82,7 @@ static void set_err_msg(
 
   if (msg)
     {
-    snprintf(msgbuf, len, "%s", msg);
+		msgbuf = msg;
     }
 
   return;
@@ -340,36 +344,36 @@ void req_reject(
   const char          *Msg)       /* I (optional) */
 
   {
-  char msgbuf[ERR_MSG_SIZE + 256 + 1];
-  char msgbuf2[ERR_MSG_SIZE + 256 + 1];
+  std::string msgbuf;
+  std::string msgbuf2;
   char log_buf[LOCAL_LOG_BUF_SIZE];
 
-  set_err_msg(code, msgbuf, sizeof(msgbuf));
+  set_err_msg(code, msgbuf);
 
-  snprintf(msgbuf2, sizeof(msgbuf2), "%s", msgbuf);
+	msgbuf2 = msgbuf;
 
   if ((HostName != NULL) && (*HostName != '\0'))
     {
-    snprintf(msgbuf, sizeof(msgbuf), "%s REJHOST=%s",
-      msgbuf2,
-      HostName);
+		msgbuf = msgbuf2;
+		msgbuf += " REJHOST=";
+		msgbuf += HostName;
     
-    snprintf(msgbuf2, sizeof(msgbuf2), "%s", msgbuf);
+		msgbuf2 = msgbuf;
     }
 
   if ((Msg != NULL) && (*Msg != '\0'))
     {
-    snprintf(msgbuf, sizeof(msgbuf), "%s %s%s",
-      msgbuf2,
-      PBS_MSG_EQUAL,
-      Msg);
+		msgbuf = msgbuf2;
+		msgbuf += " ";
+		msgbuf += PBS_MSG_EQUAL;
+		msgbuf += Msg;
 
     /* NOTE: Don't need this last snprintf() unless another message is concatenated. */
     }
 
   sprintf(log_buf, "Reject reply code=%d(%s), aux=%d, type=%s, from %s@%s",
     code,
-    msgbuf,
+    msgbuf.c_str(),
     aux,
     reqtype_to_txt(preq->rq_type),
     preq->rq_user,
@@ -379,7 +383,7 @@ void req_reject(
 
   preq->rq_reply.brp_auxcode = aux;
 
-  reply_text(preq, code, msgbuf);
+  reply_text(preq, code, msgbuf.c_str());
 
   return;
   }  /* END req_reject() */
@@ -401,20 +405,24 @@ void reply_badattr(
 
   {
   int   i = 1;
-  char  msgbuf[ERR_MSG_SIZE+1];
+  std::string  msgbuf;
 
-  set_err_msg(code, msgbuf, sizeof(msgbuf));
+  set_err_msg(code, msgbuf);
 
   while (pal)
     {
     if (i == aux)
       {
-      int len = strlen(msgbuf);
-
       if (pal->al_resc)
-        snprintf(msgbuf + len, sizeof(msgbuf) - len, " %s.%s", pal->al_name, pal->al_resc);
+				{
+				msgbuf += pal->al_name;
+				msgbuf += ".";
+				msgbuf += pal->al_resc;
+				}
       else
-        snprintf(msgbuf + len, sizeof(msgbuf) - len, " %s", pal->al_name);
+				{
+				msgbuf = pal->al_name;
+				}
 
       break;
       }
@@ -424,7 +432,7 @@ void reply_badattr(
     ++i;
     }
 
-  reply_text(preq, code, msgbuf);
+  reply_text(preq, code, msgbuf.c_str());
 
   return;
   }  /* END reply_badattr() */

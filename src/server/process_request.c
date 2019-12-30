@@ -95,6 +95,7 @@
 #include <sys/uio.h>
 #endif
 #include <pthread.h>
+#include <string>
 
 #include "libpbs.h"
 #include "lib_ifl.h" /* netaddr_long */
@@ -348,7 +349,7 @@ int read_request_from_socket(
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   time_t                time_now = time(NULL);
-  char                  tmpLine[MAXLINE];
+  std::string           tmpLine;
   enum conn_type        conn_active;
   unsigned short        conn_socktype;
 #ifdef ENABLE_UNIX_SOCKETS
@@ -414,15 +415,17 @@ int read_request_from_socket(
     {
     char out[80];
 
-    snprintf(tmpLine, MAXLINE, "request on invalid type of connection: %d, sock type: %d, from address %s", 
-                conn_active,conn_socktype, netaddr_long(conn_addr, out));
+    tmpLine = "request on invalid type of connection: ";
+	tmpLine += std::to_string(conn_active);
+	tmpLine += ", sock type: ";
+	tmpLine += std::to_string(conn_socktype);
+	tmpLine += ", from address ";
+	tmpLine +=  netaddr_long(conn_addr, out);
+
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST,
-      "process_req", tmpLine);
-    snprintf(tmpLine, sizeof(tmpLine),
-        "request on invalid type of connection (%d) from %s",
-        conn_active,
-        netaddr_long(conn_addr, out));
-    req_reject(PBSE_BADHOST, 0, &request, NULL, tmpLine);
+      "process_req", tmpLine.c_str());
+
+    req_reject(PBSE_BADHOST, 0, &request, NULL, tmpLine.c_str());
     return(-1);
     }
 
@@ -435,12 +438,11 @@ int read_request_from_socket(
 
     log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_REQUEST, "", log_buf);
 
-    snprintf(log_buf, sizeof(log_buf), "%s", tmpLine);
-    snprintf(tmpLine, sizeof(tmpLine),
-        "cannot determine hostname for connection from %s",
-        log_buf);
+    snprintf(log_buf, sizeof(log_buf), "%s", tmpLine.c_str());
+	tmpLine = "cannot determine hostname for connection from ";
+    tmpLine += log_buf;
 
-    req_reject(PBSE_BADHOST, 0, &request, NULL, tmpLine);
+    req_reject(PBSE_BADHOST, 0, &request, NULL, tmpLine.c_str());
     return(-1);
     }
 

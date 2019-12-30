@@ -369,7 +369,7 @@ u_long   localaddr = 0;
 int   cphosts_num = 0;
 
 
-char                    PBSNodeMsgBuf[MAXLINE];
+std::string             PBSNodeMsgBuf;
 static time_t           MOMExeTime = 0;
 
 
@@ -2322,8 +2322,8 @@ void clear_rm_messages(
   std::stringstream &output)
 
   {
-  /* this is where the messages are stored */
-  PBSNodeMsgBuf[0] = '\0';
+  /* PBSNodeMsgBuf this is where the messages are stored */
+	PBSNodeMsgBuf.clear();
 
   output << "messages cleared";
 
@@ -3434,7 +3434,7 @@ do_tcp_cleanup:
 
 
 
-void *tcp_request(
+void tcp_request(
 
   void *new_sock)
 
@@ -3453,7 +3453,7 @@ void *tcp_request(
   if ((avail_bytes = socket_avail_bytes_on_descriptor(socket)) == 0)
     {
     close_conn(socket, FALSE);
-    return(NULL);
+    return;
     }
 
   memset(&sockAddr,0,sizeof(sockAddr));
@@ -3483,7 +3483,7 @@ void *tcp_request(
     sprintf(log_buffer, "bad connect from %s", address);
     log_err(-1, __func__, log_buffer);
     close_conn(socket, FALSE);
-    return(NULL);
+    return;
     }
 
   log_buffer[0] = '\0';
@@ -3525,11 +3525,11 @@ void *tcp_request(
 
   DBPRT(("%s:(exit loop for socket %d) processed\n", __func__, socket))
 
-  return(NULL);
   }  /* END tcp_request() */
 
 
 
+extern struct sig_tbl sig_tbl[];
 const char *find_signal_name(
 
   int sig)
@@ -3538,7 +3538,6 @@ const char *find_signal_name(
 
   struct sig_tbl *psigt;
 
-  extern struct sig_tbl sig_tbl[];
 
   for (psigt = sig_tbl; psigt->sig_name != NULL; psigt++)
     {
@@ -3608,7 +3607,7 @@ int kill_job(
       {
       log_err(-1, __func__, "precancel epilog failed");
 
-      sprintf(PBSNodeMsgBuf, "ERROR:  precancel epilog failed");
+			PBSNodeMsgBuf = "ERROR:  precancel epilog failed";
       }
     }
 
@@ -5505,13 +5504,14 @@ int setup_program_environment(void)
 
     if (c != 0)
       {
-      char logbuf[1024];
+      std::string logbuf;
 
-      snprintf(logbuf, 1024, "Unable to get my full hostname for %s error %d",
-               mom_host,
-               c);
+			logbuf = "Unable to get my full hostname for ";
+			logbuf += mom_host;
+			logbuf += " error ";
+			logbuf += std::to_string(c);
 
-      log_err(-1, msg_daemonname, logbuf);
+      log_err(-1, msg_daemonname, logbuf.c_str());
 
       return(-1);
       }

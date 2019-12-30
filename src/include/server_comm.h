@@ -79,8 +79,8 @@
 
 #include "tcp.h"
 
-void *start_process_pbs_server_port(void *new_sock);
-void *svr_is_request(void *args);
+void start_process_pbs_server_port(void *new_sock);
+void svr_is_request(void *args);
 
 typedef struct is_request_info
   {

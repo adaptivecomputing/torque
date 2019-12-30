@@ -20,7 +20,7 @@ extern int   chk_hold_priv(long hold, int priv);
 extern void  get_jobowner(const char *from, char *to); 
 extern char *parse_servername(const char *, unsigned int *);
 extern void  process_Areply(int);
-extern void  *mom_process_request(void *);
+extern void  mom_process_request(void *);
 extern void  process_dis_request(int);
 extern int   save_struct(char *, unsigned int, int, char *, size_t *, size_t);
 extern void  schedule_job(void);
@@ -44,7 +44,7 @@ int set_svr_attr(int, void *);
 
 #ifndef PBS_MOM
 #ifdef PBS_JOB_H
-extern int   set_nodes(svr_job *, const char *, int, std::string &, std::string &, char *, char *);
+extern int   set_nodes(svr_job *, const char *, int, std::string &, std::string &, char *, std::string&);
 extern void  free_nodes(svr_job *, const char *spec = NULL);
 #endif /* PBS_JOB_H */
 #endif
@@ -59,7 +59,7 @@ extern int   chk_resc_limits(pbs_attribute *, pbs_queue *, char *);
 
 #ifdef PBS_NET_H
 struct pbsnode;
-extern int   svr_connect(pbs_net_t, unsigned int, int *, struct pbsnode *, void *(*)(void *));
+extern int   svr_connect(pbs_net_t, unsigned int, int *, struct pbsnode *, void (*)(void *));
 #endif /* PBS_NET_H */
 
 #ifdef WORK_TASK_H

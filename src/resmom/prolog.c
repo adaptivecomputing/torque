@@ -277,8 +277,8 @@ static int pelog_err(
     n,
     text);
 
-  sprintf(PBSNodeMsgBuf,"ERROR: %s",
-    log_buffer);
+	PBSNodeMsgBuf = "ERROR: ";
+  PBSNodeMsgBuf += log_buffer;
 
   log_err(-1, __func__, log_buffer);
 

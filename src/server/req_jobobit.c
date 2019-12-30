@@ -172,7 +172,7 @@ extern void cleanup_restart_file(svr_job *);
 void        on_job_exit(batch_request *preq, char *jobid);
 int         kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 void        handle_complete_second_time(struct work_task *ptask);
-void       *on_job_exit_task(struct work_task *vp);
+void        on_job_exit_task(struct work_task *vp);
 bool        single_cleanup_transaction(svr_job *pjob);
 
 /*
@@ -656,7 +656,7 @@ struct batch_request *cpy_stage(
 int mom_comm(
 
   svr_job *pjob,
-  void *(*func)(struct work_task *vp))
+  void (*func)(struct work_task *vp))
 
   {
   unsigned int      dummy;
@@ -719,7 +719,7 @@ int mom_comm(
           "cannot establish connection with mom for clean-up - will retry later");
       }
 
-    set_task(WORK_Timed, time_now + PBS_NET_RETRY_TIME, (void (*)(struct work_task *))func, strdup(jobid), FALSE);
+    set_task(WORK_Timed, time_now + PBS_NET_RETRY_TIME, func, strdup(jobid), FALSE);
 
     return(-1);
     }
@@ -2193,7 +2193,7 @@ void on_job_exit(
 
 
 
-void *on_job_exit_task(
+void on_job_exit_task(
 
   struct work_task *vp)
 
@@ -2221,12 +2221,11 @@ void *on_job_exit_task(
     on_job_exit(NULL, jobid);
     }
 
-  return(NULL);
   } /* END on_job_exit_task() */
 
 
 
-void *on_job_rerun_task(
+void on_job_rerun_task(
 
   struct work_task *vp)
 
@@ -2242,7 +2241,6 @@ void *on_job_rerun_task(
     on_job_rerun(NULL, jobid);
     }
 
-  return(NULL);
   } /* END on_job_rerun_task() */
 
 

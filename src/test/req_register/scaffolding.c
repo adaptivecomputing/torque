@@ -739,9 +739,9 @@ int enqueue_threadpool_request(
 
 threadpool_t *task_pool;
 
-void *svr_job_purge_task(void *vp)
+void svr_job_purge_task(void *vp)
   {
-  return(NULL);
+  return;
   }
 
 

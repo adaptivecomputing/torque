@@ -98,6 +98,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <string>
+
 #include "server_limits.h"
 #include "list_link.h"
 #include "attribute.h"
@@ -137,9 +139,9 @@ int que_save(
   {
   int fds;
   int rc;
-  char namebuf1[MAXPATHLEN];
-  char namebuf2[MAXPATHLEN];
-  char node_value[MAXLINE];
+  std::string namebuf1;
+  std::string namebuf2;
+  std::string node_value;
 
   xmlDocPtr doc = NULL;
   doc = xmlNewDoc(BAD_CAST "1.0");
@@ -148,13 +150,13 @@ int que_save(
   pque->qu_attr[QA_ATR_MTime].at_val.at_long = time(NULL);
   pque->qu_attr[QA_ATR_MTime].at_flags = ATR_VFLAG_SET;
 
-  snprintf(namebuf1,sizeof(namebuf1),
-    "%s%s",
-    path_queues,
-    pque->qu_qs.qu_name);
-  snprintf(namebuf2,sizeof(namebuf2),"%s.new",namebuf1);
+ 	namebuf1 = path_queues;
+	namebuf1 += pque->qu_qs.qu_name;
 
-  fds = open(namebuf2, O_CREAT | O_WRONLY | O_Sync, 0600);
+	namebuf2 = namebuf1;
+	namebuf2 += ".new";
+
+  fds = open(namebuf2.c_str(), O_CREAT | O_WRONLY | O_Sync, 0600);
 
   if (fds < 0)
     {
@@ -167,17 +169,21 @@ int que_save(
   xmlDocSetRootElement(doc, root_node);
   xmlNodePtr node = root_node;
   
-  snprintf(node_value, sizeof(node_value),"%i",pque->qu_qs.qu_modified);
-  xmlNewChild(node, NULL, BAD_CAST "modified", BAD_CAST node_value);
+	node_value = std::to_string(pque->qu_qs.qu_modified);
+  //snprintf(node_value, sizeof(node_value),"%i",pque->qu_qs.qu_modified);
+  xmlNewChild(node, NULL, BAD_CAST "modified", BAD_CAST node_value.c_str());
   
-  snprintf(node_value, sizeof(node_value),"%i",pque->qu_qs.qu_type);
-  xmlNewChild(node, NULL, BAD_CAST "type", BAD_CAST node_value);
+	node_value = std::to_string(pque->qu_qs.qu_type);
+  //snprintf(node_value, sizeof(node_value),"%i",pque->qu_qs.qu_type);
+  xmlNewChild(node, NULL, BAD_CAST "type", BAD_CAST node_value.c_str());
 
-  snprintf(node_value, sizeof(node_value),"%ld",pque->qu_qs.qu_ctime);
-  xmlNewChild(node, NULL, BAD_CAST "create_time", BAD_CAST node_value);
+	node_value = std::to_string(pque->qu_qs.qu_ctime);
+  //snprintf(node_value, sizeof(node_value),"%ld",pque->qu_qs.qu_ctime);
+  xmlNewChild(node, NULL, BAD_CAST "create_time", BAD_CAST node_value.c_str());
 
-  snprintf(node_value, sizeof(node_value),"%ld",pque->qu_qs.qu_mtime);
-  xmlNewChild(node, NULL, BAD_CAST "modify_time", BAD_CAST node_value);
+	node_value = std::to_string(pque->qu_qs.qu_mtime);
+  //snprintf(node_value, sizeof(node_value),"%ld",pque->qu_qs.qu_mtime);
+  xmlNewChild(node, NULL, BAD_CAST "modify_time", BAD_CAST node_value.c_str());
   xmlNewChild(node, NULL, BAD_CAST "name", BAD_CAST pque->qu_qs.qu_name);
   xmlNewChild(node, NULL, BAD_CAST "attributes", NULL);
 
@@ -207,7 +213,7 @@ int que_save(
     return(-1);
     }
 
-  if (rename(namebuf2, namebuf1) < 0)
+  if (rename(namebuf2.c_str(), namebuf1.c_str()) < 0)
     {
     log_err(errno, __func__, (char *)"unable to replace queue file");
     return(-1);

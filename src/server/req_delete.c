@@ -969,7 +969,7 @@ int delete_all_work(
  *             unless it is NULL.
  */
 
-void *delete_all_task(
+void delete_all_task(
 
   void *vp)
 
@@ -983,7 +983,6 @@ void *delete_all_task(
     delete preq;
     }
 
-  return(NULL);
   } // END delete_all_task()
 
 
@@ -1073,7 +1072,7 @@ int single_delete_work(
  *             by the end of this function, unless it is NULL.
  */
 
-void *single_delete_task(
+void single_delete_task(
 
   void *vp)
 
@@ -1087,7 +1086,6 @@ void *single_delete_task(
     delete preq;
     }
 
-  return(NULL);
   } // END single_delete_task()
 
 

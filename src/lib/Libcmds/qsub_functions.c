@@ -38,6 +38,8 @@
 #include <grp.h>
 #include <csv.h>
 #include <pwd.h>
+
+#include <iostream>
 #include <stdexcept>
 
 #include <vector>
@@ -82,7 +84,7 @@ int have_terminal = TRUE;
 char *new_jobname = NULL;           /* return from submit request */
 /* for reference purposes:
  * pbs_server is defined in pbsD_connect.c and the extern is in pbs_ifl.h */
-static char server_out[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
+char server_out[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 50];
 struct termios oldtio;
 /* END: bailout globals */
 
@@ -131,7 +133,7 @@ char *x11_get_proto(
 
   if ((tmp = getenv("DISPLAY")) == NULL)
     {
-    fprintf(stderr, "qsub: DISPLAY not set\n");
+		std::cout << "qsub: DISPLAY not set" << std::endl;
     return(NULL);
     }
 
@@ -187,31 +189,23 @@ char *x11_get_proto(
     snprintf(screen, sizeof(screen), "0");
 
   if (debug)
-    fprintf(stderr, "x11_get_proto: %s\n",
-            line);
+		std::cout << "x11_get_proto: " << line << std::endl;
 
   f = popen(line, "r");
 
   if (f == NULL)
     {
-    fprintf(stderr, "execution of '%s' failed, errno=%d (%s)\n",
-            line,
-            errno,
-            pbs_strerror(errno));
+		std::cout << "execution of '" << line << "' failed, errno=" << errno << "(" << pbs_strerror(errno) << ")" << std::endl;
     }
   else if (fgets(line, X11_CHAR_SIZE, f) == 0)
     {
-    fprintf(stderr, "cannot read data from '%s', errno=%d (%s)\n",
-            line,
-            errno,
-            pbs_strerror(errno));
+		std::cout << "cannot read data from '" << line << "', errno=" << errno << "(" << pbs_strerror(errno) << ")" << std::endl;
     }
   else if (sscanf(line, "%*s %511s %511s",
                   proto,
                   data) != 2)
     {
-    fprintf(stderr, "cannot parse output from '%s'\n",
-            line);
+		std::cout << "cannot parse output from '" << line << "'" << std::endl;
     }
   else
     {
@@ -2506,11 +2500,12 @@ void interactive(
 
   if (strncmp(momjobid, "PBS:", 4) == 0)
     {
-    sprintf(error_str, "qsub: %s\n", momjobid);
+	std::string error_msg = "qsub: ";
+	error_msg += momjobid;
 
     shutdown(news, 2);
 
-    throw std::runtime_error(error_str);
+    throw std::runtime_error(error_msg);
     }
 
   if (strncmp(momjobid, new_jobname, PBS_MAXSVRJOBID) != 0)

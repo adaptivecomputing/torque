@@ -3,6 +3,8 @@
 #include <sstream>
 #include <check.h>
 
+#include <string>
+
 #include "pbs_job.h"
 #include "mom_func.h"
 #include "json/json.h"
@@ -16,7 +18,7 @@ u_long setcudavisibledevices(const char *value);
 unsigned long setjobstarterprivileged(const char *);
 
 int jobstarter_privileged = 0;
-char         PBSNodeMsgBuf[MAXLINE];
+std::string  PBSNodeMsgBuf;
 int          MOMJobDirStickySet;
 
 

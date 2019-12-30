@@ -28,7 +28,7 @@ int cnt2server(const char *SpecServer, bool silence)
   }
 }
 
-int locate_job(char *job_id, char *parent_server, char *located_server)
+int locate_job(char *job_id, const char *parent_server, char *located_server)
   { 
   fprintf(stderr, "The call to locate_job needs to be mocked!!\n");
   exit(1);

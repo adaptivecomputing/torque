@@ -647,6 +647,6 @@ node_iterator   *get_node_iterator();
 struct prop     *init_prop(const char *pname);
 void             update_node_state(struct pbsnode *np, int newstate);
 int              is_job_on_node(struct pbsnode *np, int internal_job_id);
-void            *sync_node_jobs(void *vp);
+void             sync_node_jobs(void *vp);
 
 #endif /* PBS_NODES_H */ 

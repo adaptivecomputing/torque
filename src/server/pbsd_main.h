@@ -33,7 +33,7 @@ int is_ha_lock_file_valid(char *lockfile);
 
 int release_file_lock(char *Lockfile, int *LockFD);
 
-int acquire_file_lock(char *LockFile, int *LockFD, char *FileType);
+int acquire_file_lock(const char *LockFile, int *LockFD, char *FileType);
 
 void *update_ha_lock_thread(void *Arg);
 

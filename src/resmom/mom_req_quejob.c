@@ -88,6 +88,9 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <string.h>
+
+#include <string>
+
 #include "libpbs.h"
 #include "server_limits.h"
 #include "list_link.h"
@@ -657,10 +660,14 @@ void req_jobscript(
 
   if (fds < 0)
     {
-    char tmpLine[1024];
+    std::string tmpLine;
 
-    snprintf(tmpLine, sizeof(tmpLine), "cannot open '%s' errno=%d - %s",
-      namebuf, errno, strerror(errno));
+		tmpLine = "cannot open '";
+		tmpLine += namebuf;
+		tmpLine += "' errno=";
+		tmpLine += std::to_string(errno);
+		tmpLine += " - ";
+		tmpLine += strerror(errno);
 
     /* FAILURE */
 
@@ -668,7 +675,7 @@ void req_jobscript(
 
     log_err(errno, __func__, msg_script_open);
 
-    req_reject(PBSE_INTERNAL, 0, preq, mom_host, tmpLine);
+    req_reject(PBSE_INTERNAL, 0, preq, mom_host, tmpLine.c_str());
 
     return;
     }

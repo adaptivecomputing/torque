@@ -11,7 +11,7 @@ bool eligible_for_exiting_check(mom_job *pjob);
 void check_jobs_main_process(mom_job *pjob, task *ptask);
 bool non_mother_superior_cleanup(mom_job *pjob);
 bool mother_superior_cleanup(mom_job *pjob, int limit, int *found);
-void *obit_reply(void *new_sock);
+void obit_reply(void *new_sock);
 hnodent *get_node(mom_job *pjob, tm_node_id nodeid);
 int run_epilogues(mom_job *pjob, int i_am_ms, int deletejob);
 

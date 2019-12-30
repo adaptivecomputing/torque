@@ -125,7 +125,7 @@ pthread_mutex_t     *acctfile_mutex;
 /* Global Data */
 
 extern attribute_def job_attr_def[];
-extern char     *path_acct;
+extern std::string   path_acct;
 extern char     *acct_file;
 extern int       LOGLEVEL;
 
@@ -342,7 +342,7 @@ int acct_open(
     ptm = localtime_r(&now,&tmpPtm);
 
     sprintf(filen, "%s%04d%02d%02d",
-            path_acct,
+            path_acct.c_str(),
             ptm->tm_year + 1900,
             ptm->tm_mon + 1,
             ptm->tm_mday);
@@ -658,7 +658,7 @@ void acct_cleanup(
 
   {
 
-  if (log_remove_old(path_acct,(days_to_keep * SECS_PER_DAY)) != 0)
+  if (log_remove_old(path_acct.c_str(),(days_to_keep * SECS_PER_DAY)) != 0)
     {
     log_err(-1, __func__, "failure occurred when checking for old accounting logs");
     }

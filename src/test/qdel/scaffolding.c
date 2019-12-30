@@ -40,7 +40,7 @@ int cnt2server(const char *SpecServer, bool silence)
   }
 }
 
-int locate_job(char *job_id, char *parent_server, char *located_server)
+int locate_job(char *job_id, const char *parent_server, char *located_server)
   { 
   return(TRUE);
   }

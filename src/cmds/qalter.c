@@ -737,7 +737,7 @@ cnt:
       {
       located = TRUE;
 
-      if (locate_job(job_id_out, server_out, rmt_server))
+      if (locate_job(job_id_out, (const char *)server_out, rmt_server))
         {
         pbs_disconnect(connect);
 

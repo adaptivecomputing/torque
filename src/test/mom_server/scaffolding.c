@@ -53,7 +53,7 @@ char *auto_max_load = NULL;
 unsigned int pbs_rm_port = 0;
 char PBSNodeCheckPath[MAXLINE];
 int internal_state = 0;
-char PBSNodeMsgBuf[MAXLINE];
+std::string PBSNodeMsgBuf;
 int alarm_time;
 tlist_head svr_alljobs;
 char mom_alias[PBS_MAXHOSTNAME + 1];

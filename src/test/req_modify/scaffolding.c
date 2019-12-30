@@ -156,7 +156,7 @@ void set_resc_deflt(svr_job *pjob, pbs_attribute *ji_wattr, int has_queue_mutex)
   exit(1);
   }
 
-int set_jobexid(svr_job *pjob, pbs_attribute *attrry, char *EMsg)
+int set_jobexid(svr_job *pjob, pbs_attribute *attrry, std::string& EMsg)
   {
   fprintf(stderr, "The call to set_jobexid to be mocked!!\n");
   exit(1);

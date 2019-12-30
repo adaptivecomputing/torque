@@ -1146,13 +1146,13 @@ void process_job_info_from_json(
  * @see is_stat_get()
  */
 
-void *sync_node_jobs(
+void sync_node_jobs(
 
   void *vp)
 
   {
   if (vp == NULL)
-    return(NULL);
+    return;
 
   struct pbsnode       *np;
   sync_job_info        *sji = (sync_job_info *)vp;
@@ -1166,7 +1166,7 @@ void *sync_node_jobs(
 
   if ((np = find_nodebyname(node_name.c_str())) == NULL)
     {
-    return(NULL);
+    return;
     }
 
   pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
@@ -1206,7 +1206,7 @@ void *sync_node_jobs(
         }
 
       pthread_setcancelstate(old_state, NULL);
-      return(NULL);
+      return;
       }
     }
 
@@ -1219,7 +1219,7 @@ void *sync_node_jobs(
     
     np->unlock_node(__func__, NULL, LOGLEVEL);
     pthread_setcancelstate(old_state, NULL);
-    return(NULL);
+    return;
     }
 
 
@@ -1233,7 +1233,6 @@ void *sync_node_jobs(
   
   pthread_setcancelstate(old_state, NULL);
 
-  return(NULL);
   }  /* END sync_node_jobs() */
 
 
@@ -1408,7 +1407,7 @@ void stream_eof(
  * wrapper task that check_nodes places in the thread pool's queue
  */
 
-void *check_nodes_work(
+void check_nodes_work(
 
   void *vp)
 
@@ -1481,7 +1480,6 @@ void *check_nodes_work(
   free(ptask->wt_mutex);
   free(ptask);
 
-  return(NULL);
   } /* check_nodes_work() */
 
 
@@ -1511,7 +1509,7 @@ void check_nodes(
 
 
 
-void *write_node_state_work(
+void write_node_state_work(
 
   void *vp)
 
@@ -1542,7 +1540,6 @@ void *write_node_state_work(
 
       pthread_mutex_unlock(node_state_mutex);
       
-      return(NULL);
       }
     }
   else
@@ -1555,7 +1552,6 @@ void *write_node_state_work(
 
       pthread_mutex_unlock(node_state_mutex);
       
-      return(NULL);
       }
     }
 
@@ -1604,12 +1600,11 @@ void *write_node_state_work(
 
   pthread_mutex_unlock(node_state_mutex);
 
-  return(NULL);
   } /* END write_node_state_work() */
 
 
 
-void *write_node_power_state_work(
+void write_node_power_state_work(
 
   void *vp)
 
@@ -1638,7 +1633,6 @@ void *write_node_power_state_work(
 
       pthread_mutex_unlock(node_state_mutex);
 
-      return(NULL);
       }
     }
   else
@@ -1651,7 +1645,6 @@ void *write_node_power_state_work(
 
       pthread_mutex_unlock(node_state_mutex);
 
-      return(NULL);
       }
     }
 
@@ -1683,7 +1676,6 @@ void *write_node_power_state_work(
 
   pthread_mutex_unlock(node_state_mutex);
 
-  return(NULL);
   } /* END write_node_power_state_work() */
 
 
@@ -1785,7 +1777,7 @@ err1:
 
 
 
-void *node_unreserve_work(
+void node_unreserve_work(
 
   void *vp)
 
@@ -1807,7 +1799,6 @@ void *node_unreserve_work(
   if (iter != NULL)
     delete iter;
 
-  return(NULL);
   } /* END node_unreserve_work() */
 
 
@@ -3181,7 +3172,7 @@ int node_spec(
   char                          *ProcBMStr,  /* I */
   char                          *FailNode,   /* O (optional,minsize=1024) */
   std::list<node_job_add_info>  *naji_list,  /* O (optional) */
-  char                          *EMsg,       /* O (optional,minsize=1024) */
+  std::string&                  EMsg,       /* O (optional,minsize=1024) */
   char                          *login_prop, /* I (optional) */
   alps_req_data                **ard_array,  /* O (optional) */
   int                           *num_reqs,   /* O (optional) */
@@ -3208,8 +3199,6 @@ int node_spec(
 
   FUNCTION_TIMER
 
-  if (EMsg != NULL)
-    EMsg[0] = '\0';
 
   if (FailNode != NULL)
     FailNode[0] = '\0';
@@ -3240,10 +3229,7 @@ int node_spec(
       log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
       }
 
-    if (EMsg != NULL)
-      {
-      snprintf(EMsg, 1024, "%s", log_buf);
-      }
+    EMsg =  log_buf;
 
     return(-1);
     }
@@ -3373,10 +3359,7 @@ int node_spec(
         log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
         }
 
-      if (EMsg != NULL)
-        {
-        snprintf(EMsg, 1024, "%s", log_buf);
-        }
+      EMsg =  log_buf;
 
       return(-1);
       }
@@ -3496,10 +3479,7 @@ int node_spec(
 
     log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
 
-    if (EMsg != NULL)
-      {
-      snprintf(EMsg, MAXLINE, "%s", log_buf);
-      }
+	EMsg = log_buf;
 
     if (naji_list != NULL)
       release_node_allocation(naji_list);
@@ -4312,7 +4292,7 @@ int place_subnodes_in_hostlist(
 int translate_howl_to_string(
 
   std::list<howl>  &hlist,
-  char             *EMsg,
+  std::string&     EMsg,
   int              &NCount,
   std::string      &str,
   std::string      *portstr,
@@ -4480,7 +4460,7 @@ int record_external_node(
 int build_hostlist_nodes_req(
 
   svr_job                            *pjob,      /* M */
-  char                               *EMsg,      /* O */
+  std::string&                       EMsg,      /* O */
   const char                         *spec,      /* I */
   short                               newstate,  /* I */
   std::vector<job_reservation_info>  &host_info, /* O */
@@ -4558,12 +4538,12 @@ int build_hostlist_nodes_req(
   if (failure == true)
     {
     /* did not satisfy the request */
-    if (EMsg != NULL)
+    if (!EMsg.empty())
       {
       sprintf(log_buf,
         "Could not locate requested resources '%.4000s' (node_spec failed) %s",
         spec,
-        EMsg);
+        EMsg.c_str());
       
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
       }
@@ -4833,7 +4813,7 @@ int set_nodes(
   std::string &node_list,   /* O */
   std::string &rtnportlist, /* O */
   char        *FailHost,    /* O (optional,minsize=1024) */
-  char        *EMsg)        /* O (optional,minsize=1024) */
+  std::string&   EMsg)        /* O (optional,minsize=1024) */
 
   {
   FUNCTION_TIMER
@@ -4862,8 +4842,6 @@ int set_nodes(
   if (FailHost != NULL)
     FailHost[0] = '\0';
 
-  if (EMsg != NULL)
-    EMsg[0] = '\0';
 
   if (LOGLEVEL >= 3)
     {
@@ -4907,12 +4885,12 @@ int set_nodes(
   if (i == 0)
     {
     /* no resources located, request failed */
-    if (EMsg != NULL)
+    if (!EMsg.empty())
       {
       sprintf(log_buf,
         "could not locate requested resources '%.4000s' (node_spec failed) %s",
         spec,
-        EMsg);
+        EMsg.c_str());
 
       log_record(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buf);
       }
@@ -4979,8 +4957,7 @@ int set_nodes(
       log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
       }
 
-    if (EMsg != NULL)
-      sprintf(EMsg, "no nodes can be allocated to job");
+    EMsg  = "no nodes can be allocated to job";
    
     free_nodes(pjob, spec); 
     delete [] ard_array;
@@ -5224,8 +5201,9 @@ int node_avail_complex(
   {
   int            ret;
   enum job_types job_type;
+  std::string eMsg;
 
-  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, job_type,false);
+  ret = node_spec(spec, 1, 0, NULL, NULL, NULL, eMsg, NULL, NULL, NULL, job_type,false);
 
   *navail = ret;
   *nalloc = 0;
@@ -5379,6 +5357,7 @@ int node_reserve(
   struct pbsnode    *pnode;
   int                ret_val;
 
+  std::string		 eMsg;
   node_iterator      iter;
   char               log_buf[LOCAL_LOG_BUF_SIZE];
   std::list<node_job_add_info>  naji_list;
@@ -5393,7 +5372,7 @@ int node_reserve(
     return(-1);
     }
 
-  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, &naji_list, NULL, NULL, NULL, NULL, job_type,false)) >= 0)
+  if ((ret_val = node_spec(nspec, 0, 0, NULL, NULL, &naji_list, eMsg, NULL, NULL, NULL, job_type,false)) >= 0)
     {
     /*
     ** Zero or more of the needed Nodes are available to be

@@ -211,7 +211,7 @@ int completed_jobs_map_class::cleanup_completed_jobs(
 
       // call with work task structure
       //   will remove job id from map
-      enqueue_threadpool_request((void *(*)(void *))handle_complete_second_time, pnew, task_pool);
+      enqueue_threadpool_request((void (*)(void *))handle_complete_second_time, pnew, task_pool);
       }
     }
 

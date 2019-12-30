@@ -218,7 +218,7 @@ work_task *next_task(all_tasks *at, int *iter)
   return(NULL);
   }
 
-int svr_connect(pbs_net_t hostaddr, unsigned int port, int *my_err, struct pbsnode  *pnode, void *(*func)(void *))
+int svr_connect(pbs_net_t hostaddr, unsigned int port, int *my_err, struct pbsnode  *pnode, void (*func)(void *))
   {
   if (local_connect == true)
     return PBS_LOCAL_CONNECTION;

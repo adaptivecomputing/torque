@@ -14,7 +14,7 @@
 #include "work_task.h"
 #include "mail_throttler.hpp"
 
-extern void *send_the_mail(void *vp);
+extern void send_the_mail(void *vp);
 
 pthread_mutex_t *scheduler_sock_jobct_mutex;
 int scheduler_sock=0;
@@ -42,7 +42,7 @@ int get_svr_attr_b(int index, bool *b)
   return(0);
   }
 
-int enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp)
+int enqueue_threadpool_request(void (*func)(void *), void *arg, threadpool_t *tp)
   {
   send_the_mail((mail_info *)arg);
   return 0;

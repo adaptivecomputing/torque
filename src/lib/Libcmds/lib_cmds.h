@@ -23,7 +23,7 @@ int TShowAbout(void);
 int get_server(char *job_id_in, char *job_id_out, char *server_out);
 
 /* from file locate_job.c */
-int locate_job(char *job_id, char *parent_server, char *located_server);
+int locate_job(char *job_id, const char *parent_server, char *located_server);
 
 /* from file parse_at.c */
 /* struct hostlist */

@@ -24,9 +24,9 @@ svr_job *svr_find_job(char const* p, int i)
   return(NULL);
   }
 
-void *handle_complete_second_time(work_task *wt)
+void handle_complete_second_time(work_task *wt)
   {
-  return(NULL);
+  return;
   }
 
 bool job_id_exists(

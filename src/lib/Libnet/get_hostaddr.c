@@ -87,6 +87,7 @@
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif
+#include <string>
 
 #include "portability.h"
 #include "server_limits.h"
@@ -127,19 +128,22 @@ char * netaddr_long(long ap, char *out)
    ** Put a human readable representation of a network addres into
    ** a staticly allocated string.
    */
-char * netaddr(struct sockaddr_in *ap)
+const char * netaddr(struct sockaddr_in *ap)
   {
-  static char out[80];
+  std::string out;
   char tmp[80];
+  uint16_t portNum;
 
   if (ap == NULL)
     return (char *)"unknown";
 
   netaddr_long( ntohl(ap->sin_addr.s_addr), tmp);
+  portNum = ntohs(ap->sin_port);
 
-  sprintf(out, "%s:%d", tmp, ntohs(ap->sin_port));
+  out = tmp;
+  out += std::to_string(portNum);
 
-  return out;
+  return out.c_str();
   }
 
 

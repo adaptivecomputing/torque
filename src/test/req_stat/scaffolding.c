@@ -214,7 +214,7 @@ pbs_queue *next_queue(all_queues *aq, all_queues_iterator *iter)
   exit(1);
   }
 
-int svr_connect(pbs_net_t hostaddr, unsigned int port, int *err, struct pbsnode *pnode, void *(*func)(void *))
+int svr_connect(pbs_net_t hostaddr, unsigned int port, int *err, struct pbsnode *pnode, void (*func)(void *))
   {
   fprintf(stderr, "The call to svr_connect to be mocked!!\n");
   exit(1);

@@ -252,7 +252,7 @@ static pid_t fork_to_user(
   struct batch_request *preq,   /* I */
   int                   SetUID, /* I (boolean) */
   char                 *HDir,   /* O (job/user home directory) */
-  char                 *EMsg)   /* I (optional,minsize=1024) */
+  std::string           EMsg)   /* I (optional,minsize=1024) */
 
   {
   struct group   *grpp;
@@ -268,9 +268,6 @@ static pid_t fork_to_user(
   struct stat     sb;
 
   /* initialize */
-
-  if (EMsg != NULL)
-    EMsg[0] = '\0';
 
   if ((pjob = mom_find_job(preq->rq_ind.rq_cpyfile.rq_jobid)) &&
       (pjob->ji_grpcache != 0) &&
@@ -304,8 +301,7 @@ static pid_t fork_to_user(
       sprintf(log_buffer, "cannot find user '%s' in password file",
               preq->rq_ind.rq_cpyfile.rq_user);
 
-      if (EMsg != NULL)
-        snprintf(EMsg, 1024, "%s", log_buffer);
+			EMsg = log_buffer;
 
       log_err(errno, __func__, log_buffer);
 
@@ -329,8 +325,7 @@ static pid_t fork_to_user(
               preq->rq_ind.rq_cpyfile.rq_group,
               preq->rq_ind.rq_cpyfile.rq_user);
 
-      if (EMsg != NULL)
-        snprintf(EMsg, 1024, "%s", log_buffer);
+			EMsg = log_buffer;
 
       log_err(errno, __func__, log_buffer);
 
@@ -365,8 +360,7 @@ static pid_t fork_to_user(
 
     log_err(PBSE_UNKRESC, __func__, (char *)"cannot determine home directory");
 
-    if (EMsg != NULL)
-      snprintf(EMsg, 1024, "%s", "cannot determine home directory");
+		EMsg = "cannot determine home directory";
 
     return(-PBSE_UNKRESC);
     }
@@ -390,8 +384,7 @@ static pid_t fork_to_user(
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
       }
 
-    if (EMsg != NULL)
-      snprintf(EMsg, 1024, "%s", log_buffer);
+		EMsg = log_buffer;
 
     /* NOTE:  warn only, root may not be able to stat directory */
 
@@ -404,8 +397,7 @@ static pid_t fork_to_user(
 
     log_err(PBSE_UNKRESC, __func__, log_buffer);
 
-    if (EMsg != NULL)
-      snprintf(EMsg, 1024, "%s", log_buffer);
+		EMsg = log_buffer;
 
     return(-PBSE_UNKRESC);
     }
@@ -433,8 +425,7 @@ static pid_t fork_to_user(
     {
     log_err(errno, __func__, "Fork failed.");
 
-    if (EMsg != NULL)
-      snprintf(EMsg, 1024, "%s", log_buffer);
+		EMsg = log_buffer;
 
     return(-PBSE_SYSTEM);
     }
@@ -507,8 +498,7 @@ static pid_t fork_to_user(
 
       log_err(errno, __func__, log_buffer);
 
-      if (EMsg != NULL)
-        snprintf(EMsg, 1024, "%s", log_buffer);
+			EMsg = log_buffer;
 
       return(-PBSE_SYSTEM);
       }
@@ -520,8 +510,7 @@ static pid_t fork_to_user(
 
       log_err(errno, __func__, log_buffer);
 
-      if (EMsg != NULL)
-        snprintf(EMsg, 1024, "%s", log_buffer);
+			EMsg = log_buffer;
 
       return(-PBSE_SYSTEM);
       }
@@ -2095,6 +2084,7 @@ static void resume_suspend(
  * @see req_signaljob() in server/req_signal.c - peer
  */
 
+extern struct   sig_tbl sig_tbl[];
 void mom_req_signal_job(
 
   batch_request *preq) /* I */
@@ -2109,7 +2099,6 @@ void mom_req_signal_job(
 
   struct sig_tbl *psigt;
 
-  extern struct   sig_tbl sig_tbl[];
 
   pjob = mom_find_job(preq->rq_ind.rq_signal.rq_jid);
 
@@ -3756,7 +3745,7 @@ void req_cpyfile(
   int             rcstat;
   std::string     spool_dir;
 
-  char            EMsg[1024];
+  std::string     EMsg;
   char            HDir[1024];
 
   mom_job            *pjob = NULL;
@@ -3804,14 +3793,14 @@ void req_cpyfile(
 
     /* FAILURE */
 
-    req_reject(-rc, 0, preq, mom_host, EMsg);
+    req_reject(-rc, 0, preq, mom_host, EMsg.c_str());
 
     if ((rc != -PBSE_SYSTEM) &&
         (rc != -PBSE_BADUSER))
       {
       sprintf(tmpLine, "fork_to_user failed with rc=%d '%s' - exiting",
         rc,
-        EMsg);
+        EMsg.c_str());
 
       log_err(errno, __func__, tmpLine);
 
@@ -3820,7 +3809,7 @@ void req_cpyfile(
 
     sprintf(tmpLine, "fork_to_user failed with rc=%d '%s' - returning failure",
       rc,
-      EMsg);
+      EMsg.c_str());
 
     log_err(errno, __func__, tmpLine);
 

@@ -97,7 +97,7 @@ typedef struct tp_work tp_work_t;
 struct tp_work
   {
   tp_work_t *next;
-  void      *(*work_func)(void *); /* function to call */
+  void      (*work_func)(void *); /* function to call */
   void      *work_arg; /* argument */
   };
 
@@ -140,7 +140,7 @@ extern threadpool_t *request_pool;
 extern threadpool_t *task_pool;
 extern threadpool_t *async_pool;
 
-int  enqueue_threadpool_request(void *(*func)(void *), void *arg, threadpool_t *tp);
+int  enqueue_threadpool_request(void (*func)(void *), void *arg, threadpool_t *tp);
 int  initialize_threadpool(threadpool_t **,int,int,int);
 void destroy_request_pool(threadpool_t *tp);
 void start_request_pool(threadpool_t *tp);

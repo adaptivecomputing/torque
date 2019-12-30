@@ -56,7 +56,7 @@ pthread_mutex_t *acctfile_mutex = NULL;
 pthread_mutex_t *check_tasks_mutex = NULL;
 const char *msg_init_queued = "Requeued in queue: ";
 char *path_svrlog;
-char path_acct[_POSIX_PATH_MAX];
+std::string path_acct;
 char *path_nodes;
 const char *msg_init_recovque = "Recovered queue %s";
 attribute_def job_attr_def[10];

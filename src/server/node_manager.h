@@ -23,23 +23,23 @@ int is_compose(struct tcp_chan *chan, int command);
 
 void stream_eof(int stream, u_long addr, uint16_t port, int ret);
 
-void *check_nodes_work(void *vp);
+void check_nodes_work(void *vp);
 
 void check_nodes(struct work_task *ptask);
 
 int svr_is_request(struct tcp_chan *chan, int version, long *args);
 
-void *write_node_state_work(void *vp);
+void write_node_state_work(void *vp);
 
 void write_node_state(void);
 
-void *write_node_power_state_work(void *vp);
+void write_node_power_state_work(void *vp);
 
 void write_node_power_state(void);
 
 int write_node_note(void);
 
-void *node_unreserve_work(void *vp);
+void node_unreserve_work(void *vp);
 
 void node_unreserve(resource_t handle);
 

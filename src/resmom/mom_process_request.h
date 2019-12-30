@@ -4,7 +4,7 @@
 
 #include "batch_request.h" /* batch_request */
 
-void *mom_process_request(void *sock_num);
+void mom_process_request(void *sock_num);
 
 void mom_dispatch_request(int  sfds, struct batch_request *request);
 

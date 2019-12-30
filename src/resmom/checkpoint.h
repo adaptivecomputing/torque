@@ -46,7 +46,7 @@ int blcr_checkpoint_job(mom_job *pjob, int abort, struct batch_request *preq);
 
 int mom_checkpoint_job(mom_job *pjob, int abort);
 
-void post_checkpoint(mom_job *pjob, int ev);
+int post_checkpoint(mom_job *pjob, int ev);
 
 int start_checkpoint(mom_job *pjob, int abort, struct batch_request *preq);
 

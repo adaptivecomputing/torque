@@ -177,7 +177,7 @@ int in_remote_checkpoint_dir(char *ckpt_path)
   exit(1);
   }
 
-int mom_open_socket_to_jobs_server_with_retries(mom_job *pjob, const char *caller_id, void *(*message_handler)(void *), int retry_limit)
+int mom_open_socket_to_jobs_server_with_retries(mom_job *pjob, const char *caller_id, void (*message_handler)(void *), int retry_limit)
   {
   return(0);
   }

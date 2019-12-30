@@ -287,7 +287,7 @@ const char *PBSServerCmds2[] =
  *         code is iused it must terminate the while loop
  *         in start_process_pbs_server_port.
  *************************************************/
-void *svr_is_request(
+void svr_is_request(
   
   void *v)  
 
@@ -306,7 +306,7 @@ void *svr_is_request(
   struct sockaddr_in  addr;
   struct pbsnode     *node = NULL;
   char                log_buf[LOCAL_LOG_BUF_SIZE+1];
-  char                msg_buf[80];
+  std::string         msg_buf;
   char                tmp[80];
   int                 version;
   struct tcp_chan    *chan;
@@ -314,7 +314,7 @@ void *svr_is_request(
   is_request_info    *isr = (is_request_info *)v;
 
   if (isr == NULL)
-    return(NULL);
+    return;
 
   chan = isr->chan;
   args = isr->args;
@@ -326,7 +326,7 @@ void *svr_is_request(
     log_err(-1,  __func__, "Cannot read version - skipping this request.\n");
     close_conn(chan->sock, FALSE);
     DIS_tcp_cleanup(chan);
-    return(NULL);
+    return;
     }
 
   command = disrsi(chan, &ret);
@@ -337,7 +337,7 @@ void *svr_is_request(
     log_err(-1, __func__, log_buf);
     close_conn(chan->sock, FALSE);
     DIS_tcp_cleanup(chan);
-    return(NULL);
+    return;
     }
 
   if (LOGLEVEL >= 4)
@@ -358,16 +358,18 @@ void *svr_is_request(
   if (version != IS_PROTOCOL_VER)
     {
     netaddr_long(args[1], tmp);
-    sprintf(msg_buf, "%s:%ld", tmp, args[2]);
+		msg_buf = tmp;
+		msg_buf += ":";
+		msg_buf += args[2];
     
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "protocol version %d unknown from %s",
       version,
-      msg_buf);
+      msg_buf.c_str());
 
     log_err(-1, __func__, log_buf);
     close_conn(chan->sock, FALSE);
     DIS_tcp_cleanup(chan);
-    return(NULL);
+    return;
     }
 
   /* check that machine is known */
@@ -377,10 +379,13 @@ void *svr_is_request(
   if (LOGLEVEL >= 3)
     {
     netaddr_long(args[1], tmp);
-    sprintf(msg_buf, "%s:%ld", tmp, args[2]);
+		msg_buf = tmp;
+		msg_buf += ":";
+		msg_buf += args[2];
+
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
       "message received from addr %s: mom_port %d  - rm_port %d",
-      msg_buf,
+      msg_buf.c_str(),
       mom_port,
       rm_port);
 
@@ -418,11 +423,14 @@ void *svr_is_request(
     {
     /* node not listed in trusted ipaddrs list */
     netaddr_long(args[1], tmp);
-    sprintf(msg_buf, "%s:%ld", tmp, args[2]);
-    
+   	msg_buf = tmp;
+		msg_buf += ":";
+		msg_buf += args[2];
+
+
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
       "bad attempt to connect from %s (address not trusted - check entry in server_priv/nodes)",
-      msg_buf);
+      msg_buf.c_str());
     
     if (LOGLEVEL >= 2)
       {
@@ -438,20 +446,22 @@ void *svr_is_request(
 
     close_conn(chan->sock, FALSE);
     DIS_tcp_cleanup(chan);
-    return(NULL);
+    return;
     }
 
   if (LOGLEVEL >= 3)
     {
     netaddr_long(args[1], tmp);
-    sprintf(msg_buf, "%s:%ld", tmp, args[2]);
+   	msg_buf = tmp;
+		msg_buf += ":";
+		msg_buf += args[2];
 
     snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
      "message %s (%d) received from mom on host %s (%s) (sock %d)",
      PBSServerCmds2[command],
      command,
      node->get_name(),
-     msg_buf,
+     msg_buf.c_str(),
      chan->sock);
 
     log_event(PBSEVENT_ADMIN,PBS_EVENTCLASS_SERVER,__func__,log_buf);
@@ -567,7 +577,7 @@ void *svr_is_request(
   close_conn(chan->sock, FALSE);
   DIS_tcp_cleanup(chan);
   
-  return(NULL);
+  return;
 
 err:
 
@@ -583,12 +593,15 @@ err:
       }
 
     netaddr_long(args[1], tmp);
-    sprintf(msg_buf, "%s:%ld", tmp, args[2]);
+
+   	msg_buf = tmp;
+		msg_buf += ":";
+		msg_buf += args[2];
 
     sprintf(log_buf, "%s from %s(%s)",
       dis_emsg[ret],
       node->get_name(),
-      msg_buf);
+      msg_buf.c_str());
     }
   else
     {
@@ -602,5 +615,4 @@ err:
   close_conn(chan->sock, FALSE);
   DIS_tcp_cleanup(chan);
 
-  return(NULL);
   } /* END svr_is_request */

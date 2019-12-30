@@ -424,7 +424,7 @@ int svr_connect(
   unsigned int     port,   /* I */
   int             *my_err,
   struct pbsnode  *pnode,
-  void           *(*func)(void *))
+  void           (*func)(void *))
   {
   fprintf(stderr,"%s needs to be mocked.\n",__func__);
   exit(-1);

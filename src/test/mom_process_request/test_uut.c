@@ -7,7 +7,7 @@
 
 #include "pbs_error.h"
 
-void *mom_process_request(void *sock_num);
+void mom_process_request(void *sock_num);
 extern char log_buffer[];
 
 START_TEST(test_mom_process_request)

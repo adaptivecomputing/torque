@@ -207,7 +207,7 @@ struct pbsnode *create_alps_subnode(
 
 
 
-void *check_if_orphaned(
+void check_if_orphaned(
 
   void *vp)
 
@@ -228,7 +228,6 @@ void *check_if_orphaned(
   else
     {
     free(node_name);
-    return(NULL);
     }
 
   if (alps_reservations.is_orphaned(rsv_id, job_id) == true)
@@ -286,7 +285,6 @@ void *check_if_orphaned(
 
   free(node_name);
 
-  return(NULL);
   } /* END check_if_orphaned() */
 
 
@@ -323,7 +321,8 @@ struct pbsnode *determine_node_from_str(
   if (next != NULL)
     next->nd_lastupdate = time(NULL);
 
-  return(next);
+	return(next);
+
   } /* END determine_node_from_str() */
 
 

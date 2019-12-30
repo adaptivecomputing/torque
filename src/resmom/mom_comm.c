@@ -426,8 +426,6 @@ eventent *event_alloc(
 
   assert(ep);
 
-  memset(ep, 0, sizeof(eventent));
-
   ep->ee_command = command;
 
   ep->ee_event = (event == TM_NULL_EVENT) ?
@@ -1295,7 +1293,7 @@ void job_start_error(
 
   mom_job *pjob,     /* I */
   int      code,     /* I */
-  char    *nodename) /* I */
+  const char    *nodename) /* I */
 
   {
   static char    abortjobid[PBS_MAXSVRJOBID + 1];
@@ -5954,7 +5952,6 @@ void im_request(
   u_long gettime(resource *);
   u_long getsize(resource *);
 
-  memset(&efwd, 0, sizeof(efwd));
  
   if (version != IM_PROTOCOL_VER)
     {
@@ -8720,9 +8717,8 @@ int run_prologue_scripts(
   if ((j = run_pelog(PE_PROLOG, path_prologp, pjob, PE_IO_TYPE_ASIS, FALSE)) != 0)
     {
     snprintf(log_buffer,sizeof(log_buffer),
-      "cannot run local prolog '%s': %s (rc: %d)\n",
+      "cannot run local prolog '%s' (rc: %d)\n",
       path_prologp,
-      log_buffer,
       j);
 
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->get_jobid(), log_buffer);
@@ -8736,9 +8732,8 @@ int run_prologue_scripts(
   if ((j = run_pelog(PE_PROLOGUSER, path_prologuserp, pjob, PE_IO_TYPE_ASIS, FALSE)) != 0)
     {
     snprintf(log_buffer,sizeof(log_buffer),
-      "cannot run local user prolog '%s': %s (rc: %d)\n",
+      "cannot run local user prolog '%s' (rc: %d)\n",
       path_prologuserp,
-      log_buffer,
       j);
 
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->get_jobid(),log_buffer);

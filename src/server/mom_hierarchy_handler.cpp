@@ -493,14 +493,14 @@ void mom_hierarchy_handler::initialLoadHierarchy(void)
   pthread_mutex_unlock(&hierarchy_mutex);
   }
 
-void *sendHierarchyThreadTaskWrapper(void *vp)
+void sendHierarchyThreadTaskWrapper(void *vp)
   {
-  return hierarchy_handler.sendHierarchyThreadTask(vp);
+  hierarchy_handler.sendHierarchyThreadTask(vp);
   }
 
 
 
-void *mom_hierarchy_handler::sendHierarchyThreadTask(void *vp)
+void mom_hierarchy_handler::sendHierarchyThreadTask(void *vp)
   {
   sendNodeHolder *pNodeHolder = (sendNodeHolder *)vp;
   struct pbsnode *pnode = NULL;
@@ -511,7 +511,7 @@ void *mom_hierarchy_handler::sendHierarchyThreadTask(void *vp)
   if (pNodeHolder == NULL)
     {
     log_err(PBSE_BAD_PARAMETER, __func__, "NULL input pointer");
-    return(NULL);
+    return;
     }
 
   name = node_mapper.get_name(pNodeHolder->id);
@@ -545,7 +545,6 @@ void *mom_hierarchy_handler::sendHierarchyThreadTask(void *vp)
     }
   pthread_mutex_unlock(&hierarchy_mutex);
 
-  return(NULL);
   } /* END send_hierarchy_threadtask() */
 
 

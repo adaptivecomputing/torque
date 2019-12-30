@@ -51,7 +51,7 @@ void *start_process_pbs_server_port(void *new_sock)
   return(NULL);
   }
 
-int log_remove_old(char *DirPath, unsigned long ExpireTime)
+int log_remove_old(const char *DirPath, unsigned long ExpireTime)
   {
   fprintf(stderr, "The call to log_remove_old needs to be mocked!!\n");
   exit(1);
@@ -126,7 +126,7 @@ struct work_task *set_task(enum work_type wt, long event, void (*func)(struct wo
   exit(1);
   }
 
-int svr_startjob(svr_job *pjob, struct batch_request **preq, char *FailHost, char *EMsg)
+int svr_startjob(svr_job *pjob, struct batch_request **preq, char *FailHost, std::string& EMsg)
   {
   fprintf(stderr, "The call to svr_startjosvr_startjob needs to be mocked!!\n");
   exit(1);
@@ -222,7 +222,7 @@ int log_open(char *filename, char *directory)
   exit(1);
   }
 
-int init_network(unsigned int socket, void *(*readfunc)(void *))
+int init_network(unsigned int socket, void (*readfunc)(void *))
   {
   fprintf(stderr, "The call to init_network needs to be mocked!!\n");
   exit(1);

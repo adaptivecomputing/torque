@@ -86,7 +86,7 @@ extern char   mom_alias[];
 int release_job_reservation(mom_job *pjob);
 u_long resc_used(mom_job *, const char *, u_long(*f) (resource *));
 void preobit_preparation (mom_job *);
-void *obit_reply (void *);
+void obit_reply (void *);
 extern u_long addclient (const char *);
 extern void encode_used (mom_job *, int, Json::Value *, tlist_head *);
 extern void encode_flagged_attrs (mom_job *, int, Json::Value *, tlist_head *);
@@ -1481,7 +1481,7 @@ int process_jobs_obit_reply(
  * @see send_job_obit() - registers obit_reply via add_conn()
  */
 
-void *obit_reply(
+void obit_reply(
 
   void *new_sock)  /* I */
 
@@ -1499,14 +1499,14 @@ void *obit_reply(
   /* read and decode the reply */
 
   if ((preq = new batch_request(PBS_BATCH_JobObit)) == NULL)
-    return(NULL);
+    return;
 
   CLEAR_HEAD(preq->rq_ind.rq_jobobit.rq_attr);
 
   if ((chan = DIS_tcp_setup(sock)) == NULL)
     {
     free_br(preq);
-    return(NULL);
+    return;
     }
 
   /* make sure errno isn't stale */
@@ -1578,7 +1578,6 @@ void *obit_reply(
       }
     }
 
-  return(NULL);
   }  /* END obit_reply() */
 
 

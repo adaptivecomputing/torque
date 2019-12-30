@@ -166,7 +166,7 @@ extern void tcp_settimeout(long);
 extern int  schedule_jobs(void);
 extern int  notify_listeners(void);
 extern void svr_shutdown(int);
-extern int  svr_startjob(svr_job *, struct batch_request **, char *, char *);
+extern int  svr_startjob(svr_job *, struct batch_request **, char *, std::string&);
 extern int RPPConfigure(int, int);
 extern void acct_cleanup(long);
 void stream_eof(int, u_long, uint16_t, int);
@@ -225,7 +225,7 @@ char                   *acct_file = NULL;
 char                   *log_file  = NULL;
 char                   *job_log_file = NULL;
 char                   *path_home = (char *)PBS_SERVER_HOME;
-char                   *path_acct;
+std::string             path_acct;
 char                    path_log[MAXPATHLEN + 1];
 char                   *path_priv = NULL;
 char                   *path_arrays;
@@ -653,13 +653,14 @@ void parse_command_line(
 
           if (EMsg[0] != '\0')
             {
-            char tmpLine[1024];
+			std::string tmpLine;
 
-            snprintf(tmpLine, sizeof(tmpLine),
-                "unable to determine full hostname for specified server host '%s' - %s",
-                server_host, EMsg);
+			tmpLine = "unable to determine full hostname for specified server host '";
+			tmpLine += server_host; 
+			tmpLine += "' - "; 
+			tmpLine +=  EMsg;
 
-            log_err(-1, __func__, tmpLine);
+            log_err(-1, __func__, tmpLine.c_str());
             }
           else
             {
@@ -669,7 +670,7 @@ void parse_command_line(
           exit(1);
           }
 
-        snprintf(server_name, PBS_MAXSERVERNAME, "%s", server_host);
+	strncpy(server_name, server_host, PBS_MAXSERVERNAME);
 
         def_pbs_server_addr = pbs_server_addr;
 
@@ -914,7 +915,7 @@ pthread_t      route_retry_thread_id = -1;
  * Returns: amount of time till next task
  */
 
-void *check_tasks(void *notUsed)
+void check_tasks(void *notUsed)
 
   {
   work_task *ptask;
@@ -957,7 +958,6 @@ void *check_tasks(void *notUsed)
 
   pthread_mutex_unlock(check_tasks_mutex);
 
-  return(NULL);
   }  /* END check_tasks() */
 
 
@@ -1091,7 +1091,7 @@ void *handle_queue_routing_retries(
 
 
 
-void *handle_scheduler_contact(
+void handle_scheduler_contact(
 
   void *vp)
 
@@ -1099,7 +1099,6 @@ void *handle_scheduler_contact(
   schedule_jobs();
   notify_listeners();
 
-  return(NULL);
   } /* END handle_scheduler_contact() */
 
 
@@ -1593,7 +1592,6 @@ int main(
   int          local_errno = 0;
   char         lockfile[MAXPATHLEN + 1];
   char         EMsg[MAXLINE];
-  char         tmpLine[MAXLINE];
   char         log_buf[LOCAL_LOG_BUF_SIZE];
   unsigned int server_name_file_port = 0;
 
@@ -1644,16 +1642,18 @@ int main(
   if ((gethostname(server_host, PBS_MAXHOSTNAME) == -1) ||
       (get_fullhostname(server_host, server_host, PBS_MAXHOSTNAME, EMsg) == -1))
     {
-    snprintf(tmpLine, sizeof(tmpLine), "unable to determine local server hostname %c %s",
-             EMsg[0] ? '-' : ' ',
-             EMsg);
+	std::string tmpLine;
+	char dash_or_space = EMsg[0] ? '-' : ' ';
+    tmpLine = "unable to determine local server hostname %c %s";
+	tmpLine += dash_or_space;
+	tmpLine += EMsg;
 
-    log_err(-1, "pbsd_main", tmpLine);
+    log_err(-1, "pbsd_main", tmpLine.c_str());
 
     exit(1);    /* FAILURE - shutdown */
     }
 
-  snprintf(server_name, PBS_MAXHOSTNAME, "%s", server_host); /* by default server = host */
+  strncpy(server_name, server_host, PBS_MAXHOSTNAME);
 
   pbs_server_addr    = get_hostaddr(&local_errno, server_host);
   pbs_mom_addr       = pbs_server_addr;   /* assume on same host */
@@ -1754,7 +1754,7 @@ int main(
 
   /* HA EVENTS MUST HAPPEN HERE */
 
-  snprintf(HALockFile,MAXPATHLEN,"%s", lockfile);
+  strncpy(HALockFile, lockfile, MAXPATHLEN);
   HALockCheckTime = server.sv_attr[SRV_ATR_LockfileCheckTime].at_val.at_long;
   HALockUpdateTime = server.sv_attr[SRV_ATR_LockfileUpdateTime].at_val.at_long;
   pthread_mutex_unlock(server.sv_attr_mutex);
@@ -2369,7 +2369,7 @@ int release_file_lock(
  */
 int acquire_file_lock(
 
-  char *LockFile,
+  const char *LockFile,
   int  *LockFD,
   char *FileType)
 
@@ -2670,7 +2670,7 @@ static void lock_out_ha()
   bool_t     FilePossession = FALSE;
   bool_t     FileIsMissing = FALSE;
 
-  char        MutexLockFile[MAX_NAME];
+  std::string MutexLockFile;
 
   int         MutexLockFD = -1;
   int         NumChecks = 0;
@@ -2679,8 +2679,8 @@ static void lock_out_ha()
 
   struct stat StatBuf;
 
-  snprintf(MutexLockFile,sizeof(MutexLockFile),"%s.mutex",
-    HALockFile);
+  MutexLockFile = HALockFile;
+  MutexLockFile += ".mutex";
 
 
   while (!FilePossession)
@@ -2707,7 +2707,7 @@ static void lock_out_ha()
       {
       /* try to get a filesystem lock on the "mutex" file */
 
-      while (acquire_file_lock(MutexLockFile,&MutexLockFD, (char *)"HA") == FAILURE)
+      while (acquire_file_lock(MutexLockFile.c_str(),&MutexLockFD, (char *)"HA") == FAILURE)
         {
         sprintf(log_buf,"Could not acquire HA flock--trying again in 1 second\n");
 

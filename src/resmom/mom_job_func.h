@@ -16,7 +16,7 @@ void mom_job_free(mom_job *pj);
 
 int job_unlink_file(mom_job *pjob, const char *name);
 
-void *delete_job_files(void *vp);
+void delete_job_files(void *vp);
 void remove_tmpdir_files(void);
 
 void mom_job_purge(mom_job *pjob);

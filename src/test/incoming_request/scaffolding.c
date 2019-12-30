@@ -29,9 +29,9 @@ unsigned disrui_peek(tcp_chan *chan, int *retval, unsigned int timeout)
   return(0);
   }
 
-void *svr_is_request(void *vp)
+void svr_is_request(void *vp)
   {
-  return(NULL);
+  return;
   }
 
 char * netaddr(struct sockaddr_in *ap)

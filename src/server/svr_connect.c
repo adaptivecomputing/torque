@@ -179,7 +179,7 @@ int svr_connect(
   unsigned int     port,   /* I */
   int             *my_err,
   struct pbsnode  *pnode,
-  void           *(*func)(void *))
+  void           (*func)(void *))
 
   {
   char         EMsg[MAXLINE];
