@@ -2755,16 +2755,15 @@ int TMomFinalizeJob2(
 
   if (multi_mom)
     {
-		buf = path_jobs;
-		buf += pjob->get_fileprefix();
-		buf += std::to_string(pbs_rm_port);
-		buf += JOB_SCRIPT_SUFFIX;
+		std::ostringstream filename;
+		filename << path_jobs << pjob->get_fileprefix() << pbs_rm_port << JOB_SCRIPT_SUFFIX;
+		buf = filename.str();
     }
   else
 		{
-		buf = path_jobs;
-		buf += pjob->get_fileprefix();
-		buf += JOB_SCRIPT_SUFFIX;
+		std::ostringstream filename;
+		filename << path_jobs << pjob->get_fileprefix()  << JOB_SCRIPT_SUFFIX;
+		buf = filename.str();
 		}
 
   if (chown(

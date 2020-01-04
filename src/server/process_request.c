@@ -414,13 +414,10 @@ int read_request_from_socket(
   else
     {
     char out[80];
+		std::ostringstream msg;	
 
-    tmpLine = "request on invalid type of connection: ";
-	tmpLine += std::to_string(conn_active);
-	tmpLine += ", sock type: ";
-	tmpLine += std::to_string(conn_socktype);
-	tmpLine += ", from address ";
-	tmpLine +=  netaddr_long(conn_addr, out);
+    msg << "request on invalid type of connection: " << conn_active << ", sock type: " << conn_socktype << ", from address " << netaddr_long(conn_addr, out);
+		tmpLine = msg.str();
 
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_REQUEST,
       "process_req", tmpLine.c_str());

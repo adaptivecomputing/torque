@@ -5505,11 +5505,10 @@ int setup_program_environment(void)
     if (c != 0)
       {
       std::string logbuf;
+			std::ostringstream msg;
 
-			logbuf = "Unable to get my full hostname for ";
-			logbuf += mom_host;
-			logbuf += " error ";
-			logbuf += std::to_string(c);
+			msg << "Unable to get my full hostname for " << mom_host << " error " << c;
+			logbuf = msg.str();
 
       log_err(-1, msg_daemonname, logbuf.c_str());
 

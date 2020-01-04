@@ -660,14 +660,11 @@ void req_jobscript(
 
   if (fds < 0)
     {
+		std::ostringstream msg;
     std::string tmpLine;
 
-		tmpLine = "cannot open '";
-		tmpLine += namebuf;
-		tmpLine += "' errno=";
-		tmpLine += std::to_string(errno);
-		tmpLine += " - ";
-		tmpLine += strerror(errno);
+		msg << "cannot open '" << namebuf << "' errno=" << errno << " - " << strerror(errno);
+		tmpLine = msg.str();
 
     /* FAILURE */
 

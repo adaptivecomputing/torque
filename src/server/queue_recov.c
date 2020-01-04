@@ -169,20 +169,21 @@ int que_save(
   xmlDocSetRootElement(doc, root_node);
   xmlNodePtr node = root_node;
   
-	node_value = std::to_string(pque->qu_qs.qu_modified);
-  //snprintf(node_value, sizeof(node_value),"%i",pque->qu_qs.qu_modified);
+	std::ostringstream stringValue;
+	stringValue << pque->qu_qs.qu_modified;
+	node_value = stringValue.str();
   xmlNewChild(node, NULL, BAD_CAST "modified", BAD_CAST node_value.c_str());
   
-	node_value = std::to_string(pque->qu_qs.qu_type);
-  //snprintf(node_value, sizeof(node_value),"%i",pque->qu_qs.qu_type);
+	stringValue << pque->qu_qs.qu_type;
+	node_value = stringValue.str();
   xmlNewChild(node, NULL, BAD_CAST "type", BAD_CAST node_value.c_str());
 
-	node_value = std::to_string(pque->qu_qs.qu_ctime);
-  //snprintf(node_value, sizeof(node_value),"%ld",pque->qu_qs.qu_ctime);
+	stringValue << pque->qu_qs.qu_ctime;
+	node_value = stringValue.str();
   xmlNewChild(node, NULL, BAD_CAST "create_time", BAD_CAST node_value.c_str());
 
-	node_value = std::to_string(pque->qu_qs.qu_mtime);
-  //snprintf(node_value, sizeof(node_value),"%ld",pque->qu_qs.qu_mtime);
+	stringValue << pque->qu_qs.qu_mtime;
+	node_value = stringValue.str();
   xmlNewChild(node, NULL, BAD_CAST "modify_time", BAD_CAST node_value.c_str());
   xmlNewChild(node, NULL, BAD_CAST "name", BAD_CAST pque->qu_qs.qu_name);
   xmlNewChild(node, NULL, BAD_CAST "attributes", NULL);

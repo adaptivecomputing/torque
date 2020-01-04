@@ -370,18 +370,15 @@ void job_array::create_job_if_needed()
 
       if (hostname_extension != NULL)
 				{
-				prev_job_id = old_id;
-				prev_job_id += "[";
-				prev_job_id += std::to_string(this->ai_qs.highest_id_created);
-				prev_job_id += "]";
-				prev_job_id += hostname_extension;
+				std::ostringstream prevJobId;
+				prevJobId << old_id << "[" << this->ai_qs.highest_id_created << "]" << hostname_extension;
+				prev_job_id = prevJobId.str();
 				}
       else
 				{
-				prev_job_id = old_id;
-				prev_job_id += "[";
-				prev_job_id += std::to_string(this->ai_qs.highest_id_created);
-				prev_job_id += "]";
+				std::ostringstream prevJobId;
+				prevJobId << old_id << "[" << this->ai_qs.highest_id_created << "]";
+				prev_job_id = prevJobId.str();
 				}
 
       std::string prev_id(prev_job_id);

@@ -88,6 +88,7 @@
 #include <arpa/inet.h>
 #endif
 #include <string>
+#include <sstream>
 
 #include "portability.h"
 #include "server_limits.h"
@@ -130,7 +131,8 @@ char * netaddr_long(long ap, char *out)
    */
 const char * netaddr(struct sockaddr_in *ap)
   {
-  std::string out;
+  std::ostringstream out;
+	std::string outAddr;
   char tmp[80];
   uint16_t portNum;
 
@@ -140,10 +142,10 @@ const char * netaddr(struct sockaddr_in *ap)
   netaddr_long( ntohl(ap->sin_addr.s_addr), tmp);
   portNum = ntohs(ap->sin_port);
 
-  out = tmp;
-  out += std::to_string(portNum);
+  out << tmp << portNum;
 
-  return out.c_str();
+	outAddr = out.str();
+  return outAddr.c_str();
   }
 
 
