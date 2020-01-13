@@ -1815,6 +1815,7 @@ int req_quejob(
     }
 
   sum_select_mem_request(pj);
+  // the lock of the job is unlocked in sum_select_mem_request. Relock it.
 
   rc = check_attribute_settings(pj, preq, resc_access_perm, pque, que_mgr, cpuClock, job_mutex);
   if (rc != PBSE_NONE)

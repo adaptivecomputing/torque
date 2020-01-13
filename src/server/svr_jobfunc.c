@@ -708,7 +708,7 @@ int svr_enquejob(
     {
     try
       {
-	  job_mutex->unlock();
+//	  job_mutex->unlock();
       rc = depend_on_que(&pjob->ji_wattr[JOB_ATR_depend], pjob, ATR_ACTION_NOOP);
       }
     catch (int pbs_errcode)

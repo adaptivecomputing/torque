@@ -1812,7 +1812,17 @@ int handle_job_recovery(
 		log_event(PBSEVENT_ERROR | PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
 		}
 
+      sprintf(log_buf, "processing job %s", pjob->ji_qs.ji_jobid);
+      log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, log_buf);
+
       job_rc = pbsd_init_job(pjob, type, job_mutex);
+
+      if (job_mutex->get_lock_state() != true)
+        {
+        sprintf(log_buf, "Not locked. Locking");
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        job_mutex->lock();
+        }
 
       if (job_rc != PBSE_NONE)
         {
@@ -1850,6 +1860,7 @@ int handle_job_recovery(
             msg_script_open);
 
           init_abt_job(pjob, job_mutex);
+          job_mutex->set_unlock_on_exit(false);
           }
         else
           {
@@ -1860,7 +1871,7 @@ int handle_job_recovery(
             {
             set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
             }
-		  job_mutex->unlock();
+		  //job_mutex->unlock();
           }
         }
       else
@@ -1872,10 +1883,16 @@ int handle_job_recovery(
           {
           set_task(WORK_Timed, time_now + 10 + (Index % 10), poll_job_task, strdup(pjob->ji_qs.ji_jobid), FALSE);
           }
-		job_mutex->unlock();
+		//job_mutex->unlock();
         }
       if (++Index >= 10)
         Index = 0;
+
+      if (job_mutex->get_lock_state() == false)
+        {
+        sprintf(log_buf, "exiting and mutex not locked");
+        log_event(PBSEVENT_DEBUG, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        }
       }
 
     sprintf(log_buf, "%s:1", __func__);

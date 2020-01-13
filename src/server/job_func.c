@@ -1170,7 +1170,7 @@ int create_and_queue_array_subjob(
     return(PBSE_NONE);
     }
 
-  boost::shared_ptr<mutex_mgr> clone_mgr = create_managed_mutex(pjobclone->ji_mutex, true, rc);
+  boost::shared_ptr<mutex_mgr> clone_mgr = create_managed_mutex(pjobclone->ji_mutex, false, rc);
   if (rc != PBSE_NONE)
 	{
 	log_err(rc, __func__, "failed to allocate job mutex");
@@ -1479,7 +1479,7 @@ void *job_clone_wt(
 	return NULL;
 	}
 
-  boost::shared_ptr<mutex_mgr> template_job_mgr = create_managed_mutex(template_job->ji_mutex,true, rc);
+  boost::shared_ptr<mutex_mgr> template_job_mgr = create_managed_mutex(template_job->ji_mutex,false, rc);
   if ( rc != PBSE_NONE)
 	{
 	// @todo should throw

@@ -1522,6 +1522,7 @@ int depend_on_que(
   if (((mode != ATR_ACTION_ALTER) && 
        (mode != ATR_ACTION_NOOP)))
     {
+    job_mutex->set_unlock_on_exit(false);
     return(PBSE_NONE);
     }
 

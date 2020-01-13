@@ -247,7 +247,7 @@ using namespace std;
     if (rc != 0)
 	  {
 	  char log_buf[LOG_BUF_SIZE];
-	  snprintf(log_buf, LOG_BUF_SIZE, "%s:%s", "UNLOCK error in mutex_mgr::lock", strerror(errno));
+	  snprintf(log_buf, LOG_BUF_SIZE, "%s:%s", "LOCK error in mutex_mgr::lock", strerror(errno));
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_SERVER, __func__, log_buf);
       return PBSE_SYSTEM;
       }

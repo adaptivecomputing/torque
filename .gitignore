@@ -535,3 +535,4 @@ torque-package-server-linux-x86_64.sh
 tpackages/
 src/mom_rcp/pbs_rcp
 .c9/
+torque.setup
