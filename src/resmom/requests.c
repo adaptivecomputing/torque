@@ -2577,6 +2577,13 @@ int req_stat_job(
 
   CLEAR_HEAD(preply->brp_un.brp_status);
 
+  if (LOGLEVEL >= 6)
+	{
+	sprintf(log_buffer, "name: %s", name);
+    log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
+	}
+	
+
   if ((name[0] == '\0') || (name[0] == '@'))
     {
     std::list<job *>::iterator iter;
@@ -2592,13 +2599,13 @@ int req_stat_job(
 
     if (pjob == NULL)
       {
-      req_reject(PBSE_UNKJOBID, 0, preq, NULL, name);
 
       snprintf(log_buffer, sizeof(log_buffer),
         "Received job status request for job %s, unknown to me",
         name);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
+      req_reject(PBSE_UNKJOBID, 0, preq, NULL, name);
       return(PBSE_UNKJOBID);
       }
     else

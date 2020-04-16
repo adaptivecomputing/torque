@@ -2621,6 +2621,8 @@ int mom_over_limit(
                   num,
                   value);
 
+          log_err(PBSE_EXLIMIT, __func__, log_buffer);
+
           return(JOB_EXEC_OVERLIMIT_CPUT);
           }
         }
@@ -2636,6 +2638,7 @@ int mom_over_limit(
           sprintf(log_buffer, "pcput exceeded limit %lu",
                   value);
 
+          log_err(PBSE_EXLIMIT, __func__, log_buffer);
           return(JOB_EXEC_OVERLIMIT_CPUT);
           }
         }
@@ -2652,6 +2655,7 @@ int mom_over_limit(
                   numll,
                   value);
 
+          log_err(PBSE_EXLIMIT, __func__, log_buffer);
           return(JOB_EXEC_OVERLIMIT_MEM);
           }
         }
@@ -2671,6 +2675,7 @@ int mom_over_limit(
           sprintf(log_buffer, "pvmem exceeded limit %llu",
                   valuell);
 
+          log_err(PBSE_EXLIMIT, __func__, log_buffer);
           return(JOB_EXEC_OVERLIMIT_MEM);
           }
         }
@@ -2695,6 +2700,7 @@ int mom_over_limit(
                   num,
                   value);
 
+          log_err(PBSE_EXLIMIT, __func__, log_buffer);
           return(JOB_EXEC_OVERLIMIT_WT);
           }
         }
@@ -2729,6 +2735,7 @@ int mom_over_limit(
         if (memory_pressure_duration && (pjob->ji_mempressure_cnt >= memory_pressure_duration))
           {
           sprintf(log_buffer, "swap rate due to memory oversubscription is too high");
+          log_err(errno, __func__, log_buffer);
           return(JOB_EXEC_OVERLIMIT_MEM);
           }
 
