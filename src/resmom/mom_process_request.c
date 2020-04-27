@@ -160,8 +160,11 @@ void *mom_process_request(
     {
     /* FAILURE */
     /* premature end of file */
-    sprintf(log_buffer, "dis_request_read failed");
-	log_err(PBSE_SOCKET_READ, __func__, log_buffer);
+	if(LOGLEVEL >= 6)
+	  {
+      sprintf(log_buffer, "dis_request_read failed");
+	  log_err(PBSE_SOCKET_READ, __func__, log_buffer);
+	  }
     req_reject(PBSE_SOCKET_READ, 0, request, NULL, "cannot read request at mom");
     mom_close_client(chan->sock);
     DIS_tcp_cleanup(chan);
