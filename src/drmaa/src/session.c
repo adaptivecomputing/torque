@@ -618,18 +618,19 @@ int drmaa_job_ps(
     const drmaa_attrib_info_t *attr;
     attr = attr_by_pbs_name(i->name);
 
-    switch (attr->code)
-      {
+    if (attr)
+      switch (attr->code)
+        {
 
-      case ATTR_JOB_STATE:
-        pbs_state = i->value[0];
-        break;
+        case ATTR_JOB_STATE:
+          pbs_state = i->value[0];
+          break;
 
-      case ATTR_EXIT_STATUS:
-        exit_status = atoi(i->value);
-        break;
+        case ATTR_EXIT_STATUS:
+          exit_status = atoi(i->value);
+          break;
+        }
       }
-    }
 
   if (!rc)
     switch (pbs_state)
