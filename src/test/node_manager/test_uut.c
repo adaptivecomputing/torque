@@ -4,14 +4,17 @@
 #include <vector>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <list>
 
 #include "license_pbs.h" /* See here for the software license */
 #include "node_manager.h"
 #include "test_uut.h"
 #include "pbs_error.h"
-#include "server.h" /* server */
+#include "server.h"
 #include "json/json.h"
+#include "complete_req.hpp"
+#include "pbs_nodes.h"
 
 const char *exec_hosts = "napali/0+napali/1+napali/2+napali/50+napali/4+l11/0+l11/1+l11/2+l11/3";
 char  buf[4096];
@@ -19,6 +22,7 @@ const char *napali = "napali";
 const char *l11 =    "l11";
 struct server server;
 
+void  free_nodes(job *pjob, const char *spec);
 int   kill_job_on_mom(const char *job_id, struct pbsnode *pnode);
 int   remove_job_from_node(struct pbsnode *pnode, int internal_job_id);
 bool  node_in_exechostlist(const char *, char *, const char *);
@@ -41,6 +45,9 @@ int add_job_to_mic(struct pbsnode *pnode, int index, job *pjob);
 int remove_job_from_nodes_mics(struct pbsnode *pnode, job *pjob);
 void update_failure_counts(const char *node_name, int rc);
 void check_node_jobs_existence(struct work_task *pwt);
+int  add_job_to_gpu_subnode(pbsnode *pnode, gpusubn &gn, job *pjob);
+int proplist(char **str, std::vector<prop> &plist, int *node_req, int *gpu_req, int *mic_req);
+int process_gpu_token(const char*, job*);
 
 
 
@@ -52,6 +59,61 @@ extern int decode_resc_count;
 extern bool conn_success;
 extern bool alloc_br_success;
 extern bool cray_enabled;
+extern int gpu_mode_rqstd;
+
+
+START_TEST(free_nodes_test)
+  {
+  job     pjob;
+
+#ifdef PENABLE_LINUX_CGROUPS
+  complete_req cr;
+  req          r;
+  allocation   a;
+  pjob.ji_wattr[JOB_ATR_exec_host].at_val.at_str = NULL;
+  pjob.ji_wattr[JOB_ATR_login_node_id].at_val.at_str = NULL;
+  pjob.ji_wattr[JOB_ATR_req_information].at_flags = ATR_VFLAG_SET;
+  pjob.ji_wattr[JOB_ATR_req_information].at_val.at_ptr = &cr;
+  pjob.ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup("roshar:0-31");
+  pjob.ji_wattr[JOB_ATR_cpuset_string].at_flags = ATR_VFLAG_SET;
+  pjob.ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup("roshar:0-1");
+  pjob.ji_wattr[JOB_ATR_memset_string].at_flags = ATR_VFLAG_SET;
+  r.record_allocation(a);
+  cr.add_req(r);
+
+  // We shouldn't free allocations for completed jobs
+  pjob.ji_qs.ji_substate = JOB_SUBSTATE_COMPLETE;
+  free_nodes(&pjob, "roshar:ppn=32");
+  req &ref1 = cr.get_req(0);
+  fail_unless(ref1.get_req_allocation_count() == 1);
+  fail_unless(pjob.ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL);
+  fail_unless(pjob.ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL);
+
+  // We should free allocations for jobs that failed to start
+  pjob.ji_qs.ji_substate = JOB_SUBSTATE_TRNOUT;
+  free_nodes(&pjob, "roshar:ppn=32");
+  req &ref2 = cr.get_req(0);
+  fail_unless(ref2.get_req_allocation_count() == 0);
+#endif
+  }
+END_TEST
+
+
+START_TEST(add_job_to_gpu_subnode_test)
+  {
+  gpusubn gn;
+  job     pjob;
+  pbsnode pnode;
+
+  pnode.nd_ngpus_to_be_used = 1;
+  pjob.ji_internal_id = 10;
+
+  fail_unless(add_job_to_gpu_subnode(&pnode, gn, &pjob) == PBSE_NONE);
+  fail_unless(gn.inuse == true);
+  fail_unless(pnode.nd_ngpus_to_be_used == 0);
+  fail_unless(gn.job_internal_id == pjob.ji_internal_id);
+  }
+END_TEST
 
 
 START_TEST(check_node_jobs_exitence_test)
@@ -83,24 +145,29 @@ START_TEST(check_node_jobs_exitence_test)
 END_TEST
 
 #ifdef PENABLE_LINUX_CGROUPS
-void save_cpus_and_memory_cpusets(job *pjob, const char *host, std::string &cpus, std::string &mems);
+void save_cpus_and_memory_cpusets(job *pjob, const char *host, cgroup_info &cgi);
 START_TEST(test_save_cpus_and_memory_cpusets)
   {
   job         *pjob = new job();
-  std::string  cpus("0-3");
-  std::string  mems("0");
+  cgroup_info  cgi;
+  cgi.cpu_string = "0-3";
+  cgi.mem_string = "0";
 
-  save_cpus_and_memory_cpusets(pjob, "napali", cpus, mems);
+  save_cpus_and_memory_cpusets(pjob, "napali", cgi);
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3"));
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0"));
   
-  save_cpus_and_memory_cpusets(pjob, "wailua", cpus, mems);
+  save_cpus_and_memory_cpusets(pjob, "wailua", cgi);
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3+wailua:0-3"));
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0+wailua:0"));
-  
-  save_cpus_and_memory_cpusets(pjob, "waimea", cpus, mems);
+ 
+  cgi.gpu_string = "0-1";
+  cgi.mic_string = "4";
+  save_cpus_and_memory_cpusets(pjob, "waimea", cgi);
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str, "napali:0-3+wailua:0-3+waimea:0-3"));
   fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str, "napali:0+wailua:0+waimea:0"));
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_gpus_reserved].at_val.at_str, "waimea:0-1"));
+  fail_unless(!strcmp(pjob->ji_wattr[JOB_ATR_mics_reserved].at_val.at_str, "waimea:4"));
 
   }
 END_TEST
@@ -226,11 +293,7 @@ START_TEST(test_kill_job_on_mom)
   rc = kill_job_on_mom(job_id, &pnode);
   fail_unless(rc == PBSE_NONE); 
 
-  alloc_br_success = false;
-  rc = kill_job_on_mom(job_id, &pnode);
-  fail_unless(rc == -1); 
-
-  alloc_br_success = true;;
+  alloc_br_success = true;
   conn_success = false;
   rc = kill_job_on_mom(job_id, &pnode);
   fail_unless(rc == -1); 
@@ -892,6 +955,38 @@ START_TEST(place_subnodes_in_hostlist_job_exclusive_test)
   }
 END_TEST
 
+START_TEST(test_process_gpu_token)
+  {
+  job *pjob;
+  char *s;
+  struct pbsnode *pnode;
+
+  pjob = (job *)calloc(1, sizeof(job));
+  s = strdup("gpunode/5");
+
+  fail_unless(process_gpu_token(NULL, pjob) != PBSE_NONE);
+  fail_unless(process_gpu_token(s, NULL) != PBSE_NONE);
+  fail_unless(process_gpu_token(NULL, NULL) != PBSE_NONE);
+
+  pjob->ji_internal_id = 10;
+  fail_unless(process_gpu_token(s, pjob) == PBSE_NONE);
+
+  fail_unless((pnode = find_nodebyname("gpunode")) != NULL);
+
+  fail_unless(pnode->nd_gpusn[5].job_internal_id == 10);
+  fail_unless(pnode->nd_gpusn[5].inuse == true);
+  fail_unless(pnode->nd_gpusn[5].job_count == 1);
+
+  s = strdup("gpunode/0-2");
+  fail_unless(process_gpu_token(s, pjob) == PBSE_NONE);
+  fail_unless(pnode->nd_gpusn[0].inuse == true);
+  fail_unless(pnode->nd_gpusn[0].job_count == 1);
+  fail_unless(pnode->nd_gpusn[1].inuse == true);
+  fail_unless(pnode->nd_gpusn[1].job_count == 1);
+  fail_unless(pnode->nd_gpusn[2].inuse == true);
+  fail_unless(pnode->nd_gpusn[2].job_count == 1);
+  }
+END_TEST
 
 Suite *node_manager_suite(void)
   {
@@ -935,6 +1030,7 @@ Suite *node_manager_suite(void)
 
   tc_core = tcase_create("place_subnodes_in_hostlist_job_exclusive_test");
   tcase_add_test(tc_core, place_subnodes_in_hostlist_job_exclusive_test);
+  tcase_add_test(tc_core, add_job_to_gpu_subnode_test);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("record_external_node_test");
@@ -945,12 +1041,17 @@ Suite *node_manager_suite(void)
   tc_core = tcase_create("more tests");
   tcase_add_test(tc_core, translate_job_reservation_info_to_string_test);
   tcase_add_test(tc_core, test_initialize_alps_req_data);
+  tcase_add_test(tc_core, free_nodes_test);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("even more tests");
   tcase_add_test(tc_core, node_is_spec_acceptable_test);
   tcase_add_test(tc_core, populate_range_string_from_job_reservation_info_test);
   tcase_add_test(tc_core, check_node_jobs_exitence_test);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_process_gpu_token");
+  tcase_add_test(tc_core, test_process_gpu_token);
   suite_add_tcase(s, tc_core);
 
   return(s);

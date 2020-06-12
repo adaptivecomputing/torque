@@ -27,7 +27,7 @@ int parse_response_svr(int sock, char **msg);
 int build_response_client(int code, char *msg, char **send_message);
 int get_trq_server_addr(char *server_name, char **server_addr, int *server_addr_len);
 void *process_svr_conn(void *sock);
-int validate_server(char *active_server_name, int t_server_port, char *ssh_key, char **sign_key);
+int validate_server(std::string &active_server_name, int t_server_port, char *ssh_key, char **sign_key);
 int set_active_pbs_server(const char *, const int);
 int get_active_pbs_server(char **, int *);
 int validate_active_pbs_server(char **);
@@ -294,6 +294,7 @@ int parse_daemon_response(long long code, long long len, char *buf);
 ssize_t send_unix_creds(int sd);
 #endif 
 int pbs_original_connect(char *server); 
+int pbs_original_connect_ext(char *server, bool silence); 
 int pbs_disconnect_socket(int socket);
 int pbs_connect_with_retry(char *server_name_ptr, int retry_seconds); 
 void initialize_connections_table();

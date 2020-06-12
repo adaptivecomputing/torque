@@ -1203,7 +1203,8 @@ int job_save(
   int  mom_port)   /* if 0 ignore otherwise append to end of job name. this is for multi-mom mode */
 
   {
-  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+  int old_state = PTHREAD_CANCEL_ENABLE;
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
 
   char    namebuf1[MAXPATHLEN];
   char    namebuf2[MAXPATHLEN];
@@ -1282,11 +1283,11 @@ int job_save(
     {
     log_event(PBSEVENT_ERROR | PBSEVENT_SECURITY, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid,
       "call to saveJobToXML in job_save failed");
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+    pthread_setcancelstate(old_state, NULL);
     return -1;
     }
 
-  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+  pthread_setcancelstate(old_state, NULL);
 
   return(PBSE_NONE);
   }  /* END job_save() */
@@ -1499,8 +1500,8 @@ int set_array_job_ids(
         }
       else
         {
-        job_abt(&pj, "Array job missing array struct, aborting job");
         snprintf(log_buf, buflen, "array struct missing for array job %s", pj->ji_qs.ji_jobid);
+        job_abt(&pj, "Array job missing array struct, aborting job");
         return(-1);
         }
       }

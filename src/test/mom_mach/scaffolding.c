@@ -26,6 +26,7 @@
 extern std::string cg_memory_path;
 char         mom_alias[PBS_MAXHOSTNAME + 1];
 
+int              ServerStatUpdateInterval = 45;
 Machine this_node;
 std::string cg_cpuacct_path;
 std::list<job *> alljobs_list;
@@ -57,6 +58,8 @@ int       numa_index;
 #endif
 int   job_oom_score_adjust = 0;  /* no oom score adjust by default */
 int   mom_oom_immunize = 0;  /* make pbs_mom processes immune? no by default */
+unsigned long max_memory = 0;
+unsigned long max_swap = 0;
 
 void *get_next_return_value = NULL;
 

@@ -140,12 +140,12 @@ extern int LOGLEVEL;
 
 /* Public Functions in this file */
 
-int  svr_startjob(job *, struct batch_request **, char *, char *);
+int  svr_startjob(job *, batch_request *, char *, char *);
 
 /* Private Functions local to this file */
 
-int  svr_stagein(job **, struct batch_request **, int, int);
-int  svr_strtjob2(job **, struct batch_request *);
+int  svr_stagein(job **, batch_request *, int, int);
+int  svr_strtjob2(job **, batch_request *);
 job *chk_job_torun(struct batch_request *, int);
 int  assign_hosts(job *, char *, int, char *, char *);
 
@@ -267,10 +267,9 @@ int check_and_run_job_work(
 
   /* NOTE:  nodes assigned to job in svr_startjob() */
 
-  rc = svr_startjob(pjob, &preq, failhost, emsg);
+  rc = svr_startjob(pjob, preq, failhost, emsg);
 
-  if ((rc != 0) && 
-      (preq != NULL))
+  if (rc != 0)
     {
     free_nodes(pjob);
 
@@ -285,10 +284,6 @@ int check_and_run_job_work(
       }
     }
 
-  if ((rc == PBSE_NONE) &&
-      (preq != NULL))
-    free_br(preq);
-
   return(rc);
   } // END check_and_run_job_work()
 
@@ -302,6 +297,8 @@ void *check_and_run_job(
   batch_request   *preq = (batch_request *)vp;
 
   check_and_run_job_work(preq);
+
+  delete preq;
 
   return(NULL);
   } /* END check_and_run_job() */
@@ -370,8 +367,8 @@ int req_runjob(
   if (preq->rq_type == PBS_BATCH_AsyrunJob)
     {
     reply_ack(preq);
-    preq->rq_noreply = TRUE;
-    enqueue_threadpool_request(check_and_run_job, preq, async_pool);
+    preq->rq_noreply = true;
+    enqueue_threadpool_request(check_and_run_job, new batch_request(*preq), async_pool);
     }
   else
     {
@@ -421,7 +418,6 @@ void post_checkpointsend(
   {
   int                   code;
   job                  *pjob;
-  bool                 preq_free_done = FALSE;
 
   pbs_attribute        *pwait;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -490,17 +486,12 @@ void post_checkpointsend(
       job_save(pjob, SAVEJOB_FULL, 0);
       
       /* continue to start job running */
-
       svr_strtjob2(&pjob, preq);
-      preq_free_done = TRUE;
       }
 
     if (pjob == NULL)
       job_mutex.set_unlock_on_exit(false);
     }    /* END if (pjob != NULL) */
-
-  if (!preq_free_done)
-    free_br(preq); /* close connection and release request */
 
   return;
   }  /* END post_checkpointsend() */
@@ -514,26 +505,23 @@ void post_checkpointsend(
 
 int svr_send_checkpoint(
 
-  job                  **pjob_ptr, /* I */
-  struct batch_request **preq,     /* I */
-  int                    state,    /* I */
-  int                    substate) /* I */
+  job           **pjob_ptr, /* I */
+  batch_request  *preq,     /* I */
+  int             state,    /* I */
+  int             substate) /* I */
 
   {
-
-  struct batch_request *momreq = 0;
-  int                   rc;
-  char                  jobid[PBS_MAXSVRJOBID + 1];
-  job                  *pjob = *pjob_ptr;
+  batch_request *momreq = 0;
+  int            rc;
+  char           jobid[PBS_MAXSVRJOBID + 1];
+  job           *pjob = *pjob_ptr;
 
   momreq = cpy_checkpoint(momreq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_IN);
 
   if (momreq == NULL)
     {
     /* no files to send, go directly to sending job to mom */
-    rc = svr_strtjob2(&pjob, *preq);
-
-    *preq = NULL;
+    rc = svr_strtjob2(&pjob, preq);
 
     return(rc);
     }
@@ -563,22 +551,13 @@ int svr_send_checkpoint(
      * checkpoint copy started ok - reply to client as copy may
      * take too long to wait.
      */
-    if (*preq != NULL)
-      {
-      reply_ack(*preq);
-      *preq = NULL;
-      }
+    reply_ack(preq);
     }
-  else
-    {
-    free_br(momreq);
-    }
+    
+  delete momreq;
 
   return(rc);
   }  /* END svr_send_checkpoint() */
-
-
-
 
 
 
@@ -622,9 +601,9 @@ int req_stagein(
 
   if ((rc = svr_stagein(
               &pjob,
-              &preq,
-              JOB_STATE_QUEUED,
-              JOB_SUBSTATE_STAGEIN)))
+               preq,
+               JOB_STATE_QUEUED,
+               JOB_SUBSTATE_STAGEIN)))
     {
     free_nodes(pjob);
 
@@ -713,19 +692,14 @@ void post_stagein(
           /* need to copy checkpoint file to mom before running */
           svr_send_checkpoint(
               &pjob,
-              &preq,
+              preq,
               JOB_STATE_RUNNING,
               JOB_SUBSTATE_CHKPTGO);
           }
         else
           {
           /* continue to start job running */
-
           svr_strtjob2(&pjob, preq);
-          
-          /* svr_strjob2 would call finish_sendmom which would free preq 
-             in its reply_send_svr, set preq now to NULL to avoid double free */
-          preq = NULL;
           }
         }
       else
@@ -740,9 +714,6 @@ void post_stagein(
       job_mutex.set_unlock_on_exit(false);
     }    /* END if (pjob != NULL) */
 
-  if (preq)
-    free_br(preq); /* close connection and release request */
-
   return;
   }  /* END post_stagein() */
 
@@ -756,14 +727,14 @@ void post_stagein(
 
 int svr_stagein(
 
-  job                  **pjob_ptr, /* I */
-  struct batch_request **preq,     /* I */
-  int                    state,    /* I */
-  int                    substate) /* I */
+  job           **pjob_ptr, /* I */
+  batch_request  *preq,     /* I */
+  int             state,    /* I */
+  int             substate) /* I */
 
   {
   job                  *pjob = *pjob_ptr;
-  struct batch_request *momreq = 0;
+  struct batch_request *momreq = NULL;
   int                   rc;
   char                  jobid[PBS_MAXSVRJOBID + 1];
 
@@ -772,9 +743,7 @@ int svr_stagein(
   if (momreq == NULL)
     {
     /* no files to stage, go directly to sending job to mom */
-    rc = svr_strtjob2(&pjob, *preq);
-
-    *preq = NULL;
+    rc = svr_strtjob2(&pjob, preq);
 
     return(rc);
     }
@@ -807,30 +776,13 @@ int svr_stagein(
      * take too long to wait.
      */
 
-    if (*preq != NULL)
+    if (preq != NULL)
       {
-      struct batch_request *request = *preq;
-      int free_preq = 0;
-      /* Under the following circumstances, reply_send_svr called eventually
-       * by reply_ack/reply_send will free preq under the following cirmcustances.
-       * There are 60+ occurrences of reply_send, so this is the easiest way.
-       */
-      if (((request->rq_type != PBS_BATCH_AsyModifyJob) &&
-           (request->rq_type != PBS_BATCH_AsyrunJob) &&
-           (request->rq_type != PBS_BATCH_AsySignalJob)) ||
-           (request->rq_noreply == TRUE))
-         free_preq = 1;
-
-      reply_ack(*preq);
-
-      if (free_preq)
-    	  *preq = NULL;
+      reply_ack(preq);
       }
     }
-  else
-    {
-    free_br(momreq);
-    }
+
+  delete momreq;
 
   return(rc);
   }  /* END svr_stagein() */
@@ -987,10 +939,10 @@ int verify_moms_up(
 
 int svr_startjob(
 
-  job                   *pjob,     /* I job to run (modified) */
-  struct batch_request **preq,     /* I Run Job batch request (optional) */
-  char                  *FailHost, /* O (optional,minsize=1024) */
-  char                  *EMsg)     /* O (optional,minsize=1024) */
+  job           *pjob,     /* I job to run (modified) */
+  batch_request *preq,     /* I Run Job batch request (optional) */
+  char          *FailHost, /* O (optional,minsize=1024) */
+  char          *EMsg)     /* O (optional,minsize=1024) */
 
   {
   int     f;
@@ -1113,9 +1065,7 @@ int svr_startjob(
     {
     /* No stage-in or already done, start job executing */
 
-    rc = svr_strtjob2(&pjob, *preq);
-
-    *preq = NULL;
+    rc = svr_strtjob2(&pjob, preq);
     }
 
   return(rc);
@@ -1317,12 +1267,12 @@ int handle_heterogeneous_job_launch(
   lock_ji_mutex(cray_clone, __func__, NULL, LOGLEVEL);
   
   /* clone the batch requests to avoid double frees */
-  external_preq = duplicate_request(preq);
-  cray_preq     = duplicate_request(preq);
+  external_preq = new batch_request(*preq);
+  cray_preq     = new batch_request(*preq);
   
   /* client doesn't need a response from these */
-  external_preq->rq_noreply = TRUE;
-  cray_preq->rq_noreply     = TRUE;
+  external_preq->rq_noreply = true;
+  cray_preq->rq_noreply     = true;
   
   if ((rc = send_job_to_mom(&external_clone, external_preq, pjob)) == PBSE_NONE)
     {
@@ -1334,8 +1284,9 @@ int handle_heterogeneous_job_launch(
     else
       both_running = TRUE;
     }
-  else
-    free_br(cray_preq);
+
+  delete external_preq;
+  delete cray_preq;
   
   if (cray_clone != NULL)
     unlock_ji_mutex(cray_clone, __func__, NULL, LOGLEVEL);
@@ -1375,8 +1326,8 @@ int handle_heterogeneous_job_launch(
 
 int svr_strtjob2(
 
-  job                  **pjob_ptr, /* I */
-  struct batch_request  *preq)     /* I (modified - report status) */
+  job           **pjob_ptr, /* I */
+  batch_request  *preq)     /* I (modified - report status) */
 
   {
   job             *pjob = *pjob_ptr;
@@ -1417,6 +1368,43 @@ int svr_strtjob2(
   }    /* END svr_strtjob2() */
 
 
+
+/*
+ * get_message_from_mom_err()
+ * 
+ * @param mom_err (I) - the error code sent back from the mom
+ * @param msg (O) - the message string to populate
+ */
+
+void get_message_from_mom_err(
+
+  int          mom_err,
+  std::string &msg)
+
+  {
+  switch (mom_err)
+    {
+    case JOB_EXEC_CMDFAIL:
+
+      msg = "Failed to exec the job, please retry.";
+      break;
+
+    case JOB_EXEC_STDOUTFAIL:
+
+      msg = "Failed to open the output and error files for the job.";
+      break;
+
+    case JOB_EXEC_RETRY_CGROUP:
+
+      msg = "Failed to create the cgroups for this job.";
+      break;
+
+    default:
+      
+      msg = "Mom rejected the job.";
+      break;
+    }
+  } // get_message_from_mom_err()
 
 
 
@@ -1530,7 +1518,11 @@ void finish_sendmom(
         if (preq != NULL)
           {
           if (mom_err != PBSE_NONE)
-            req_reject(mom_err, 0, preq, node_name, "connection to mom timed out");
+            {
+            std::string mom_err_msg;
+            get_message_from_mom_err(mom_err, mom_err_msg);
+            req_reject(mom_err, 0, preq, node_name, mom_err_msg.c_str());
+            }
           else
             req_reject(PBSE_MOMREJECT, 0, preq, node_name, "connection to mom timed out");
           }
@@ -1921,6 +1913,35 @@ int set_job_exec_info(
 
 
 
+void set_mode_from_string(
+
+  const char  *mode_string,
+  std::string &mode)
+
+  {
+  if (strstr(mode_string, "exclusive_thread"))
+    {
+    mode = ":exclusive_thread";
+    }
+  else if (strstr(mode_string, "exclusive_process"))
+    {
+    mode = ":exclusive_process";
+    }
+  else if (strstr(mode_string, "exclusive"))
+    {
+    mode = ":exclusive";
+    }
+  else if (strstr(mode_string, "default"))
+    {
+    mode = ":default";
+    }
+  else if (strstr(mode_string, "shared"))
+    {
+    mode = ":shared";
+    }
+  } // END set_mode_from_string()
+
+
 
 char *get_correct_spec_string(
 
@@ -1928,18 +1949,18 @@ char *get_correct_spec_string(
   job  *pjob)
 
   {
-  char      mode[20];
-  char     *mode_string;
-  char     *request;
-  char     *correct_spec = NULL;
-  char     *outer_plus;
-  char     *plus;
-  char     *one_req;
-  int       num_gpu_reqs;
-  char     *gpu_req;
-  int       len;
-  resource *pres = NULL;
-  char      log_buf[LOCAL_LOG_BUF_SIZE];
+  std::string  mode;
+  char        *mode_string = NULL;
+  char        *request;
+  char        *correct_spec = NULL;
+  char        *outer_plus = NULL;
+  char        *plus;
+  char        *one_req;
+  int          num_gpu_reqs;
+  char        *gpu_req;
+  int          len;
+  resource    *pres = NULL;
+  char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* check to see if there is a gpus request. If so moab
    * sripted the mode request if it existed. We need to
@@ -1950,8 +1971,15 @@ char *get_correct_spec_string(
     {
     /* Build our host list from what is in the job attrs */
     pres = find_resc_entry(
-      &pjob->ji_wattr[(int)JOB_ATR_resource],
+      &pjob->ji_wattr[JOB_ATR_resource],
       find_resc_def(svr_resc_def, "neednodes", svr_resc_size));
+
+    if (pres == NULL)
+      {
+      pres = find_resc_entry(
+        &pjob->ji_wattr[JOB_ATR_resource],
+        find_resc_def(svr_resc_def, "gres", svr_resc_size));
+      }
     
     if (pres != NULL)
       {
@@ -1970,11 +1998,17 @@ char *get_correct_spec_string(
 
         if (!(gpu_req = strstr(request, ":gpus=")))
           {
-          correct_spec = strdup(given);
-          return(correct_spec);
+          if (!(gpu_req = strstr(request, "gpus:")))
+            {
+            correct_spec = strdup(given);
+            return(correct_spec);
+            }
+          else
+            mode_string = gpu_req + 5; // strlen(gpus:)
           }
+        else
+          mode_string = gpu_req + 6; // strlen(:gpus=)
 
-        mode_string = gpu_req + strlen(":gpus=");
         while (isdigit(*mode_string))
           mode_string++;
 
@@ -1992,43 +2026,19 @@ char *get_correct_spec_string(
 
           if ((outer_plus = strchr(mode_string, '+')) != NULL)
             *outer_plus = '\0';
-
+        
           /* 
            * The neednodes original value may have non gpu things in it, so we
            * can not rely on the requested gpu mode being the first item in the
            * the string after the gpus=x:.
            */
-
-          if (strstr(mode_string, "exclusive_thread"))
-            {
-            strcpy(mode, ":exclusive_thread");
-            }
-          else if (strstr(mode_string, "exclusive_process"))
-            {
-            strcpy(mode, ":exclusive_process");
-            }
-          else if (strstr(mode_string, "exclusive"))
-            {
-            strcpy(mode, ":exclusive");
-            }
-          else if (strstr(mode_string, "default"))
-            {
-            strcpy(mode, ":default");
-            }
-          else if (strstr(mode_string, "shared"))
-            {
-            strcpy(mode, ":shared");
-            }
-          else
-            {
-            strcpy(mode, "");
-            }
+          set_mode_from_string(mode_string, mode);
 
           if (outer_plus != NULL)
             *outer_plus = '+';
 
           /* now using the actual length of requested gpu mode */
-          len = strlen(given) + 1 + (num_gpu_reqs * strlen(mode));
+          len = strlen(given) + 1 + (num_gpu_reqs * mode.size());
           if ((correct_spec = (char *)calloc(1, len)) != NULL)
             {
             one_req = given;
@@ -2042,7 +2052,7 @@ char *get_correct_spec_string(
               
               strcat(correct_spec, one_req);
               if (strstr(one_req, ":gpus") != NULL)
-                strcat(correct_spec, mode);
+                strcat(correct_spec, mode.c_str());
               
               if (plus != NULL)
                 {
@@ -2053,6 +2063,7 @@ char *get_correct_spec_string(
                 one_req = NULL;
               }
             }
+
           if ((LOGLEVEL >= 7) && (correct_spec != NULL) && (correct_spec[0] != '\0'))
             {
             sprintf(log_buf, "%s: job gets adjusted gpu node spec of '%s'",

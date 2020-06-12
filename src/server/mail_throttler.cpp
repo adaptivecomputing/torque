@@ -8,12 +8,69 @@ mail_info::mail_info() : mailto(), exec_host(), jobid(), jobname(),
   {
   }
 
+// Constructor from job - update the default values with 
+mail_info::mail_info(
+
+  job *pjob) : mailto(), exec_host(), jobid(), jobname(), text(), errFile(), outFile(), mail_point(0),
+               queue_name(), owner(), working_directory(), resources_requested(), resources_used()
+
+  {
+  if (pjob != NULL)
+    {
+    if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
+      this->exec_host = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
+
+    this->jobid = pjob->ji_qs.ji_jobid;
+
+    if (pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str != NULL)
+      this->jobname = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
+
+    // Initialize the output files
+    if (pjob->ji_wattr[JOB_ATR_join].at_flags & ATR_VFLAG_SET)
+      {
+      char *join_val = pjob->ji_wattr[JOB_ATR_join].at_val.at_str;
+      if (!strcmp(join_val, "oe"))
+        {
+        this->errFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
+        this->outFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
+        }
+      else if (!strcmp(join_val, "eo"))
+        {
+        this->errFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
+        this->outFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
+        }
+      }
+
+    if (this->outFile.size() == 0)
+      this->outFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
+
+    if (this->errFile.size() == 0)
+      this->errFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
+
+    this->queue_name = pjob->ji_qs.ji_queue;
+    this->owner = pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str;
+
+    if (pjob->ji_wattr[JOB_ATR_init_work_dir].at_flags & ATR_VFLAG_SET)
+      this->working_directory = pjob->ji_wattr[JOB_ATR_init_work_dir].at_val.at_str;
+
+    if (pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr != NULL)
+      this->resources_requested = *((std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resource].at_val.at_ptr);
+
+    if (pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_ptr != NULL)
+      this->resources_used = *((std::vector<resource> *)pjob->ji_wattr[JOB_ATR_resc_used].at_val.at_ptr);
+    }
+  }
+
 // Copy constructor
 mail_info::mail_info(
 
   const mail_info &other) : mailto(other.mailto), exec_host(other.exec_host), jobid(other.jobid),
                             jobname(other.jobname), text(other.text), errFile(other.errFile),
-                            outFile(other.outFile), mail_point(other.mail_point)
+                            outFile(other.outFile), mail_point(other.mail_point),
+                            queue_name(other.queue_name), owner(other.owner),
+                            working_directory(other.working_directory), 
+                            resources_requested(other.resources_requested),
+                            resources_used(other.resources_used)
   {
   }
 
@@ -31,6 +88,11 @@ mail_info &mail_info::operator =(
   this->errFile = other.errFile;
   this->outFile = other.outFile;
   this->mail_point = other.mail_point;
+  this->queue_name = other.queue_name;
+  this->owner = other.owner;
+  this->working_directory = other.working_directory;
+  this->resources_requested = other.resources_requested;
+  this->resources_used = other.resources_used;
   return(*this);
   }
 

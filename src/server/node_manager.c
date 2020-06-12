@@ -198,6 +198,9 @@ int                     default_gpu_mode = -1;
 #ifndef MAX_BM
 #define MAX_BM          64
 #endif
+#ifdef NVML_API
+#include <nvml.h>
+#endif
 
 int handle_complete_first_time(job *pjob);
 int is_compute_node(char *node_id);
@@ -572,7 +575,6 @@ int kill_job_on_mom(
   struct pbsnode *pnode)
 
   {
-  batch_request *preq;
   int            rc = -1;
   int            conn;
   int            local_errno = 0;
@@ -587,27 +589,20 @@ int kill_job_on_mom(
 
   if (conn >= 0)
     {
-    if ((preq = alloc_br(PBS_BATCH_SignalJob)) == NULL)
-      {
-      log_err(-1, __func__, "unable to allocate SignalJob request-trouble!");
-      svr_disconnect(conn);
-      }
+    batch_request preq(PBS_BATCH_SignalJob);
+    
+    snprintf(preq.rq_ind.rq_signal.rq_jid, sizeof(preq.rq_ind.rq_signal.rq_jid), "%s", job_id);
+    snprintf(preq.rq_ind.rq_signal.rq_signame, sizeof(preq.rq_ind.rq_signal.rq_signame), "SIGKILL");
+    preq.rq_extra = strdup(SYNC_KILL);
+    pnode->tmp_unlock_node(__func__, NULL, LOGLEVEL);
+    rc = issue_Drequest(conn, &preq, true);
+
+    if (preq.rq_reply.brp_code == PBSE_TIMEOUT)
+      update_failure_counts(node_name.c_str(), PBSE_TIMEOUT);
     else
-      {
-      snprintf(preq->rq_ind.rq_signal.rq_jid, sizeof(preq->rq_ind.rq_signal.rq_jid), "%s", job_id);
-      snprintf(preq->rq_ind.rq_signal.rq_signame, sizeof(preq->rq_ind.rq_signal.rq_signame), "SIGKILL");
-      preq->rq_extra = strdup(SYNC_KILL);
-      pnode->tmp_unlock_node(__func__, NULL, LOGLEVEL);
-      rc = issue_Drequest(conn, preq, true);
+      update_failure_counts(node_name.c_str(), 0);
 
-      if (preq->rq_reply.brp_code == PBSE_TIMEOUT)
-        update_failure_counts(node_name.c_str(), PBSE_TIMEOUT);
-      else
-        update_failure_counts(node_name.c_str(), 0);
-
-      free_br(preq);
-      pnode->tmp_lock_node(__func__, NULL, LOGLEVEL);
-      }
+    pnode->tmp_lock_node(__func__, NULL, LOGLEVEL);
     }
   else
     {
@@ -1007,8 +1002,6 @@ int parse_job_information_from_legacy_format(
         {
         free(raw_job_data);
 
-        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
-
         throw (int)PBSE_NODE_DELETED;
         }
       }
@@ -1100,8 +1093,6 @@ void process_job_info_from_json(
     // re-lock the node
     if ((np = find_nodebyname(node_name.c_str())) == NULL)
       {
-      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
-
       throw (int)PBSE_NODE_DELETED;
       }
 
@@ -1168,6 +1159,7 @@ void *sync_node_jobs(
   bool                  sync = sji->sync_jobs;
   std::string           node_name(sji->node_name);
   std::string           raw_job_info(sji->job_info);
+  int                   old_state = PTHREAD_CANCEL_ENABLE;
 
   delete sji;
 
@@ -1176,7 +1168,7 @@ void *sync_node_jobs(
     return(NULL);
     }
 
-  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
   
   std::vector<std::string> job_id_list;
   std::string              job_list_str("jobs=");
@@ -1212,7 +1204,7 @@ void *sync_node_jobs(
         np->unlock_node(__func__, NULL, LOGLEVEL);
         }
 
-      pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+      pthread_setcancelstate(old_state, NULL);
       return(NULL);
       }
     }
@@ -1225,7 +1217,7 @@ void *sync_node_jobs(
     log_err(-1, __func__, log_buf);
     
     np->unlock_node(__func__, NULL, LOGLEVEL);
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+    pthread_setcancelstate(old_state, NULL);
     return(NULL);
     }
 
@@ -1238,7 +1230,7 @@ void *sync_node_jobs(
 
   np->unlock_node(__func__, NULL, LOGLEVEL);
   
-  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+  pthread_setcancelstate(old_state, NULL);
 
   return(NULL);
   }  /* END sync_node_jobs() */
@@ -1581,8 +1573,6 @@ void *write_node_state_work(
         {
         fprintf(nstatef, fmt, np->get_name(), np->nd_state & savemask);
         }
-
-      np->unlock_node(__func__, NULL, LOGLEVEL);
       } /* END for each node */
     }
   else
@@ -1726,8 +1716,8 @@ void write_node_power_state(void)
 int write_node_note(void)
 
   {
-  struct pbsnode *np;
-  all_nodes_iterator *iter = NULL;
+  struct pbsnode *np = NULL;
+  node_iterator   iter;
   FILE           *nin;
 
   if (LOGLEVEL >= 2)
@@ -1747,9 +1737,11 @@ int write_node_note(void)
 
     return(-1);
     }
+  
+  reinitialize_node_iterator(&iter);
 
   /* for each node ... */
-  while ((np = next_host(&allnodes, &iter, NULL)) != NULL)
+  while ((np = next_node(&allnodes, np, &iter)) != NULL)
     {
     /* write node name followed by its note string */
     if (np->nd_note.size() != 0)
@@ -1760,8 +1752,8 @@ int write_node_note(void)
     np->unlock_node(__func__, NULL, LOGLEVEL);
     }
 
-  if (iter != NULL)
-    delete iter;
+  if (iter.node_index != NULL)
+    delete iter.node_index;
 
   fflush(nin);
 
@@ -1879,12 +1871,21 @@ static int hasppn(
 
 
 /*
-** Count how many gpus are available for use on this node
-*/
+ * gpu_count()
+ *
+ * Get a gpu count for this node
+ * if freeonly is true, then count the free gpus; if false, then return the number
+ * of gpus.
+ *
+ * @param pnode - the node whose gpus we're counting
+ * @param freeonly - specifies if we want a total or just the available gpus
+ * @return the total gpus if freeonly is false, else the number of free gpus
+ */
+
 int gpu_count(
 
-  struct pbsnode *pnode,    /* I */
-  int             freeonly) /* I */
+  pbsnode *pnode,    /* I */
+  bool     freeonly) /* I */
 
   {
   int  count = 0;
@@ -1900,7 +1901,7 @@ int gpu_count(
       sprintf(log_buf,
         "Counted %d gpus %s on node %s that was skipped",
         count,
-        (freeonly? "free":"available"),
+        (freeonly? "free" : "total"),
         pnode->get_name());
     
       log_ext(-1, __func__, log_buf, LOG_DEBUG);
@@ -1908,49 +1909,17 @@ int gpu_count(
     return (count);
     }
 
-  if (pnode->nd_gpus_real)
-    {
-    int j;
-
-    for (j = 0; j < pnode->nd_ngpus; j++)
-      {
-      struct gpusubn &gn = pnode->nd_gpusn[j];
-
-      /* always ignore unavailable gpus */
-      if (gn.state == gpu_unavailable)
-        continue;
-
-      if (!freeonly)
-        {
-        count++;
-        }
-      else if ((gn.state == gpu_unallocated) ||
-               ((gn.state == gpu_shared) &&
-                (gpu_mode_rqstd == gpu_normal)))
-        {
-        count++;;
-        }
-      }
-    }
+  if (freeonly == false)
+    count = pnode->nd_ngpus;
   else
-    {
-    /* virtual gpus */
-    if (freeonly)
-      {
-      count = pnode->nd_ngpus_free;
-      }
-    else
-      {
-      count = pnode->nd_ngpus;
-      }
-    }
+    count = pnode->nd_ngpus_free;
 
   if (LOGLEVEL >= 7)
     {
     sprintf(log_buf,
       "Counted %d gpus %s on node %s",
       count,
-      (freeonly? "free":"available"),
+      (freeonly? "free" : "total"),
       pnode->get_name());
 
     log_ext(-1, __func__, log_buf, LOG_DEBUG);
@@ -2131,7 +2100,7 @@ int proplist(
   char         name_storage[80];
   char        *pname;
   char        *pequal;
-  int          have_gpus = FALSE;
+  bool         have_gpus = false;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
 
   *node_req = 1; /* default to 1 processor per node */
@@ -2186,7 +2155,7 @@ int proplist(
           return(1);
           }
 
-        have_gpus = TRUE;
+        have_gpus = true;
         gpu_err_reset = FALSE; /* default to no */
 
         // default value if no other gets specified
@@ -2197,7 +2166,15 @@ int proplist(
         if (deflt_gpu_mode != NULL)
           gpu_mode_rqstd = default_gpu_mode;
         else
+          {
+#if defined(NVML_API_VERSION) && (NVML_API_VERSION >= 8)
+          // exclusive thread mode deprecated starting in version 8
+          //  so use exlusive process instead
+          gpu_mode_rqstd = gpu_exclusive_process;
+#else
           gpu_mode_rqstd = gpu_exclusive_thread;
+#endif
+          }
         }
       else
         {
@@ -2405,7 +2382,7 @@ bool node_is_spec_acceptable(
     return(false);
 
   if ((hasppn(pnode, ppn_req, SKIP_NONE) == FALSE) ||
-      (gpu_count(pnode, FALSE) < gpu_req) ||
+      (gpu_count(pnode, false) < gpu_req) ||
       (pnode->nd_nmics < mic_req))
     return(false);
 
@@ -2414,7 +2391,7 @@ bool node_is_spec_acceptable(
   if (((pnode->nd_state & (INUSE_OFFLINE | INUSE_NOT_READY | INUSE_RESERVE | INUSE_JOB)) != 0)||(pnode->nd_power_state != POWER_STATE_RUNNING))
     return(false);
 
-  gpu_free = gpu_count(pnode, TRUE) - pnode->nd_ngpus_to_be_used;
+  gpu_free = gpu_count(pnode, true) - pnode->nd_ngpus_to_be_used;
   np_free  = pnode->nd_slots.get_number_free() - pnode->nd_np_to_be_used;
   mic_free = pnode->nd_nmics_free - pnode->nd_nmics_to_be_used;
   
@@ -2422,7 +2399,8 @@ bool node_is_spec_acceptable(
       (gpu_req > gpu_free) ||
       (mic_req > mic_free))
     return(false);
-  if(job_is_exclusive)
+
+  if (job_is_exclusive)
     {
     if(pnode->nd_slots.get_number_free() != pnode->nd_slots.get_total_execution_slots())
       {
@@ -2432,7 +2410,6 @@ bool node_is_spec_acceptable(
 
   return(true);
   } /* END node_is_spec_acceptable() */
-
 
 
 
@@ -2561,7 +2538,7 @@ int save_node_for_adding(
   /* count off the number we have reserved */
   pnode->nd_np_to_be_used    += req.ppn;
   pnode->nd_ngpus_to_be_used += req.gpu;
-  pnode->nd_nmics_to_be_used -= req.mic;
+  pnode->nd_nmics_to_be_used += req.mic;
 
   return(PBSE_NONE);
   } /* END save_node_for_adding */
@@ -3012,7 +2989,7 @@ int select_nodes_using_hostlist(
       return(-2);
       }
     
-    if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes,job_is_exclusive) == false)
+    if (node_is_spec_acceptable(pnode, req, ProcBMStr, eligible_nodes, job_is_exclusive) == false)
       {
       snprintf(log_buf, sizeof(log_buf),
         "Requested node '%s' is not currently available", req.plist[0].name.c_str());
@@ -3712,23 +3689,17 @@ int reserve_node(
 
 int add_job_to_gpu_subnode(
     
-  struct pbsnode *pnode,
-  gpusubn        &gn,
-  job            *pjob)
+  pbsnode *pnode,
+  gpusubn &gn,
+  job     *pjob)
 
   {
-  if (!pnode->nd_gpus_real)
-    {
-    /* update the gpu subnode */
-    gn.job_internal_id = pjob->ji_internal_id;
-    gn.inuse = TRUE;
-
-    /* update the main node */
-    pnode->nd_ngpus_free--;
-    }
-
+  gn.job_internal_id = pjob->ji_internal_id;
+  pnode->nd_ngpus_free--;
+  gn.inuse = true;
   gn.job_count++;
-  pnode->nd_ngpus_to_be_used--;
+  if (pnode->nd_ngpus_to_be_used > 0)
+    pnode->nd_ngpus_to_be_used--;
 
   return(PBSE_NONE);
   } /* END add_job_to_gpu_subnode() */
@@ -3851,30 +3822,8 @@ int place_gpus_in_hostlist(
     
     gpusubn &gn = pnode->nd_gpusn[j];
 
-    if (pnode->nd_gpus_real)
-      {
-      if ((gn.state == gpu_unavailable) ||
-          (gn.state == gpu_shared) ||
-          (gn.state == gpu_exclusive) ||
-          ((((int)gn.mode == gpu_normal)) &&
-           (gpu_mode_rqstd != gpu_normal) &&
-           (gn.state != gpu_unallocated)))
-        continue;
-      }
-    else
-      {
-      if ((gn.state == gpu_unavailable) ||
-          (gn.inuse == TRUE))
-        continue;
-      }
-
-    if ((gn.state == gpu_unavailable) ||
-        ((gn.state == gpu_exclusive) && pnode->nd_gpus_real) ||
-        ((pnode->nd_gpus_real) &&
-         ((int)gn.mode == gpu_normal) &&
-         ((gpu_mode_rqstd != gpu_normal) && (gn.state != gpu_unallocated))) ||
-        ((!pnode->nd_gpus_real) && 
-         (gn.inuse == TRUE)))
+    if ((gn.inuse == true) ||
+        (gn.state == gpu_unavailable))
       continue;
     
     add_job_to_gpu_subnode(pnode,gn,pjob);
@@ -4012,6 +3961,41 @@ int place_mics_in_hostlist(
 
 
 #ifdef PENABLE_LINUX_CGROUPS
+
+/*
+ */
+
+void save_cgroup_string_attr(
+
+  job         *pjob,
+  const char  *node_name,
+  std::string &value,
+  int          index)
+
+  {
+  if (pjob->ji_wattr[index].at_val.at_str == NULL)
+    {
+    std::string formatted(node_name);
+
+    if (value.size() != 0)
+      formatted += ":" + value;
+
+    pjob->ji_wattr[index].at_val.at_str = strdup(formatted.c_str());
+    pjob->ji_wattr[index].at_flags |= ATR_VFLAG_SET;
+    }
+  else
+    {
+    std::string concat = pjob->ji_wattr[index].at_val.at_str;
+    concat += "+";
+    concat += node_name;
+    if (value.size() != 0)
+      concat += ":" + value;
+
+    free(pjob->ji_wattr[index].at_val.at_str);
+    pjob->ji_wattr[index].at_val.at_str = strdup(concat.c_str());
+    }
+  } // END save_cgroup_string_attr()
+
 /*
  * save_cpus_and_memory_cpusets()
  *
@@ -4022,47 +4006,17 @@ void save_cpus_and_memory_cpusets(
 
   job         *pjob,
   const char  *node_name,
-  std::string &cpus,
-  std::string &mems)
+  cgroup_info &cgi)
 
   {
-  if (pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str == NULL)
-    {
-    std::string formatted(node_name);
-    if (cpus.size() != 0)
-      formatted += ":" + cpus;
-    pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(formatted.c_str());
-    pjob->ji_wattr[JOB_ATR_cpuset_string].at_flags |= ATR_VFLAG_SET;
-    }
-  else
-    {
-    std::string all_cpus = pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str;
-    all_cpus += "+";
-    all_cpus += node_name;
-    if (cpus.size() != 0)
-      all_cpus += ":" + cpus;
-    free(pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str);
-    pjob->ji_wattr[JOB_ATR_cpuset_string].at_val.at_str = strdup(all_cpus.c_str());
-    }
-  
-  if (pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str == NULL)
-    {
-    std::string formatted(node_name);
-    if (mems.size() != 0)
-      formatted += ":" + mems;
-    pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(formatted.c_str());
-    pjob->ji_wattr[JOB_ATR_memset_string].at_flags |= ATR_VFLAG_SET;
-    }
-  else
-    {
-    std::string all_mems = pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str;
-    all_mems += "+";
-    all_mems += node_name;
-    if (mems.size() != 0)
-      all_mems += ":" + mems;
-    free(pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str);
-    pjob->ji_wattr[JOB_ATR_memset_string].at_val.at_str = strdup(all_mems.c_str());
-    }
+  save_cgroup_string_attr(pjob, node_name, cgi.cpu_string, JOB_ATR_cpuset_string);
+  save_cgroup_string_attr(pjob, node_name, cgi.mem_string, JOB_ATR_memset_string);
+
+  if (cgi.gpu_string.size() > 0)
+    save_cgroup_string_attr(pjob, node_name, cgi.gpu_string, JOB_ATR_gpus_reserved);
+
+  if (cgi.mic_string.size() > 0)
+    save_cgroup_string_attr(pjob, node_name, cgi.mic_string, JOB_ATR_mics_reserved);
 
   } // END save_cpus_and_memory_cpusets()
 
@@ -4165,6 +4119,49 @@ void update_req_hostlist(
     }
 
   } // END update_req_hostlist()
+
+
+
+/*
+ * set_gpu_mode_if_needed()
+ * Sets the gpu mode if there's a default gpu mode, this job requests gpus, and this job
+ * doesn't set the gpu mode
+ *
+ * @param pjob - the job whose gpu mode we may set
+ */
+
+void set_gpu_mode_if_needed(
+
+  job *pjob)
+
+  {
+  char *default_gpu_mode = NULL;
+
+  if (pjob->ji_wattr[JOB_ATR_request_version].at_val.at_long > 1)
+    {
+    complete_req *cr = (complete_req *)pjob->ji_wattr[JOB_ATR_req_information].at_val.at_ptr;
+
+    if (cr != NULL)
+      {
+      get_svr_attr_str(SRV_ATR_DefaultGpuMode, &default_gpu_mode);
+
+      if (default_gpu_mode != NULL)
+        {
+        for (unsigned int i = 0; i < cr->get_num_reqs(); i++)
+          {
+          req &r = cr->get_req(i);
+
+          if ((r.get_gpus() > 0) &&
+              (r.get_gpu_mode().size() == 0))
+            {
+            r.set_attribute(default_gpu_mode);
+            }
+          }
+        }
+      }
+    }
+
+  } // END set_gpu_mode_if_needed()
 #endif
 
 
@@ -4183,7 +4180,8 @@ int place_subnodes_in_hostlist(
   char                 *ProcBMStr)
 
   {
-  int rc = PBSE_NONE;
+  int  rc = PBSE_NONE;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 #ifdef GEOMETRY_REQUESTS
   if (IS_VALID_STR(ProcBMStr))
     {
@@ -4223,10 +4221,11 @@ int place_subnodes_in_hostlist(
       pnode->nd_state |= INUSE_JOB;
 
 #ifdef PENABLE_LINUX_CGROUPS
-    std::string       cpus;
-    std::string       mems;
+    cgroup_info       cgi;
     bool              legacy_vmem = false;
     get_svr_attr_b(SRV_ATR_LegacyVmem, &legacy_vmem);
+
+    set_gpu_mode_if_needed(pjob);
 
     // We shouldn't be starting a job if the layout hasn't been set up yet.
     if (pnode->nd_layout.is_initialized() == false)
@@ -4234,9 +4233,16 @@ int place_subnodes_in_hostlist(
 
     update_req_hostlist(pjob, pnode->get_name(), naji.req_index, naji.ppn_needed);
 
-    rc = pnode->nd_layout.place_job(pjob, cpus, mems, pnode->get_name(), legacy_vmem);
+    rc = pnode->nd_layout.place_job(pjob, cgi, pnode->get_name(), legacy_vmem);
     if (rc != PBSE_NONE)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+        "Couldn't place job %s on node %s.",
+        pjob->ji_qs.ji_jobid, pnode->get_name());
+      log_err(-1, __func__, log_buf);
+
       return(rc);
+      }
 
     if ((pjob->ji_wattr[JOB_ATR_node_exclusive].at_flags & ATR_VFLAG_SET) &&
         (pjob->ji_wattr[JOB_ATR_node_exclusive].at_val.at_long != 0) &&
@@ -4248,21 +4254,21 @@ int place_subnodes_in_hostlist(
       if (pnode->nd_layout.getTotalThreads() > 1)
         {
         sprintf(buf, "0-%d", pnode->nd_layout.getTotalThreads() - 1);
-        cpus = buf;
+        cgi.cpu_string = buf;
         }
       else
-        cpus = "0";
+        cgi.cpu_string = "0";
 
       if (pnode->nd_layout.getTotalChips() > 1)
         {
         sprintf(buf, "0-%d", pnode->nd_layout.getTotalChips() - 1);
-        mems = buf;
+        cgi.mem_string = buf;
         }
       else
-        mems = "0";
+        cgi.mem_string = "0";
       }
 
-    save_cpus_and_memory_cpusets(pjob, pnode->get_name(), cpus, mems);
+    save_cpus_and_memory_cpusets(pjob, pnode->get_name(), cgi);
     save_node_usage(pnode);
 #endif
 
@@ -4271,6 +4277,11 @@ int place_subnodes_in_hostlist(
     }
   else
     {
+    snprintf(log_buf, sizeof(log_buf),
+      "Node %s doesn't have enough execution slots remaining for job %s.",
+      pnode->get_name(), pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buf);
+
     rc = -1;
     }
 
@@ -4734,7 +4745,7 @@ void add_entry_to_naji_list(
 
   naji.node_id = pnode->nd_id;
   naji.ppn_needed = r.get_execution_slots() * tasks_placed;
-  naji.gpu_needed = r.getGpus() * tasks_placed;
+  naji.gpu_needed = r.get_gpus() * tasks_placed;
   naji.mic_needed = r.getMics() * tasks_placed;
   naji.is_external = false;
 
@@ -5506,17 +5517,23 @@ char *get_next_exec_host(
 
 
 
+/*
+ * remove_job_from_nodes_gpus()
+ *
+ * @param pnode - the node whose job is being removed
+ * @param pjob - the job that should be removed from the gpus
+ * @return PBSE_NONE
+ */
+
 int remove_job_from_nodes_gpus(
 
-  struct pbsnode *pnode,
-  job            *pjob)
+  pbsnode *pnode,
+  job     *pjob)
 
   {
   char        *gpu_str = NULL;
   int          i;
   char         log_buf[LOCAL_LOG_BUF_SIZE];
-  std::string  tmp_str;
-  char         num_str[6];
  
   if (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET)
     gpu_str = pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str;
@@ -5528,56 +5545,27 @@ int remove_job_from_nodes_gpus(
       {
       gpusubn &gn = pnode->nd_gpusn[i];
       
-      if (pnode->nd_gpus_real)
+      if (gn.job_internal_id == pjob->ji_internal_id)
         {
-        /* reset real gpu nodes */
-        tmp_str = pnode->get_name();
-        tmp_str += "-gpu/";
-        sprintf (num_str, "%d", i);
-        tmp_str += num_str;
-        
-        /* look thru the string and see if it has this host and gpuid.
-         * exec_gpus string should be in format of 
-         * <hostname>-gpu/<index>[+<hostname>-gpu/<index>...]
-         *
-         * if we are using the gpu node exclusively or if shared mode and
-         * this is last job assigned to this gpu then set it's state
-         * unallocated so its available for a new job. Takes time to get the
-         * gpu status report from the moms.
-         */
-        
-        if (strstr(gpu_str, tmp_str.c_str()) != NULL)
-          {
-          gn.job_count--;
+        gn.job_internal_id = -1;
+        gn.inuse = false;
+        pnode->nd_ngpus_free++;
+        gn.job_count--;
           
-          if ((gn.mode == gpu_exclusive_thread) ||
-              (gn.mode == gpu_exclusive_process) ||
-              ((gn.mode == gpu_normal) && 
-               (gn.job_count == 0)))
-            {
-            gn.state = gpu_unallocated;
-            
-            if (LOGLEVEL >= 7)
-              {
-              sprintf(log_buf, "freeing node %s gpu %d for job %s",
-                pnode->get_name(),
-                i,
-                pjob->ji_qs.ji_jobid);
-              
-              log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
-              }
-            
-            }
-          }
-        }
-      else
-        {
-        if (gn.job_internal_id == pjob->ji_internal_id)
-          {
-          gn.inuse = FALSE;
-          gn.job_internal_id = -1;
+        if ((gn.mode == gpu_exclusive_thread) ||
+            (gn.mode == gpu_exclusive_process) ||
+            ((gn.mode == gpu_normal) && 
+             (gn.job_count == 0)))
+          gn.state = gpu_unallocated;
           
-          pnode->nd_ngpus_free++;
+        if (LOGLEVEL >= 7)
+          {
+          sprintf(log_buf, "freeing node %s gpu %d for job %s",
+            pnode->get_name(),
+            i,
+            pjob->ji_qs.ji_jobid);
+          
+          log_record(PBSEVENT_SCHED, PBS_EVENTCLASS_REQUEST, __func__, log_buf);
           }
         }
       }
@@ -5588,11 +5576,18 @@ int remove_job_from_nodes_gpus(
 
 
 
+/*
+ * remove_job_from_node()
+ *
+ * @param pnode - the node removeing the job
+ * @param internal_job_id - the internal job id from the job to be removed
+ * @return PBSE_NONE
+ */
 
 int remove_job_from_node(
 
-  struct pbsnode *pnode,
-  int             internal_job_id)
+  pbsnode *pnode,
+  int      internal_job_id)
 
   {
   FUNCTION_TIMER
@@ -5715,7 +5710,8 @@ void free_nodes(
         (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN1) ||
         (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN2) ||
         (pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN3) ||
-        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED))
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_QUEUED) ||
+        (pjob->ji_qs.ji_substate == JOB_SUBSTATE_TRNOUT))
       {
       cr->clear_allocations();
       }
@@ -5741,10 +5737,9 @@ void free_nodes(
 
 
 
-
 struct pbsnode *get_compute_node(
 
-  char *node_name)
+  const char *node_name)
 
   {
   struct pbsnode *ar = alps_reporter;
@@ -5878,6 +5873,73 @@ int set_one_old(
   }  /* END set_one_old() */
 
 
+/*
+ * Process gpu token of the form <hostname>-gpu/<first>[-<last>]
+ *
+ * Set gpu subjob information for <hostname> node.
+ */
+
+int process_gpu_token(
+
+  const char *gpu_token,
+  job *pjob)
+
+  {
+  char           *pc;
+  char           *dash;
+  char           *p;
+  int             first;
+  int             last;
+  struct pbsnode *pnode;
+
+  // gpu_token expected to point to something like "numa3-gpu/2"
+
+  if ((gpu_token == NULL) || (pjob == NULL))
+    return(-1);
+     
+  // calculate range indices after the /
+  if ((pc = strchr((char *)gpu_token, (int)'/')))
+    {
+    first = strtol(pc + 1, &dash, 10);
+
+    *pc = '\0';
+
+    if (*dash == '-')
+      last = strtol(dash + 1, NULL, 10);
+    else
+      last = first;
+    }
+  else
+    {
+    first = 0;
+    last = first;
+    }
+
+  // drop -gpu suffix
+  if ((p = strrchr((char *)gpu_token, (int)'-')) != NULL)
+    {
+    if (strcmp(p, "-gpu") == 0)
+      *p = '\0';
+    }
+
+  // lookup node and set gpu info on each gpu subnode
+  if ((pnode = find_nodebyname(gpu_token)) != NULL)
+    {
+    int i;
+
+    for (i = first; i <= last; i++)
+      {
+      gpusubn &gn = pnode->nd_gpusn[i];
+
+      add_job_to_gpu_subnode(pnode, gn, pjob);
+      }
+
+      // unlock node
+      pnode->unlock_node(__func__, NULL, LOGLEVEL);
+    }
+
+  return(PBSE_NONE);
+  }
 
 /*
  * set_old_nodes - set "old" nodes as in use - called from pbsd_init()
@@ -5892,6 +5954,40 @@ int set_old_nodes(
   char     *old;
   char     *po;
   int       rc = PBSE_NONE;
+
+  // handle gpu info
+  if (pjob->ji_wattr[JOB_ATR_exec_gpus].at_flags & ATR_VFLAG_SET)
+    {
+    char *old_str;
+    
+    if ((old_str = strdup(pjob->ji_wattr[JOB_ATR_exec_gpus].at_val.at_str)) == NULL)
+      {
+      return(PBSE_SYSTEM);
+      }
+
+    while ((po = strrchr(old_str, (int)'+')) != NULL)
+      {
+      // remove +
+      *po++ = '\0';
+
+      if (process_gpu_token(po, pjob) != PBSE_NONE)
+        {
+        free(old_str);
+        return(PBSE_SYSTEM);
+        }
+      }
+
+    if (old_str != NULL)
+      {
+      if (process_gpu_token(old_str, pjob) != PBSE_NONE)
+        {
+        free(old_str);
+        return(PBSE_SYSTEM);
+        }
+      }
+
+    free(old_str);
+    }
 
   if (pjob->ji_wattr[JOB_ATR_exec_host].at_flags & ATR_VFLAG_SET)
     {

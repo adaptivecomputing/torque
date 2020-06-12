@@ -177,7 +177,6 @@ int req_holdjob(
   pbs_attribute *pattr;
   batch_request *preq = (struct batch_request *)vp;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
-  batch_request *dup_req = NULL;
 
   pjob = chk_job_request(preq->rq_ind.rq_hold.rq_orig.rq_objname, preq);
 
@@ -236,15 +235,11 @@ int req_holdjob(
        snprintf(preq->rq_ind.rq_hold.rq_orig.rq_objname, 
           sizeof(preq->rq_ind.rq_hold.rq_orig.rq_objname), "%s", 
           pjob->ji_qs.ji_jobid);
-    if ((dup_req = duplicate_request(preq)) == NULL)
+
+    batch_request dup_req(*preq);
+    
+    if ((rc = relay_to_mom(&pjob, &dup_req, NULL)) != PBSE_NONE)
       {
-      req_reject(rc, 0, preq, NULL, "memory allocation failure");
-      }
-    /* The dup_req is freed in relay_to_mom (failure)
-     * or in issue_Drequest (success) */
-    else if ((rc = relay_to_mom(&pjob, dup_req, NULL)) != PBSE_NONE)
-      {
-      free_br(dup_req);
       *hold_val = old_hold;  /* reset to the old value */
       req_reject(rc, 0, preq, NULL, "relay to mom failed");
 
@@ -270,7 +265,7 @@ int req_holdjob(
       else
         job_mutex.set_unlock_on_exit(false);
 
-      process_hold_reply(dup_req);
+      process_hold_reply(&dup_req);
       }
     }
 #ifdef ENABLE_BLCR
@@ -326,7 +321,6 @@ void *req_checkpointjob(
   int            rc;
   pbs_attribute *pattr;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
-  batch_request *dup_req = NULL;
 
   if ((pjob = chk_job_request(preq->rq_ind.rq_manager.rq_objname, preq)) == NULL)
     {
@@ -345,17 +339,11 @@ void *req_checkpointjob(
     {
     /* have MOM attempt checkpointing */
 
-    if ((dup_req = duplicate_request(preq)) == NULL)
-      {
-      req_reject(PBSE_SYSTEM, 0, preq, NULL, "failure to allocate memory");
-      }
+    batch_request dup_req(*preq);
 
-    /* The dup_req is freed in relay_to_mom (failure)
-     * or in issue_Drequest (success) */
-    else if ((rc = relay_to_mom(&pjob, dup_req, NULL)) != PBSE_NONE)
+    if ((rc = relay_to_mom(&pjob, &dup_req, NULL)) != PBSE_NONE)
       {
       req_reject(rc, 0, preq, NULL, NULL);
-      free_br(dup_req);
 
       if (pjob == NULL)
         job_mutex.set_unlock_on_exit(false);
@@ -374,13 +362,12 @@ void *req_checkpointjob(
       else
         job_mutex.set_unlock_on_exit(false);
 
-      process_checkpoint_reply(dup_req);
+      process_checkpoint_reply(&dup_req);
       }
     }
   else
     {
-    /* Job does not have checkpointing enabled, so reject the request */
-
+    // Job does not have checkpointing enabled, so reject the request
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
     req_reject(PBSE_IVALREQ, 0, preq, NULL, "job is not checkpointable");
@@ -388,7 +375,6 @@ void *req_checkpointjob(
 
   return(NULL);
   }  /* END req_checkpointjob() */
-
 
 
 
@@ -473,7 +459,7 @@ int release_job(
         preq->rq_host);
 
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
-      rc = PBSE_BAD_JOB_STATE_TRANSITION;
+      rc = PBSE_STATE_SLOT_LIMIT;
     }
 
   return(rc);

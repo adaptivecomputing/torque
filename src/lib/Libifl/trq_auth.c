@@ -70,7 +70,7 @@ int set_active_pbs_server(
   )
 
   {
-  strncpy(active_pbs_server, new_active_server, PBS_MAXSERVERNAME);
+  snprintf(active_pbs_server, sizeof(active_pbs_server), "%s", new_active_server);
   active_pbs_server_port = new_active_port;
   return(PBSE_NONE);
   }
@@ -331,6 +331,19 @@ int trq_simple_connect(
   int                  optval = 1;
   std::string          server(server_name);
 
+#ifdef BIND_OUTBOUND_SOCKETS
+  struct sockaddr_in   local;
+
+  /* Bind to the IP address associated with the hostname, in case there are
+   * muliple possible source IPs for this destination.*/
+  if (get_local_address(local) != PBSE_NONE)
+    {
+    fprintf(stderr, "could not determine local IP address: %s", strerror(errno));
+    return(PBSE_SYSTEM);
+    }
+
+#endif
+
   memset(&hints, 0, sizeof(hints));
   /* set the hints so we get a STREAM socket */
   hints.ai_family = AF_UNSPEC; /* allow for IPv4 or IPv6 */
@@ -364,6 +377,23 @@ int trq_simple_connect(
       close(sock);
       continue;
       }
+
+#ifdef BIND_OUTBOUND_SOCKETS
+
+    // only bind if not localhost
+    if (!islocalhostaddr(&local))
+      {
+      rc = bind(sock, (struct sockaddr *)&local, sizeof(sockaddr_in));
+      if (rc != 0)
+        {
+        fprintf(stderr, "could not bind local socket: %s", strerror(errno));
+        rc = PBSE_SYSTEM;
+        close(sock);
+        continue;
+        }
+      }
+
+#endif
 
     rc = connect(sock, addr_info->ai_addr, addr_info->ai_addrlen);
     if (rc != 0)
@@ -401,10 +431,10 @@ int trq_simple_connect(
  * server is made the active server */ 
 int validate_server(
 
-  char  *active_server_name,
-  int    t_server_port,
-  char  *ssh_key,
-  char **sign_key)
+  std::string  &active_server_name,
+  int           t_server_port,
+  char         *ssh_key,
+  char        **sign_key)
 
   {
   int rc = PBSE_NONE;
@@ -420,8 +450,8 @@ int validate_server(
      we stick with the active_server_name. If 
      another server in teh server_name_list responds 
      that will become the active_pbs_server */
-  if (active_server_name != NULL)
-    rc = trq_simple_connect(active_server_name, t_server_port, &sd);
+  if (active_server_name.size() > 0)
+    rc = trq_simple_connect(active_server_name.c_str(), t_server_port, &sd);
   else
     rc = PBSE_UNKREQ; /* If we don't have a server name we want to process everyting. */
 
@@ -520,19 +550,24 @@ int parse_terminate_request(
 
 int parse_request_client(
 
-  int    sock,
-  char **server_name,
-  int   *server_port,
-  int   *auth_type,
-  char **user,
-  int   *user_pid,
-  int   *user_sock)
+  int           sock,
+  std::string  &server_name,
+  int          *server_port,
+  int          *auth_type,
+  char        **user,
+  int          *user_pid,
+  int          *user_sock)
 
   {
-  int rc = PBSE_NONE;
-  long long tmp_val = 0, tmp_port = 0, tmp_auth_type = 0, tmp_sock = 0, tmp_pid = 0;
+  int        rc = PBSE_NONE;
+  long long  tmp_val = 0;
+  long long  tmp_port = 0;
+  long long  tmp_auth_type = 0;
+  long long  tmp_sock = 0;
+  long long  tmp_pid = 0;
+  char      *ptr = NULL;
   
-  if ((rc = socket_read_str(sock, server_name, &tmp_val)) != PBSE_NONE)
+  if ((rc = socket_read_str(sock, &ptr, &tmp_val)) != PBSE_NONE)
     {
     }
   else if ((rc = socket_read_num(sock, &tmp_port)) != PBSE_NONE)
@@ -557,7 +592,14 @@ int parse_request_client(
     *user_pid = (int)tmp_pid;
     *user_sock = (int)tmp_sock;
     }
-  return rc;
+ 
+  if (ptr != NULL)
+    {
+    server_name = ptr;
+    free(ptr);
+    }
+
+  return(rc);
   }
 
 
@@ -627,7 +669,8 @@ int build_active_server_response(
 
   if (len == 0)
     {
-    validate_server(NULL, 0, NULL, NULL);
+    std::string empty;
+    validate_server(empty, 0, NULL, NULL);
     len = strlen(active_pbs_server);
     }
 
@@ -760,9 +803,9 @@ int parse_response_svr(
 
 int get_trq_server_addr(
    
-  char  *server_name,
-  char **server_addr,
-  int   *server_addr_len)
+  const char  *server_name,
+  char       **server_addr,
+  int         *server_addr_len)
 
   {
   int   rc = PBSE_NONE;
@@ -845,7 +888,7 @@ int authorize_socket(
   int           local_socket,
   std::string  &message,
   char         *msg_buf,
-  char        **server_name_ptr,
+  std::string  &server_name,
   char        **user_name_ptr,
   std::string  &err_msg)
 
@@ -877,11 +920,8 @@ int authorize_socket(
    * 0|0||
    */
 
-  if ((rc = parse_request_client(local_socket, server_name_ptr, &server_port, &auth_type, user_name_ptr, &user_pid, &user_sock)) != PBSE_NONE)
+  if ((rc = parse_request_client(local_socket, server_name, &server_port, &auth_type, user_name_ptr, &user_pid, &user_sock)) != PBSE_NONE)
     {
-    if (*server_name_ptr != NULL)
-      free(*server_name_ptr);
-
     if (*user_name_ptr != NULL)
       free(*user_name_ptr);
 
@@ -890,7 +930,6 @@ int authorize_socket(
   else
     {
     int   retries = 0;
-    char *server_name = *server_name_ptr;
 
     while (retries < MAX_RETRIES)
       {
@@ -905,7 +944,7 @@ int authorize_socket(
         usleep(20000);
         continue;
         }
-      else if ((rc = get_trq_server_addr(server_name, &trq_server_addr, &trq_server_addr_len)) != PBSE_NONE)
+      else if ((rc = get_trq_server_addr(server_name.c_str(), &trq_server_addr, &trq_server_addr_len)) != PBSE_NONE)
         {
         disconnect_svr = false;
         retries++;
@@ -977,11 +1016,11 @@ int authorize_socket(
         if (debug_mode == TRUE)
           {
           fprintf(stderr, "Conn to %s port %d success. Conn %d authorized\n",
-            server_name, server_port, user_sock);
+            server_name.c_str(), server_port, user_sock);
           }
 
         sprintf(msg_buf,
-          "User %s at IP:port %s:%d logged in", *user_name_ptr, server_name, server_port);
+          "User %s at IP:port %s:%d logged in", *user_name_ptr, server_name.c_str(), server_port);
         log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
           className, msg_buf);
         }
@@ -1010,7 +1049,7 @@ void *process_svr_conn(
   {
   const char  *className = "trqauthd";
   int          rc = PBSE_NONE;
-  char        *server_name = NULL;
+  std::string  server_name;
   int          server_port = 0;
   char        *user_name = NULL;
   int          user_pid = 0;
@@ -1074,7 +1113,7 @@ void *process_svr_conn(
 
       case TRQ_AUTH_CONNECTION:
         {
-        rc = authorize_socket(local_socket, message, msg_buf, &server_name, &user_name, error_string);
+        rc = authorize_socket(local_socket, message, msg_buf, server_name, &user_name, error_string);
         break;
         }
       default:
@@ -1113,25 +1152,25 @@ void *process_svr_conn(
     
     if (debug_mode == TRUE)
       {
-      if (server_name != NULL)
+      if (server_name.size() > 0)
         fprintf(stderr, "Conn to %s port %d Fail. Conn %d not authorized (Err Num %d)\n",
-          server_name, server_port, user_sock, rc);
+          server_name.c_str(), server_port, user_sock, rc);
       }
 
     if (error_string.size() == 0)
       {
-      if (server_name != NULL)
+      if (server_name.size() > 0)
         snprintf(msg_buf, sizeof(msg_buf),
           "User %s at IP:port %s:%d login attempt failed --no message", 
           (user_name) ? user_name : "null",
-          server_name, server_port);
+          server_name.c_str(), server_port);
       }
     else
       {
       snprintf(msg_buf, sizeof(msg_buf),
         "User %s at IP:port %s:%d login attempt failed --%s", 
           (user_name) ? user_name : "null",
-          (server_name) ? server_name : "null", server_port, 
+          (server_name.size()) ? server_name.c_str() : "null", server_port, 
           error_string.c_str());
       }
     log_record(PBSEVENT_CLIENTAUTH | PBSEVENT_FORCE, PBS_EVENTCLASS_TRQAUTHD,
@@ -1140,9 +1179,6 @@ void *process_svr_conn(
 
   if (message.length() != 0)
     rc = socket_write(local_socket, message.c_str(), message.length());
-
-  if (server_name != NULL)
-    free(server_name);
 
   if (user_name != NULL)
     free(user_name);

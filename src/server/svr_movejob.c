@@ -371,7 +371,8 @@ int local_move(
 
   snprintf(pjob->ji_qs.ji_queue, sizeof(pjob->ji_qs.ji_queue), "%s", destination);
 
-  pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
+  if (!(pjob->ji_wattr[JOB_ATR_qrank].at_flags & ATR_VFLAG_SET))
+    pjob->ji_wattr[JOB_ATR_qrank].at_val.at_long = ++queue_rank;
     
   if ((*my_err = svr_enquejob(pjob, FALSE, NULL, reservation, false)) == PBSE_JOB_RECYCLED)
     return(-1);
@@ -758,7 +759,8 @@ int queue_job_on_mom(
 
   if ((pc = PBSD_queuejob(con, my_err, (const char *)job_id, (const char *)job_destin, pqjatr, NULL)) == NULL)
     {
-    if (*my_err == PBSE_EXPIRED)
+    if ((*my_err == PBSE_EXPIRED) ||
+        (*my_err == PBSE_TIMEOUT))
       {
       /* queue job timeout based on pbs_tcp_timeout */
       timeout = true;
@@ -939,6 +941,11 @@ void log_commit_error(
       mom_err, pbse_to_txt(mom_err), (err_text != NULL) ? err_text : "N/A");
     errno2 = mom_err;
     }
+  else if (mom_err < 0)
+    {
+    // Mom failed with a JOB_EXEC_* code
+    errno2 = mom_err;
+    }
   else
     {
     sprintf(log_buf, "send_job commit failed, rc=%d (%s)",
@@ -1117,6 +1124,11 @@ int send_job_over_network(
 
 
 
+/*
+ * send_job_over_network_with_retries()
+ *
+ */
+
 int send_job_over_network_with_retries(
     
   char           *job_id,
@@ -1214,7 +1226,8 @@ int send_job_over_network_with_retries(
                                my_err,
                                mom_err);
 
-    if (rc == LOCUTION_SUCCESS)
+    if ((rc == LOCUTION_SUCCESS) ||
+        (timeout == true))
       break;
     }  /* END for (NumRetries) */
   
@@ -1382,7 +1395,7 @@ int send_job_work(
                                           my_err,
                                           &mom_err);
 
-  if (Timeout == TRUE)
+  if (Timeout == true)
     {
     /* 10 indicates that job migrate timed out, server will mark node down *
           and abort the job - see post_sendmom() */
@@ -1404,10 +1417,21 @@ int send_job_work(
   
   if (type == MOVE_TYPE_Exec)
     {
+    // If the job failed to submit, we only want to call it a network error if we didn't
+    // get a reply from the mom, in which case mom_err will still be set to PBSE_NONE. Otherwise,
+    // it was not a network error and the node is responding.
+    int fail_count_rc = PBSE_NONE;
+
+    if (Timeout == true)
+      fail_count_rc = PBSE_TIMEOUT;
+    else if ((rc != PBSE_NONE) &&
+        (mom_err == PBSE_NONE))
+      fail_count_rc = rc;
+
     if (node_name != NULL)
-      update_failure_counts(node_name, rc);
+      update_failure_counts(node_name, fail_count_rc);
     else
-      update_failure_counts(job_destin, rc);
+      update_failure_counts(job_destin, fail_count_rc);
     }
 
 send_job_work_end:

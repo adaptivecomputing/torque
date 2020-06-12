@@ -10,6 +10,7 @@
 #include "test_svr_mail.h"
 #include "mail_throttler.hpp"
 #include "work_task.h"
+#include "server.h"
 
 
 
@@ -27,8 +28,10 @@ extern int called;
 
 
 void send_email_batch(struct work_task *pwt);
+int get_sendmail_args(char **, mail_info *, char **);
 extern mail_throttler pending_emails;
 extern bool empty_body;
+extern bool get_svr_attr_str_return_svr_sm_attr;
 
 void init_server()
   {
@@ -332,7 +335,10 @@ START_TEST(mail_point_p)
   job pjob;	
    
   char p[]= "p";
-  pjob.ji_wattr[JOB_ATR_mailpnts].at_val.at_str = p;	  
+  pjob.ji_wattr[JOB_ATR_mailpnts].at_val.at_str = p;
+  pjob.ji_wattr[JOB_ATR_outpath].at_val.at_str = strdup("/home/dbeer/forgery");
+  pjob.ji_wattr[JOB_ATR_errpath].at_val.at_str = strdup("/home/dbeer/forgery");
+  pjob.ji_wattr[JOB_ATR_job_owner].at_val.at_str = strdup("dbeer@sel");
   svr_mailowner(&pjob, 1, 1, p);
   fail_unless((called == 0),"one");
 
@@ -342,6 +348,27 @@ START_TEST(mail_point_p)
   pjob.ji_wattr[JOB_ATR_mailpnts].at_val.at_str = a;	  
   svr_mailowner(&pjob, 1, 1, p);
   fail_unless((called == 1),"two");
+  }
+END_TEST
+
+START_TEST(test_get_sendmail_args)
+  {
+  char *sendmail_args[100];
+  mail_info mi;
+  char *p;
+
+  get_sendmail_args(sendmail_args, &mi, (char **)&p);
+
+  // expect value compiled in
+  fail_unless(strcmp(sendmail_args[0], UT_SENDMAIL_CMD) == 0);
+
+  // now set the server attribute
+  server.sv_attr[SRV_ATR_SendmailPath].at_val.at_str = (char *)"./foo";
+
+  // expect to match server attribute (not one compiled in)
+  get_svr_attr_str_return_svr_sm_attr = true;
+  get_sendmail_args(sendmail_args, &mi, (char **)&p);
+  fail_unless(strcmp(sendmail_args[0], "./foo") == 0);
   }
 END_TEST
 
@@ -363,6 +390,10 @@ Suite *svr_mail_suite(void)
   
   tc_core = tcase_create("mail_point_p");
   tcase_add_test(tc_core, mail_point_p);
+  suite_add_tcase(s, tc_core);
+  
+  tc_core = tcase_create("test_get_sendmail_args");
+  tcase_add_test(tc_core, test_get_sendmail_args);
   suite_add_tcase(s, tc_core);
   
   return s;

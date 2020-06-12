@@ -57,6 +57,7 @@ bool             job_mode = false;
 int              can_place = 0;
 pbsnode          napali_node;
 
+int create_a_gpusubnode(struct pbsnode*);
 
 struct batch_request *alloc_br(int type)
   {
@@ -134,11 +135,20 @@ struct pbsnode *find_nodebyname(const char *nodename)
   {
   static struct pbsnode bob;
   static struct pbsnode other;
+  static struct pbsnode gpunode;
   static int    called = 0;
 
   if (called == 0)
     {
     other.change_name("lihue");
+
+    create_a_gpusubnode(&gpunode);
+    create_a_gpusubnode(&gpunode);
+    create_a_gpusubnode(&gpunode);
+    create_a_gpusubnode(&gpunode);
+    create_a_gpusubnode(&gpunode);
+    create_a_gpusubnode(&gpunode);
+
     called++;
     }
 
@@ -153,9 +163,9 @@ struct pbsnode *find_nodebyname(const char *nodename)
   else if (!strcmp(nodename, "3"))
     return(&bob);
   else if (!strcmp(nodename, "lihue"))
-    {
     return(&other);
-    }
+  else if (!strcmp(nodename, "gpunode"))
+    return(&gpunode);
   else
     return(NULL);
   }
@@ -537,6 +547,12 @@ pbs_net_t get_hostaddr(
 
 int create_a_gpusubnode(struct pbsnode *np)
   {
+  gpusubn tmp(np->nd_gpusn.size());
+
+  np->nd_gpusn.push_back(tmp);
+  np->nd_ngpus++;
+  np->nd_ngpus_free++;
+
   return(0);
   }
 
@@ -981,11 +997,10 @@ void Machine::displayAsJson(stringstream &out, bool include_jobs) const {}
 
 int Machine::place_job(
 
-  job        *pjob,
-  string     &cpu_string,
-  string     &mem_string,
-  const char *hostname,
-  bool        legacy_vmem)
+  job         *pjob,
+  cgroup_info &cgi,
+  const char  *hostname,
+  bool         legacy_vmem)
 
   {
   return(0);
@@ -1092,3 +1107,7 @@ pbsnode *authorized_hosts::get_authorized_node(unsigned long addr, unsigned shor
 
 authorized_hosts::authorized_hosts() {}
 authorized_hosts auth_hosts;
+
+batch_request::batch_request(int type) {}
+batch_request::~batch_request() {}
+

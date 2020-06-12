@@ -226,6 +226,7 @@ int get_sendmail_args(
   int         rc = PBSE_NONE;
   int         numargs = 0;
   const char *mailfrom = NULL;
+  const char *sendmail_path = NULL;
   char       *mailptr;
   
   /* Who is mail from, if SRV_ATR_mailfrom not set use default */
@@ -247,7 +248,17 @@ int get_sendmail_args(
       }
     }
 
-  sendmail_args[numargs++] = (char *)SENDMAIL_CMD;
+  // see if sendmail path server attribute set
+  get_svr_attr_str(SRV_ATR_SendmailPath, (char **)&sendmail_path);
+  if (sendmail_path != NULL)
+    {
+    sendmail_args[numargs++] = (char *)sendmail_path;
+    }
+  else
+    {
+    sendmail_args[numargs++] = (char *)SENDMAIL_CMD;
+    }
+
   sendmail_args[numargs++] = (char *)"-f";
   sendmail_args[numargs++] = (char *)mailfrom;
 
@@ -438,36 +449,6 @@ void *send_the_mail(
 
   return(NULL);
   } /* END send_the_mail() */
-
-
-
-void set_output_files(
-
-  job       *pjob,
-  mail_info *mi)
-
-  {
-  if (pjob->ji_wattr[JOB_ATR_join].at_flags & ATR_VFLAG_SET)
-    {
-    char *join_val = pjob->ji_wattr[JOB_ATR_join].at_val.at_str;
-    if (!strcmp(join_val, "oe"))
-      {
-      mi->errFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
-      mi->outFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
-      }
-    else if (!strcmp(join_val, "eo"))
-      {
-      mi->errFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
-      mi->outFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
-      }
-    }
-
-  if (mi->outFile.size() == 0)
-    mi->outFile = pjob->ji_wattr[JOB_ATR_outpath].at_val.at_str;
-
-  if (mi->errFile.size() == 0)
-    mi->errFile = pjob->ji_wattr[JOB_ATR_errpath].at_val.at_str;
-  } // END set_output_files()
              
 
 
@@ -590,7 +571,7 @@ void svr_mailowner(
   char                  mailto[1024];
   char                 *domain = NULL;
   int                   i;
-  mail_info             mi;
+  mail_info             mi(pjob);
   bool                  no_force = false;
 
   struct array_strings *pas;
@@ -625,23 +606,6 @@ void svr_mailowner(
       }
     
     return;        
-    }
-
-  if (LOGLEVEL >= 3)
-    {
-    char tmpBuf[LOG_BUF_SIZE];
-
-    snprintf(tmpBuf, LOG_BUF_SIZE, "preparing to send '%c' mail for job %s to %s (%.64s)\n",
-             (char)mailpoint,
-             pjob->ji_qs.ji_jobid,
-             pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
-             (text != NULL) ? text : "---");
-
-    log_event(
-      PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
-      PBS_EVENTCLASS_JOB,
-      pjob->ji_qs.ji_jobid,
-      tmpBuf);
     }
 
   /*
@@ -708,6 +672,23 @@ void svr_mailowner(
 
       return;
       }
+    }
+
+  if (LOGLEVEL >= 3)
+    {
+    char tmpBuf[LOG_BUF_SIZE];
+
+    snprintf(tmpBuf, LOG_BUF_SIZE, "preparing to send '%c' mail for job %s to %s (%.64s)\n",
+             (char)mailpoint,
+             pjob->ji_qs.ji_jobid,
+             pjob->ji_wattr[JOB_ATR_job_owner].at_val.at_str,
+             (text != NULL) ? text : "---");
+
+    log_event(
+      PBSEVENT_ERROR | PBSEVENT_ADMIN | PBSEVENT_JOB,
+      PBS_EVENTCLASS_JOB,
+      pjob->ji_qs.ji_jobid,
+      tmpBuf);
     }
 
   /* Who does the mail go to?  If mail-list, them; else owner */
@@ -783,17 +764,6 @@ void svr_mailowner(
   /* initialize the mail information */
   mi.mailto = mailto;
   mi.mail_point = mailpoint;
-
-  if (pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str != NULL)
-    mi.exec_host = pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str;
-
-  mi.jobid = pjob->ji_qs.ji_jobid;
-
-  if (pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str != NULL)
-    mi.jobname = pjob->ji_wattr[JOB_ATR_jobname].at_val.at_str;
-
-  if (mailpoint == (int) MAIL_END)
-    set_output_files(pjob, &mi);
 
   if (text)
     {

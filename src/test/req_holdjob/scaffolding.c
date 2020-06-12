@@ -119,7 +119,7 @@ int copy_batchrequest(struct batch_request **newreq, struct batch_request *preq,
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);
@@ -160,4 +160,17 @@ batch_request *duplicate_request(batch_request *preq, int type)
 int check_array_slot_limits(job *pjob, job_array *pa)
   {
   return(0);
+  }
+
+batch_request::batch_request()
+  {
+  }
+
+batch_request::batch_request(const batch_request &other)
+  {
+  }
+
+batch_request::~batch_request()
+
+  {
   }

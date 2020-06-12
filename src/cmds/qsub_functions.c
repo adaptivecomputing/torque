@@ -39,16 +39,19 @@
 #include <csv.h>
 #include <pwd.h>
 
+#include <vector>
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <poll.h>
+
 #ifdef sun
 #include <sys/stream.h>
 #endif /* sun */
 
 #if defined(HAVE_SYS_TTY_H)
 #include <sys/tty.h>
-#endif
-
-#if defined(FD_SET_IN_SYS_SELECT_H)
-#include <sys/select.h>
 #endif
 
 #include "libcmds.h" /* TShowAbout_exit */
@@ -88,10 +91,14 @@ char *host_name_suffix = NULL;
 int    J_opt = FALSE;
 int    P_opt = FALSE;
 
+const int   MAX_BIND_RETRIES = 20;
 const char *checkpoint_strings = "n,c,s,u,none,shutdown,periodic,enabled,interval,depth,dir";
 char       *alternate_dependency;
 int         alternate_data_type;
+int         interactive_port_min;
+int         interactive_port_max;
 complete_req  cr;
+std::string   L_request;
 
 /* adapted from openssh */
 /* The parameter was EMsg, but was never used.
@@ -788,17 +795,16 @@ int validate_submit_filter(
 
 void validate_pbs_o_workdir(
 
-  job_data_container *job_attr)
+  const job_info   *ji)
 
   {
-  job_data     *tmp_job_info = NULL;
+  job_data   *tmp_job_info = NULL;
   const char *the_val = NULL;
-  char        null_val[] = "\0";
   char        tmp_dir[MAXPATHLEN] = {""};
 
-  if (hash_find(job_attr, ATTR_init_work_dir, &tmp_job_info) == FALSE)
+  if (hash_find(ji->job_attr, ATTR_init_work_dir, &tmp_job_info) == FALSE)
     {
-    if (hash_find(job_attr, "PWD",  &tmp_job_info))
+    if (hash_find(ji->job_attr, "PWD",  &tmp_job_info))
       the_val = tmp_job_info->value.c_str();
     else
       {
@@ -806,14 +812,35 @@ void validate_pbs_o_workdir(
       if ((the_dir = getcwd(tmp_dir, MAXPATHLEN)) != NULL)
         the_val = the_dir;
       else
-        the_val = null_val;
+        {
+        // Current working directory is deleted. Fail
+        fprintf(stderr, "qsub: Cannot obtain the current directory.\nPlease submit from a valid directory.\n");
+        exit(3);
+        }
       }
     }
   else
+    {
+    // save the value of the work dir job attribute
     the_val = tmp_job_info->value.c_str();
 
-  hash_add_or_exit(job_attr, ATTR_pbs_o_workdir, the_val, ENV_DATA);
-  hash_add_or_exit(job_attr, ATTR_init_work_dir, the_val, ENV_DATA);
+    if (hash_find(ji->client_attr, "validate_path", &tmp_job_info))
+      {
+      // validate local existence of '-w' working directory
+
+      struct stat sb;
+
+      if ((stat(the_val, &sb) != 0) ||
+          (!(S_ISDIR(sb.st_mode))))
+        {
+        fprintf(stderr, "qsub: Requested working directory '%s' is not a valid directory\nPlease specify a valid working directory.\n", the_val);
+        exit(3);
+        }
+      }
+    }
+
+  hash_add_or_exit(ji->job_attr, ATTR_pbs_o_workdir, the_val, ENV_DATA);
+  hash_add_or_exit(ji->job_attr, ATTR_init_work_dir, the_val, ENV_DATA);
   } /* END validate_pbs_o_workdir() */
 
 
@@ -882,6 +909,11 @@ void validate_qsub_host_pbs_o_server(
     }
   } /* END validate_qsub_host_pbs_o_server() */
 
+
+
+/*
+ * are_mpp_present()
+ */
 
 int are_mpp_present(
 
@@ -983,6 +1015,86 @@ bool is_resource_request_valid(
 
 
 
+/*
+ * is_memory_request_valid()
+ * For cgroups, swap cannot be less than phsyical memory, so reject such jobs.
+ *
+ * @param ji (I) - the job information
+ * @param err_msg (O) - the error message
+ * @return true if the request is valid or cgroups aren't enabled, false otherwise.
+ */
+
+bool is_memory_request_valid(
+
+  job_info    *ji,
+  std::string &err_msg)
+
+  {
+  bool valid = true;
+
+#ifdef PENABLE_LINUX_CGROUPS
+  job_data_container *resources = ji->res_attr;
+  job_data           *jd;
+  std::string         mem_str;
+  std::string         vmem_str;
+  unsigned long       mem = 0;
+  unsigned long       vmem = 0;
+
+  if (hash_find(resources, "vmem", &jd) == 0)
+    {
+    if (hash_find(resources, "pvmem", &jd))
+      {
+      read_mem_value(jd->value.c_str(), vmem);
+      vmem_str = jd->value;
+      err_msg = "qsub: requested pvmem='";
+      err_msg += vmem_str;
+      }
+    }
+  else
+    {
+    read_mem_value(jd->value.c_str(), vmem);
+    vmem_str = jd->value;
+    err_msg = "qsub: requested vmem='";
+    err_msg += vmem_str;
+    }
+
+  if (vmem != 0)
+    {
+    if (hash_find(resources, "mem", &jd))
+      {
+      read_mem_value(jd->value.c_str(), mem);
+      mem_str = jd->value;
+      
+      if (vmem < mem)
+        {
+        err_msg += "' which is less than mem='";
+        err_msg += mem_str;
+        err_msg += "'. If p/vmem is set to a non-zero value, it must be greater than or equal to mem.\n";
+        valid = false;
+        }
+      }
+    else if (hash_find(resources, "pmem", &jd))
+      {
+      read_mem_value(jd->value.c_str(), mem);
+      mem_str = jd->value;
+      
+      if (vmem < mem)
+        {
+        err_msg += "' which is less than pmem='";
+        err_msg += mem_str;
+        err_msg += "'. If p/vmem is set to a non-zero value, it must be greater than or equal to pmem.\n";
+        valid = false;
+        }
+      }
+    }
+
+#endif
+
+  return(valid);
+  } // END is_memory_request_valid()
+
+
+
 void validate_basic_resourcing(
 
   job_info *ji)
@@ -991,6 +1103,12 @@ void validate_basic_resourcing(
   std::string err_msg;
 
   if (is_resource_request_valid(ji, err_msg) == false)
+    {
+    fprintf(stderr, "%s", err_msg.c_str());
+    exit(4);
+    }
+
+  if (is_memory_request_valid(ji, err_msg) == false)
     {
     fprintf(stderr, "%s", err_msg.c_str());
     exit(4);
@@ -1074,7 +1192,7 @@ void validate_join_options (
 
 void post_check_attributes(job_info *ji, char *script_tmp)
   {
-  validate_pbs_o_workdir(ji->job_attr);
+  validate_pbs_o_workdir(ji);
   validate_qsub_host_pbs_o_server(ji->job_attr);
   validate_basic_resourcing(ji);
 
@@ -1107,6 +1225,7 @@ void add_new_request_if_present(
     std::string req_str;
     cr.toString(req_str);
     hash_add_or_exit(ji->job_attr, ATTR_req_information, req_str.c_str(), CMDLINE_DATA);
+    hash_add_or_exit(ji->job_attr, ATTR_L_request, L_request.c_str(), CMDLINE_DATA);
     }
   } // END add_new_request_if_present() 
 
@@ -1198,6 +1317,8 @@ static int get_script(
           directive_prefix[0] = '\\';
           strcat(directive_prefix, ArgV[index]);
           directive_prefix_on = false;
+
+          cfilter += directive_prefix;
           continue;
           }
 
@@ -1549,15 +1670,27 @@ void do_dir(
   }  /* END do_dir() */
 
 
+
+unsigned int get_port_in_range()
+
+  {
+  int span = interactive_port_max - interactive_port_min + 1;
+  return(rand() % span + interactive_port_min);
+  } // END get_port_in_range()
+
+
+
 /*
  * The following bunch of functions support the "Interactive Job"
  * capability of PBS.
  */
+
 /*
  * interactive_port - get a socket to listen to for "interactive" job
  * When the "interactive" job is run, its standard in, out, and error
  * will be connected to this socket.
  */
+
 char *interactive_port(
     
   int *sock)
@@ -1568,6 +1701,7 @@ char *interactive_port(
 
   struct sockaddr_in myaddr;
   unsigned short port;
+  int            bind_rc = -1;
 
   *sock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -1580,11 +1714,20 @@ char *interactive_port(
   myaddr.sin_family = AF_INET;
   myaddr.sin_addr.s_addr = INADDR_ANY;
 
-  if (bind(*sock, (struct sockaddr *)&myaddr, namelen) < 0)
+  // Since the requested port range could be in use, retry throughout the port range.
+  for (int bind_retry = 0; bind_retry < MAX_BIND_RETRIES; bind_retry++)
+    {
+    if (interactive_port_min != 0)
+      myaddr.sin_port = htons(get_port_in_range());
+
+    if ((bind_rc = bind(*sock, (struct sockaddr *)&myaddr, namelen)) >= 0)
+      break;
+    }
+  
+  if (bind_rc < 0)
     print_qsub_usage_exit("qsub: unable to bind to socket");
 
   /* get port number assigned */
-
   if (getsockname(*sock, (struct sockaddr *)&myaddr, &namelen) < 0)
     print_qsub_usage_exit("qsub: unable to get port number");
 
@@ -2033,7 +2176,7 @@ void bailout(void)
   printf("Job %s is being deleted\n",
          new_jobname);
 
-  c = cnt2server(server_out);
+  c = cnt2server(server_out, false);
 
   if (c <= 0)
     {
@@ -2137,20 +2280,18 @@ void x11handler(
   int      param_sock)
 
   {
-  struct pfwdsock *socks;
+  std::vector<pfwdsock> *socks = new std::vector<pfwdsock>(NUM_SOCKS);
   int              n;
   char            *display;
 
-  calloc_or_fail((char **)&socks, sizeof(struct pfwdsock) * NUM_SOCKS, "x11handler");
-
   for (n = 0;n < NUM_SOCKS;n++)
-    (socks + n)->active = 0;
+    socks->at(n).active = 0;
 
-  (socks + 0)->sock = param_sock;
+  socks->at(0).sock = param_sock;
 
-  (socks + 0)->active = 1;
+  socks->at(0).active = 1;
 
-  (socks + 0)->listening = 1;
+  socks->at(0).listening = 1;
 
   /* Try to open a socket for the local X server. */
   display = getenv("DISPLAY");
@@ -2167,6 +2308,133 @@ void x11handler(
   exit(EXIT_FAILURE);
   }
 
+/*
+ * wait_for_read_ready()
+ *
+ * Wait for a file descriptor to be ready to read before timeout elapsed
+ * @param fd - file descriptor
+ * @param timeout_sec - time in seconds to wait for read activity
+ * @return -1 if error, 0 if not ready, >1 if ready
+ */
+
+int wait_for_read_ready(
+
+  int fd,
+  int timeout_sec)
+
+  { 
+  struct pollfd   PollArray;
+  struct timespec ts;
+  int             n;
+
+  PollArray.fd = fd;
+  PollArray.events = POLLIN;
+  PollArray.revents = 0;
+
+  ts.tv_sec = timeout_sec;
+  ts.tv_nsec = 0;
+
+  // wait for data ready to read
+  n = ppoll(&PollArray, 1, &ts, NULL);
+
+  if (n > 0)
+    {
+    // events returned, fd ready for reading?
+    if ((PollArray.revents & POLLIN) == 0)
+      {
+      // none ready to read after timeout
+      n = 0;
+      }
+    }
+  else if ((n == -1) && (errno == EINTR))
+    {
+    // ignore signals -- none ready to read
+    n = 0;
+    }
+
+  return(n);
+  }
+
+
+
+/*
+ * get_interactive_job_id()
+ *
+ */
+
+int get_interactive_job_id(
+    
+  int  &news,
+  char *momjobid,
+  int   momjobid_size)
+
+  {
+  int                rc = PBSE_NONE;
+  torque_socklen_t   fromlen;
+  char               cur_server[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
+
+  struct sockaddr_in from;
+
+  // Accept connection on socket set up earlier
+  while (true)
+    {
+    int rc;
+
+    if ((rc = wait_for_read_ready(inter_sock, 30)) < 0)
+      print_qsub_usage_exit("qsub: poll failed");
+
+    if (rc > 0)
+      break;
+
+    /* connect to server, status job to see if still there */
+
+    if (!locate_job(new_jobname, server_out, cur_server))
+      {
+      fprintf(stderr, "qsub: job %s apparently deleted\n",
+              new_jobname);
+
+      exit(1);
+      }
+    }
+
+  // apparently someone is attempting to connect to us
+  fromlen = sizeof(from);
+
+  if ((news = accept(inter_sock, (struct sockaddr *) & from, &fromlen)) < 0)
+    print_qsub_usage_exit("qsub: accept error");
+
+  // When MOM connects, she will send the job id for us to verify
+  int   amt = momjobid_size;
+  char *pc = momjobid;
+
+  while (amt > 0)
+    {
+    int amt_read = read_ac_socket(news, pc, amt);
+
+    if (amt_read <= 0)
+      break;
+
+    pc += amt_read;
+    amt -= amt_read;
+
+    if (*(pc - 1) == '\0')
+      break;
+    }
+
+  if ((pc - momjobid == 1) &&
+      (momjobid[0] == 'C'))
+    return(-2);
+
+  // Return -1 if we didn't read anything
+  if (amt == momjobid_size)
+    {
+    shutdown(news, 2);
+    rc = -1;
+    }
+
+  return(rc);
+  } // END get_interactive_job_id()
+
 
 
 /*
@@ -2177,24 +2445,14 @@ void interactive(
   job_data_container  *client_attr)
 
   {
-  int  amt;
-  char cur_server[PBS_MAXSERVERNAME + PBS_MAXPORTNUM + 2];
-
   char momjobid[LOG_BUF_SIZE+1];
   int  news;
-  int  nsel;
-  char *pc;
-  fd_set selset;
 
   struct sigaction act;
 
-  struct sockaddr_in from;
-  torque_socklen_t fromlen;
-
-  struct timeval timeout;
-
   struct winsize wsz;
   job_data *tmp_job_info;
+  bool      read_jobid = false;
 
   /* Catch SIGINT and SIGTERM, and */
   /* setup to catch Death of child */
@@ -2228,75 +2486,28 @@ void interactive(
     }
 
 
-  printf("qsub: waiting for job %s to start\n",
+  printf("qsub: waiting for job %s to start\n", new_jobname);
 
-         new_jobname);
-
-  /* Accept connection on socket set up earlier */
-
-  nsel = 0;
-
-  while (nsel == 0)
+  for (int retry = 0; retry < 3; retry++)
     {
-    FD_ZERO(&selset);
-    FD_SET(inter_sock, &selset);
-
-    timeout.tv_usec = 0;
-    timeout.tv_sec  = 30;
-
-    nsel = select(FD_SETSIZE, &selset, NULL, NULL, &timeout);
-
-    if (nsel > 0)
+    int rc = get_interactive_job_id(news, momjobid, sizeof(momjobid));
+    if (rc == PBSE_NONE)
       {
+      read_jobid = true;
       break;
       }
-    else if (nsel == -1)
+    else if (rc == -2)
       {
-      if (errno == EINTR)
-        {
-        nsel = 0;
-        }
-      else
-        print_qsub_usage_exit("qsub: select failed");
-      }
-
-    /* connect to server, status job to see if still there */
-
-    if (!locate_job(new_jobname, server_out, cur_server))
-      {
-      fprintf(stderr, "qsub: job %s apparently deleted\n",
-              new_jobname);
-
+      // The job was canceled while waiting to start
+      fprintf(stderr, "qsub: Job %s was canceled while waiting to start\n", new_jobname);
       exit(1);
       }
     }
 
-  /* apparently someone is attempting to connect to us */
-
-  fromlen = sizeof(from);
-
-  if ((news = accept(inter_sock, (struct sockaddr *) & from, &fromlen)) < 0)
-    print_qsub_usage_exit("qsub: accept error");
-
-  /* When MOM connects, she will send the job id for us to verify */
-
-  amt = LOG_BUF_SIZE + 1;
-
-  pc = momjobid;
-
-  while (amt > 0)
+  if (read_jobid == false)
     {
-    fromlen = read_ac_socket(news, pc, amt);
-
-    if (fromlen <= 0)
-      break;
-
-    pc += fromlen;
-
-    if (*(pc - 1) == '\0')
-      break;
-
-    amt -= fromlen;
+    fprintf(stderr, "qsub: received 3 connections, but couldn't read a valid job id\n");
+    exit(1);
     }
 
   if (strncmp(momjobid, "PBS:", 4) == 0)
@@ -2415,8 +2626,6 @@ void interactive(
   }  /* END interactive() */
 
 
-
-
 int validate_group_list(
 
   char *glist)
@@ -2424,14 +2633,11 @@ int validate_group_list(
   {
   /* check each group to determine if it is a valid group that the user can be a part of.
    * group list is of the form group[@host][,group[@host]...] */
-  char           *buf = NULL;
   char           *groups = strdup(glist);
   const char     *delims = ",";
-  char           *tmp_group = strtok(groups, delims); 
+  char           *tmp_group = strtok(groups, delims);
   char           *at;
   char           *u_name;
-  char          **pmem;
-  struct group   *grent;
   struct passwd  *pwent;
 
   if ((pwent = getpwuid(getuid())) == NULL)
@@ -2446,44 +2652,21 @@ int validate_group_list(
     {
     if ((at = strchr(tmp_group,'@')) != NULL)
       *at = '\0';
-    
-    if ((grent = getgrnam_ext(&buf, tmp_group)) == NULL)
-      {
-      free(groups);
-      return(FALSE);
-      }
-    
-    pmem = grent->gr_mem;
-    free_grname(grent, buf);
-    
-    if (pmem == NULL)
-      {
-      free(groups);
-      return(FALSE);
-      }
-    
-    while (*pmem != NULL)
-      {
-      if (!strcmp(*pmem,u_name))
-        break;
 
-      pmem++;
-      }
-
-    if (*pmem == NULL)
-      {
-      /* match not found */
+    if (is_group_member(u_name, tmp_group) == FALSE)
+    {
       free(groups);
-      return(FALSE);
-      }
-
+      return(false);
+    }
+    
     tmp_group = strtok(NULL,delims);
     }
       
   free(groups);
 
-  return(TRUE);
+  return(true);
   }
+
 
 
 bool came_from_moab(
@@ -2533,6 +2716,12 @@ void process_opt_L(
 
   {
   char        err_buf[MAXLINE*2];
+
+  if (L_request.size() > 0)
+    L_request += " ";
+
+  L_request += "-L ";
+  L_request += cmd_arg;
 
   if (strncmp(cmd_arg, "tasks=", 6))
     {
@@ -3376,7 +3565,8 @@ void process_opts(
             if (dependency_options.size() > 1)
               {
               alternate_dependency = strdup(dependency_options[1].c_str());
-              alternate_data_type = data_type;
+              // Make this overwrite the previous value if needed
+              alternate_data_type = data_type - 1;
               }
             }
           else if (!strcmp(keyword, ATTR_job_radix))
@@ -3814,7 +4004,7 @@ void process_opts(
 
           case 'l':
 
-            if (add_verify_resources(ji->res_attr, vptr, data_type))
+            if (add_verify_resources(ji->res_attr, vptr, FILTER_DATA))
               print_qsub_usage_exit("qsub: illegal -l value");
 
             break;
@@ -4041,6 +4231,29 @@ void process_config_file(
         strcpy(host_name_suffix, param_val);
         }
       }
+
+    if ((param_val = get_trq_param("INTERACTIVE_PORT_RANGE", torque_cfg_buf)) != NULL)
+      {
+      // Must be <int>-<int>
+      char *ptr = param_val;
+      bool  valid = false;
+      interactive_port_min = strtol(ptr, &ptr, 10);
+      if (*ptr == '-')
+        {
+        ptr++;
+        interactive_port_max = strtol(ptr, &ptr, 10);
+
+        if ((interactive_port_max > interactive_port_min) &&
+            (interactive_port_min > 1024))
+          valid = true;
+        }
+
+      if (valid == false)
+        {
+        interactive_port_min = 0;
+        interactive_port_max = 0;
+        }
+      }
     }    /* END if (load_config(torque_cfg_buf,sizeof(torque_cfg_buf)) == 0) */
   }
 
@@ -4218,7 +4431,7 @@ void process_early_opts(
         TShowAbout_exit();
       else if (strcmp(name, "version") == 0)
         {
-        fprintf(stderr, "Version: %s\nCommit: %s\n", PACKAGE_VERSION, GIT_HASH);
+        fprintf(stdout, "Version: %s\nCommit: %s\n", PACKAGE_VERSION, GIT_HASH);
         exit(0);
         }
       }
@@ -4322,6 +4535,8 @@ void main_func(
   /* Allocate Memmgr */
   int               debug = FALSE;
   job_info          ji;
+
+  srand(time(NULL));
 
   /**
    * Before we go to the trouble of allocating memory, initializing structures,
@@ -4610,7 +4825,7 @@ void main_func(
       }
     }
 
-  sock_num = cnt2server(server_out);
+  sock_num = cnt2server(server_out, false);
 
   if (sock_num <= 0)
     {

@@ -143,7 +143,7 @@ extern void rel_resc(job *);
 extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
 
-extern char *get_correct_jobname(const char *jobid);
+extern const char *get_correct_jobname(const char *jobid, std::string &correct);
 
 /* prototypes */
 void post_modify_arrayreq(batch_request *preq);
@@ -230,7 +230,6 @@ void mom_cleanup_checkpoint_hold(
   job           *pjob;
   char          *jobid;
 
-  batch_request *preq;
   char           log_buf[LOCAL_LOG_BUF_SIZE];
   time_t         time_now = time(NULL);
 
@@ -279,44 +278,30 @@ void mom_cleanup_checkpoint_hold(
 
   if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
     {
-    if ((preq = alloc_br(PBS_BATCH_DeleteJob)) == NULL)
+    batch_request preq(PBS_BATCH_DeleteJob);
+      
+    strcpy(preq.rq_ind.rq_delete.rq_objname, pjob->ji_qs.ji_jobid);
+    
+    if ((rc = relay_to_mom(&pjob, &preq, NULL)) != PBSE_NONE)
       {
-      log_err(-1, __func__, "unable to allocate DeleteJob request - big trouble!");
-      }
-    else
-      {
-      strcpy(preq->rq_ind.rq_delete.rq_objname, pjob->ji_qs.ji_jobid);
-      /* The preq is freed in relay_to_mom (failure)
-       * or in issue_Drequest (success) */
-      if ((rc = relay_to_mom(&pjob, preq, NULL)) != PBSE_NONE)
+      if (pjob != NULL)
         {
-        if (pjob != NULL)
-          {
-          snprintf(log_buf,sizeof(log_buf),
-            "Unable to relay information to mom for job '%s'\n",
-            pjob->ji_qs.ji_jobid);
-          
-          log_err(rc, __func__, log_buf);
-          }
-        else
-          job_mutex.set_unlock_on_exit(false);
-
-        free_br(preq);
-
-        return;
+        snprintf(log_buf,sizeof(log_buf),
+          "Unable to relay information to mom for job '%s'\n",
+          pjob->ji_qs.ji_jobid);
+        
+        log_err(rc, __func__, log_buf);
         }
       else
-        free_br(preq);
+        job_mutex.set_unlock_on_exit(false);
 
-      if ((LOGLEVEL >= 7) &&
-          (pjob != NULL))
-        {
-        log_event(
-          PBSEVENT_JOB,
-          PBS_EVENTCLASS_JOB,
-          pjob->ji_qs.ji_jobid,
-          "requested mom cleanup");
-        }
+      return;
+      }
+
+    if ((LOGLEVEL >= 7) &&
+        (pjob != NULL))
+      {
+      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, "requested mom cleanup");
       }
     }
   else
@@ -357,29 +342,11 @@ void chkpt_xfr_hold(
 
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buf);
     }
-  
-  free_br(preq);
 
   set_task(WORK_Immed, 0, mom_cleanup_checkpoint_hold, strdup(pjob->ji_qs.ji_jobid), FALSE);
 
   return;
   }  /* END chkpt_xfr_hold() */
-
-
-
-
-
-/*
- * chkpt_xfr_done - Handle the clean up of the transfer of the checkpoint files.
- */
-
-void chkpt_xfr_done(
-
-  batch_request *preq)
-
-  {
-  free_br(preq);
-  }  /* END chkpt_xfr_done() */
 
 
 
@@ -686,12 +653,11 @@ int modify_job(
   else
     {
     reply_ack(preq);
-    preq = NULL;
     }
 
   if (copy_checkpoint_files)
     {
-    struct batch_request *momreq = 0;
+    struct batch_request *momreq = NULL;
     momreq = cpy_checkpoint(momreq, pjob, JOB_ATR_checkpoint_name, CKPT_DIR_OUT);
 
     if (momreq != NULL)
@@ -699,14 +665,10 @@ int modify_job(
       /* have files to copy */
       momreq->rq_extra = strdup(pjob->ji_qs.ji_jobid);
 
-      /* The momreq is freed in relay_to_mom (failure)
-       * or in issue_Drequest (success) */
       rc = relay_to_mom(&pjob, momreq, NULL);
 
       if (rc != PBSE_NONE)
         {
-        free_br(momreq);
-   
         if (pjob != NULL)
           {
           snprintf(log_buf,sizeof(log_buf),
@@ -720,8 +682,8 @@ int modify_job(
         }
       else if (checkpoint_req == CHK_HOLD)
         chkpt_xfr_hold(momreq, pjob);
-      else
-        chkpt_xfr_done(momreq);
+      
+      delete momreq;
       }
     else
       {
@@ -767,11 +729,12 @@ int modify_whole_array(
     else
       {
       /* NO_MOM_RELAY will prevent modify_job from calling relay_to_mom */
-      batch_request *array_req = duplicate_request(preq, i);
+      batch_request array_req(*preq);
+      array_req.update_object_id(i);
       mutex_mgr job_mutex(pjob->ji_mutex, true);
       pthread_mutex_unlock(pa->ai_mutex);
-      array_req->rq_noreply = TRUE;
-      rc = modify_job((void **)&pjob, plist, array_req, checkpoint_req, NO_MOM_RELAY);
+      array_req.rq_noreply = true;
+      rc = modify_job((void **)&pjob, plist, &array_req, checkpoint_req, NO_MOM_RELAY);
       if (rc != PBSE_NONE)
         {
         modify_job_rc = rc;
@@ -936,7 +899,7 @@ void *req_modifyarray(
   /* If async modify, reply now; otherwise reply is handled later */
   if (preq->rq_type == PBS_BATCH_AsyModifyJob)
     {
-    preq->rq_noreply = TRUE; /* set for no more replies */
+    preq->rq_noreply = true; /* set for no more replies */
     reply_ack(preq);
 
     enqueue_threadpool_request(modify_array_work, preq, async_pool);
@@ -949,22 +912,21 @@ void *req_modifyarray(
 
 
 
-void *modify_job_work(
+int modify_job_work(
 
-  batch_request *vp) /* I */
+  batch_request *preq) /* I */
 
   {
   job           *pjob;
   svrattrl      *plist;
   int            checkpoint_req = FALSE;
-  batch_request *preq = (struct batch_request *)vp;
   
   pjob = svr_find_job(preq->rq_ind.rq_modify.rq_objname, FALSE);
 
   if (pjob == NULL)
     {
     req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "Job unexpectedly deleted");
-    return(NULL);
+    return(PBSE_JOBNOTFOUND);
     }
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
@@ -987,9 +949,8 @@ void *modify_job_work(
   /* modify_job will free preq and respond to it */
   modify_job((void **)&pjob, plist, preq, checkpoint_req, 0);
 
-  return(NULL);
+  return(PBSE_NONE);
   } /* END modify_job_work() */
-
 
 
 
@@ -1006,10 +967,9 @@ void *req_modifyjob(
   batch_request *preq) /* I */
 
   {
-  job       *pjob;
-  svrattrl  *plist;
-  char       log_buf[LOCAL_LOG_BUF_SIZE];
-  char      *correct_jobname_p;
+  job         *pjob;
+  svrattrl    *plist;
+  std::string  correct_jobname;
 
   pjob = chk_job_request(preq->rq_ind.rq_modify.rq_objname, preq);
 
@@ -1019,22 +979,17 @@ void *req_modifyjob(
     }
 
   // get the correct job name
-  correct_jobname_p = get_correct_jobname(preq->rq_ind.rq_modify.rq_objname);
+  get_correct_jobname(preq->rq_ind.rq_modify.rq_objname, correct_jobname);
 
   // if correct job name and one passed in don't match, adjust one passed in
   //  so that mom will be able to match it and not reject modify request due
   //  to job not found
-  if (correct_jobname_p != NULL)
+  if (correct_jobname != preq->rq_ind.rq_modify.rq_objname)
     {
-    if (strcmp(correct_jobname_p, preq->rq_ind.rq_modify.rq_objname) != 0)
-      {
-      // job names don't match so need to modify the requested jobname
-      snprintf(preq->rq_ind.rq_modify.rq_objname,
-               sizeof(preq->rq_ind.rq_modify.rq_objname),
-               "%s", correct_jobname_p);
-      }
-    
-    free(correct_jobname_p);
+    // job names don't match so need to modify the requested jobname
+    snprintf(preq->rq_ind.rq_modify.rq_objname,
+             sizeof(preq->rq_ind.rq_modify.rq_objname),
+             "%s", correct_jobname.c_str());
     }
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
@@ -1059,18 +1014,12 @@ void *req_modifyjob(
     /* reply_ack will free preq. We need to copy it before we call reply_ack */
     batch_request *new_preq;
 
-    new_preq = duplicate_request(preq, -1);
-    if (new_preq == NULL)
-      {
-      sprintf(log_buf, "failed to duplicate batch request");
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      return(NULL);
-      }
+    new_preq = new batch_request(*preq);
 
     get_batch_request_id(new_preq);
     reply_ack(preq);
 
-    new_preq->rq_noreply = TRUE; /* set for no more replies */
+    new_preq->rq_noreply = true; /* set for no more replies */
 
     enqueue_threadpool_request((void *(*)(void *))modify_job_work, preq, async_pool);
     }
@@ -1079,8 +1028,6 @@ void *req_modifyjob(
   
   return(NULL);
   }  /* END req_modifyjob() */
-
-
 
 
 
@@ -1354,6 +1301,8 @@ int modify_job_attr(
 
 /*
  * post_modify_arrayreq - clean up after sending modify request to MOM
+ *
+ * FIXME: This appears to be dead code
  */
 
 void post_modify_arrayreq(

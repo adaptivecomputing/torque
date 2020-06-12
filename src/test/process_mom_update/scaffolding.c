@@ -14,7 +14,7 @@
 #include "u_tree.h"
 #include "id_map.hpp"
 
-#include "id_map.hpp"
+#include "machine.hpp"
 
 char        server_name[PBS_MAXSERVERNAME + 1]; /* host_name[:service|port] */
 int         allow_any_mom;
@@ -650,6 +650,8 @@ Chip::~Chip() {}
 Core::Core() {}
 Core::~Core() {}
 
+void Machine::save_allocations(const Machine &other) {}
+
 bool Machine::is_initialized() const
   {
   return(this->initialized);
@@ -684,6 +686,11 @@ Machine::Machine(
   std::vector<std::string> &valid_ids) : initialized(true)
 
   {
+  }
+
+int Machine::get_total_gpus() const
+  {
+  return(0);
   }
 
 #endif

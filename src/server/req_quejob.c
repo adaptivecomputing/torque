@@ -814,32 +814,12 @@ int decode_attributes_into_job(
 
     if (rc != 0)
       {
-      if (rc == PBSE_UNKRESC)
-        {
-        /* check for RM extension */
-
-        /* NYI */
-
-        /* unknown resources not allowed in Exec queue */
-
-        if (pque->qu_qs.qu_type == QTYPE_Execution)
-          {
-          /* FAILURE */
-          svr_job_purge(pj);
-          job_mutex.set_unlock_on_exit(false);
-          reply_badattr(rc, 1, psatl, preq);
-          return(rc);
-          }
-        }
-      else
-        {
-        /* FAILURE */
-        /* any other error is fatal */
-        svr_job_purge(pj);
-        job_mutex.set_unlock_on_exit(false);
-        reply_badattr(rc, 1, psatl, preq);
-        return(rc);
-        }
+      /* FAILURE */
+      /* any other error is fatal */
+      svr_job_purge(pj);
+      job_mutex.set_unlock_on_exit(false);
+      reply_badattr(rc, 1, psatl, preq);
+      return(rc);
       }    /* END if (rc != 0) */
 
     psatl = (svrattrl *)GET_NEXT(psatl->al_link);
@@ -1636,12 +1616,12 @@ int perform_commit_work(
     if ((pattr->at_val.at_long == 0) && (nodes_avail > 0))
       {
       /* Create a new batch request and fill it in */
-      preq_run = alloc_br(PBS_BATCH_RunJob);
+      preq_run = new batch_request(PBS_BATCH_RunJob);
       preq_run->rq_perm = preq->rq_perm | ATR_DFLAG_OPWR;
       preq_run->rq_ind.rq_run.rq_resch = 0;
       preq_run->rq_ind.rq_run.rq_destin = rq_destin;
       preq_run->rq_fromsvr = preq->rq_fromsvr;
-      preq_run->rq_noreply = TRUE; /* set for no replies */
+      preq_run->rq_noreply = true; /* set for no replies */
       strcpy(preq_run->rq_user, preq->rq_user);
       strcpy(preq_run->rq_host, preq->rq_host);
       strcpy(preq_run->rq_ind.rq_run.rq_jid, preq->rq_ind.rq_rdytocommit);
@@ -1993,6 +1973,98 @@ int req_jobcredential(
 
 
 /*
+ * write_job_file()
+ *
+ * @param pj - the job whose file we're writing
+ * @param append_only - we should be only appending the job file at this time
+ * @return PBSE_NONE on SUCCESS, false otherwise
+ */
+
+int write_job_file(
+
+  batch_request *preq,
+  job           *pj,
+  std::string   &errbuf,
+  bool           append_only)
+
+  {
+  int         filemode = 0600;
+  int         fds = -1;
+  char        namebuf[MAXPATHLEN];
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
+  int         rc = PBSE_NONE;
+  std::string adjusted_path_jobs;
+
+  if (svr_authorize_jobreq(preq, pj) == -1)
+    {
+    rc = PBSE_PERM;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
+        "cannot authorize request %s (%d-%s)",
+        preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
+    errbuf = log_buf;
+    return(rc);
+    }
+
+  // get adjusted path_jobs path
+  adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
+  snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
+    pj->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
+
+  if ((append_only == true) ||
+      (pj->ji_qs.ji_un.ji_newt.ji_scriptsz != 0))
+    {
+    // Open existing file
+    fds = open(namebuf, O_WRONLY | O_APPEND | O_Sync, filemode);
+    }
+  else
+    {
+    // Open a new file
+    fds = open(namebuf, O_WRONLY | O_CREAT | O_EXCL | O_Sync, filemode);
+    }
+
+  if (fds < 0)
+    {
+    rc = PBSE_CAN_NOT_OPEN_FILE;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot open '%s' errno=%d - %s (%s)",
+             namebuf,
+             errno,
+             strerror(errno),
+             msg_script_open);
+    errbuf = log_buf;
+    return rc;
+    }
+
+  if (write_ac_socket(
+        fds,
+        preq->rq_ind.rq_jobfile.rq_data,
+        (unsigned)preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size)
+    {
+    rc = PBSE_CAN_NOT_WRITE_FILE;
+    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot write to file %s (%d-%s) %s",
+        namebuf,
+        errno,
+        strerror(errno),
+        msg_script_write);
+    errbuf = log_buf;
+    close(fds);
+    return rc;
+    }
+
+  close(fds);
+
+  if (append_only == false)
+    pj->ji_qs.ji_un.ji_newt.ji_scriptsz += preq->rq_ind.rq_jobfile.rq_size;
+
+  /* job has a script file */
+  pj->ji_qs.ji_svrflags =
+    (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) | JOB_SVFLG_SCRIPT;
+
+  return(PBSE_NONE);
+  } // END write_job_file()
+
+
+
+/*
  * req_jobscript - receive job script section
  *
  * Each section is appended to the file
@@ -2004,13 +2076,10 @@ int req_jobscript(
   bool           perform_commit)
 
   {
-  int   fds;
-  char  namebuf[MAXPATHLEN];
   job  *pj;
-  int   filemode = 0600;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
   int   rc = PBSE_NONE;
-  std::string adjusted_path_jobs;
+  std::string errbuf;
 
   errno = 0;
 
@@ -2018,10 +2087,32 @@ int req_jobscript(
 
   if (pj == NULL)
     {
-    rc = PBSE_IVALREQ;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot locate new job %s (%d - %s)",
-        preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
-    log_err(rc, __func__, log_buf);
+    rc = -1;
+
+    // Due to the condensed queuing process, sometimes jobs can be already committed by the time we 
+    // send the next step of the job file. Check if it's in the job list and append the file if
+    // so.
+    if ((pj = svr_find_job(preq->rq_ind.rq_jobfile.rq_jobid, TRUE)) != NULL)
+      {
+      mutex_mgr job_mutex(pj->ji_mutex, true);
+      rc = write_job_file(preq, pj, errbuf, true);
+
+      // Appended the job script
+      if (rc == PBSE_NONE)
+        {
+        reply_ack(preq);
+        return(rc);
+        }
+      }
+
+    if (rc == -1)
+      {
+      rc = PBSE_IVALREQ;
+      snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot locate new job %s (%d - %s)",
+          preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
+      log_err(rc, __func__, log_buf);
+      }
+
     req_reject(rc, 0, preq, NULL, log_buf);
     return(rc);
     }
@@ -2054,71 +2145,12 @@ int req_jobscript(
     return(rc);
     }
 
-  if (svr_authorize_jobreq(preq, pj) == -1)
+  if ((rc = write_job_file(preq, pj, errbuf, false)) != PBSE_NONE)
     {
-    rc = PBSE_PERM;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE,
-        "cannot authorize request %s (%d-%s)",
-        preq->rq_ind.rq_jobfile.rq_jobid, errno, strerror(errno));
     log_err(rc, __func__, log_buf);
     req_reject(rc, 0, preq, NULL, log_buf);
-    return rc;
+    return(rc);
     }
-
-  // get adjusted path_jobs path
-  adjusted_path_jobs = get_path_jobdata(pj->ji_qs.ji_jobid, path_jobs);
-  snprintf(namebuf, sizeof(namebuf), "%s%s%s", adjusted_path_jobs.c_str(),
-    pj->ji_qs.ji_fileprefix, JOB_SCRIPT_SUFFIX);
-
-  if (pj->ji_qs.ji_un.ji_newt.ji_scriptsz == 0)
-    {
-    /* NOTE:  fail is job script already exists */
-
-    fds = open(namebuf, O_WRONLY | O_CREAT | O_EXCL | O_Sync, filemode);
-    }
-  else
-    {
-    fds = open(namebuf, O_WRONLY | O_APPEND | O_Sync, filemode);
-    }
-
-  if (fds < 0)
-    {
-    rc = PBSE_CAN_NOT_OPEN_FILE;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot open '%s' errno=%d - %s (%s)",
-             namebuf,
-             errno,
-             strerror(errno),
-             msg_script_open);
-    log_err(rc, __func__, log_buf);
-    req_reject(rc, 0, preq, NULL, log_buf);
-    return rc;
-    }
-
-  if (write_ac_socket(
-        fds,
-        preq->rq_ind.rq_jobfile.rq_data,
-        (unsigned)preq->rq_ind.rq_jobfile.rq_size) != preq->rq_ind.rq_jobfile.rq_size)
-    {
-    rc = PBSE_CAN_NOT_WRITE_FILE;
-    snprintf(log_buf, LOCAL_LOG_BUF_SIZE, "cannot write to file %s (%d-%s) %s",
-        namebuf,
-        errno,
-        strerror(errno),
-        msg_script_write);
-    log_err(rc, __func__, log_buf);
-    req_reject(PBSE_INTERNAL, 0, preq, NULL, log_buf);
-    close(fds);
-    return rc;
-    }
-
-  close(fds);
-
-  pj->ji_qs.ji_un.ji_newt.ji_scriptsz += preq->rq_ind.rq_jobfile.rq_size;
-
-  /* job has a script file */
-
-  pj->ji_qs.ji_svrflags =
-    (pj->ji_qs.ji_svrflags & ~JOB_SVFLG_CHECKPOINT_FILE) | JOB_SVFLG_SCRIPT;
 
   /* SUCCESS */
   if (perform_commit == true)
@@ -2532,12 +2564,12 @@ int req_commit2(
   if ((pattr->at_val.at_long == 0) && (nodes_avail > 0))
     {
     /* Create a new batch request and fill it in */
-    preq_run = alloc_br(PBS_BATCH_RunJob);
+    preq_run = new batch_request(PBS_BATCH_RunJob);
     preq_run->rq_perm = preq->rq_perm | ATR_DFLAG_OPWR;
     preq_run->rq_ind.rq_run.rq_resch = 0;
     preq_run->rq_ind.rq_run.rq_destin = rq_destin;
     preq_run->rq_fromsvr = preq->rq_fromsvr;
-    preq_run->rq_noreply = TRUE; /* set for no replies */
+    preq_run->rq_noreply = true; /* set for no replies */
     strcpy(preq_run->rq_user, preq->rq_user);
     strcpy(preq_run->rq_host, preq->rq_host);
     strcpy(preq_run->rq_ind.rq_run.rq_jid, preq->rq_ind.rq_rdytocommit);

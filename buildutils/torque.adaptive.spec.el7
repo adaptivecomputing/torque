@@ -63,9 +63,12 @@
   unset CONFFLAGS \
   CONFFLAGS_FILE=`mktemp %{_tmppath}/confflags.XXXX` \
   ./configure --help 2>&1 > ${CONFFLAGS_FILE} \
-  if grep -q  -- '--with-hwloc-path' "${CONFFLAGS_FILE}" \
+  if test %{_hwlocpath} != none \
   then \
-      CONFFLAGS='--with-hwloc-path=%{_hwlocpath}' \
+    if grep -q  -- '--with-hwloc-path' "${CONFFLAGS_FILE}" \
+    then \
+        CONFFLAGS='--with-hwloc-path=%{_hwlocpath}' \
+    fi \
   fi \
   if grep -q  -- '--enable-cgroups' "${CONFFLAGS_FILE}" \
   then \
@@ -348,7 +351,7 @@
 ### Macro variables
 %{!?torque_user:%global torque_user root}
 %{!?torque_home:%global torque_home %{_var}/spool/%{project_name}}
-%{!?sendmail_path:%global sendmail_path %{_sbindir}/sendmail}
+%{!?sendmail_path:%global sendmail_path /usr/sbin/sendmail}
 
 # This ensures that the debugging symbols are not stripped
 %define __os_install_post /usr/lib/rpm/brp-compress
@@ -599,10 +602,10 @@ echo '$logevent 225 # bitmap of which events to log' > \
     %{buildroot}%{torque_sysconfdir}/mom_priv/config
 
 %{__mkdir_p} %{buildroot}/etc/profile.d
-echo 'test -d ${_bindir} && export PATH=%{_bindir}:${PATH}' > %{buildroot}/etc/profile.d/torque.sh
+echo 'test -d %{_bindir} && export PATH=%{_bindir}:${PATH}' > %{buildroot}/etc/profile.d/torque.sh
 echo 'test `id -u` = 0 && test -d %{_sbindir} && export PATH=%{_sbindir}:${PATH}' >> %{buildroot}/etc/profile.d/torque.sh
-echo 'test -d ${_bindir} && setenv PATH %{_bindir}:${PATH}' > %{buildroot}/etc/profile.d/torque.csh
-echo 'test `id -u` = 0 && test-d ${_sbindir} && setenv PATH %{_sbindir}:${PATH}' >> %{buildroot}/etc/profile.d/torque.csh
+echo 'test -d %{_bindir} && setenv PATH %{_bindir}:${PATH}' > %{buildroot}/etc/profile.d/torque.csh
+echo 'test `id -u` = 0 && test -d %{_sbindir} && setenv PATH %{_sbindir}:${PATH}' >> %{buildroot}/etc/profile.d/torque.csh
 
 # Moab requires libtorque.so.0, but works with libtorque.so.2, so fudge it
 %{__ln_s} libtorque.so.2 %{buildroot}%{_libdir}/libtorque.so.0

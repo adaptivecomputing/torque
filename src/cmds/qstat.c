@@ -2817,7 +2817,7 @@ int process_commandline_opts(
 
         if ((optarg != NULL) && !strcmp(optarg, "version"))
           {
-          fprintf(stderr, "Version: %s\nCommit: %s\n",
+          fprintf(stdout, "Version: %s\nCommit: %s\n",
             PACKAGE_VERSION, GIT_HASH);
 
           exit(0);
@@ -2826,6 +2826,16 @@ int process_commandline_opts(
         if ((optarg != NULL) && !strcmp(optarg, "about"))
           {
           TShowAbout_exit();
+          }
+
+        if ((optarg != NULL) && !strcmp(optarg, "xml"))
+          {
+          DisplayXML = true;
+
+          /* We want to return all attributes */
+          attrib = NULL;
+
+          break;
           }
 
         /* unexpected '--' option received */
@@ -3097,7 +3107,7 @@ int run_job_mode(
 
   while (retry_count < MAX_RETRIES)
     {
-    connect = cnt2server(server_out);
+    connect = cnt2server(server_out, false);
 
     any_failed = -1 * connect;
     if (connect <= 0 )
@@ -3295,7 +3305,7 @@ int run_queue_mode(
 
   while(retry_count < MAX_RETRIES)
     {
-    connect = cnt2server(server_out);
+    connect = cnt2server(server_out, false);
 
     if (connect <= 0)
       {
@@ -3389,7 +3399,7 @@ int run_server_mode(
 
   while (retry_count < MAX_RETRIES)
     {
-    connect = cnt2server(server_out);
+    connect = cnt2server(server_out, false);
 
     if (connect <= 0)
       {

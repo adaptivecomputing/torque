@@ -33,6 +33,33 @@ int exitstatus = 0; /* Exit Status */
 
 static void execute(int, const char *);
 
+
+/*
+ * is_local() - tells you if the specified server is local or not
+ *
+ * @param active_server - the server that we need to determine if is local or not
+ * @return true if the specified server is local
+ */
+
+bool is_local(
+
+  const char *active_server)
+
+  {
+  int       err = 0;
+  char      local_hostname[PBS_MAXHOSTNAME];
+  pbs_net_t addr = get_hostaddr(&err, active_server);
+  
+  if ((gethostname(local_hostname, sizeof(local_hostname)) == -1) ||
+      (get_fullhostname(local_hostname, local_hostname, sizeof(local_hostname), NULL) == -1) ||
+      (addr == 0))
+    return(false);
+
+  return(get_hostaddr(&err, local_hostname) == addr);
+  }
+
+
+
 int main(
 
   int    argc,  /* I */
@@ -43,12 +70,13 @@ int main(
    * This routine sends a Server Shutdown request to the batch server.
    */
 
-  static char opts[] = "t:";  /* See man getopt */
+  static char opts[] = "lt:";  /* See man getopt */
   int s;                  /* The execute line option */
   static char usage[] = "Usage: qterm [-t quick] [server ...]\n";
   char *type = NULL;      /* Pointer to the type of termination */
   int manner;             /* The type of termination */
   int errflg = 0;         /* Error flag */
+  bool local = false;
 
   /* Command line options */
 
@@ -56,6 +84,10 @@ int main(
     {
     switch (s)
       {
+
+      case 'l':
+
+        local = true;
 
       case 't':
 
@@ -116,8 +148,20 @@ int main(
   else
     {
     /* shutdown default server */
-
-    execute(manner, "");
+    if (local == true)
+      {
+      char *active_server;
+      int   port = 0;
+      if (get_active_pbs_server(&active_server, &port) == PBSE_NONE)
+        {
+        if (is_local(active_server))
+          execute(manner, active_server);
+        else
+          exitstatus = -1;
+        }
+      }
+    else
+      execute(manner, "");
     }
 
   exit(exitstatus);
@@ -146,7 +190,7 @@ int main(
 
 static void execute(
 
-  int   manner,  /* I */
+  int         manner,  /* I */
   const char *server)  /* I */
 
   {
@@ -155,7 +199,7 @@ static void execute(
   char *errmsg;   /* Error message from pbs_terminate */
   int   local_errno = 0;
 
-  if ((ct = cnt2server(server)) > 0)
+  if ((ct = cnt2server(server, false)) > 0)
     {
     err = pbs_terminate_err(ct, manner, NULL, &local_errno);
 

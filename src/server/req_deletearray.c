@@ -35,7 +35,6 @@ extern int has_job_delete_nanny(struct job *);
 extern void setup_apply_job_delete_nanny(struct job *, time_t  time_now);
 extern void remove_stagein(job **pjob);
 extern void change_restart_comment_if_needed(struct job *);
-int issue_signal(job **, const char *, void(*)(batch_request *), void *, char *);
 
 extern char *msg_unkarrayid;
 extern char *msg_permlog;
@@ -108,7 +107,7 @@ bool attempt_delete(
 
       /* need to issue a signal to the mom, but we don't want to sent an ack to the
        * client when the mom replies */
-      issue_signal(&pjob, "SIGTERM", free_br, NULL, NULL);
+      issue_signal(&pjob, "SIGTERM", NULL, NULL, NULL);
       }
 
     if (pjob != NULL)
@@ -147,6 +146,8 @@ int req_deletearray(
   struct work_task  *ptask;
   char               log_buf[LOCAL_LOG_BUF_SIZE];
 
+  static const int   MAX_DELETE_WAIT = 3;
+  int                wait_tries = 0;
   int                num_skipped = 0;
   char               owner[PBS_MAXUSER + 1];
   time_t             time_now = time(NULL);
@@ -159,14 +160,22 @@ int req_deletearray(
 
   pa = get_array(preq->rq_ind.rq_delete.rq_objname);
 
-  // Do not attempt to delete the array while it is still cloning
+  // Do not attempt to delete the array while it is still cloning. If none have been cloned,
+  // it's because the array was never routed.
   while ((pa != NULL) &&
          ((pa->ai_qs.num_cloned < pa->ai_qs.idle_slot_limit) &&
-          (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)))
+          (pa->ai_qs.num_cloned != pa->ai_qs.num_jobs)) &&
+         (pa->ai_qs.num_cloned > 0))
     {
-    unlock_ai_mutex(pa, __func__, NULL, 10);
-    sleep(1);
-    pa = get_array(preq->rq_ind.rq_delete.rq_objname);
+    if (wait_tries == MAX_DELETE_WAIT)
+      break;
+    else
+      {
+      unlock_ai_mutex(pa, __func__, NULL, 10);
+      sleep(1);
+      pa = get_array(preq->rq_ind.rq_delete.rq_objname);
+      wait_tries++;
+      }
     }
 
   if (pa == NULL)
@@ -232,8 +241,7 @@ int req_deletearray(
       log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
       }
 
-    if (((num_skipped = delete_whole_array(pa, purge)) == NO_JOBS_IN_ARRAY) &&
-        (purge == false))
+    if ((num_skipped = delete_whole_array(pa, purge)) == NO_JOBS_IN_ARRAY)
       {
       pa_mutex.unlock();
       array_delete(preq->rq_ind.rq_delete.rq_objname);

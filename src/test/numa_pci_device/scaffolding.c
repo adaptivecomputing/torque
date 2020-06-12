@@ -38,7 +38,7 @@ void log_nvml_error(nvmlReturn_t rc, char* gpuid, const char* id)
   }
 #endif
 
-void Machine::store_device_on_appropriate_chip( PCI_Device &device)
+void Machine::store_device_on_appropriate_chip(PCI_Device &device, bool no_info)
   {
   return;
   }

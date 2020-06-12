@@ -8,15 +8,29 @@ After=network.target local-fs.target syslog.target
 Type=simple
 User=root
 
+Delegate=yes
+
 LimitNOFILE=32768
 LimitMEMLOCK=infinity
 LimitSTACK=12582912
+LimitCORE=infinity
 
 Environment=PBS_HOME=@PBS_HOME@
 Environment=PBS_ARGS=
 EnvironmentFile=-/etc/sysconfig/pbs_mom
 
 ExecStart=@sbindir@/pbs_mom -F -d $PBS_HOME $PBS_ARGS
+
+KillMode=process
+
+# attempt graceful shutdown
+ExecStop=/bin/bash -c " \
+  for i in {1..5}; do \
+    kill -0 $MAINPID &>/dev/null || exit 0; \
+    @sbindir@/momctl -s && exit; \
+    sleep 1; \
+  done \
+"
 
 [Install]
 WantedBy=multi-user.target

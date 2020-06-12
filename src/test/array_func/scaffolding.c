@@ -133,9 +133,10 @@ void svr_evaljobstate(job &pjob, int &newstate, int &newsub, int forceeval)
   exit(1);
   }
 
-char *get_correct_jobname(const char *jobid)
+const char *get_correct_jobname(const char *jobid, std::string &correct)
   {
-  return(strdup(jobid));
+  correct = jobid;
+  return(correct.c_str());
   }
 
 void *get_prior(list_link pl, char *file, int line)
@@ -379,3 +380,11 @@ int create_and_queue_array_subjob(
   {
   return(PBSE_NONE);
   }
+
+batch_request::batch_request(const batch_request &other)
+  {
+  }
+
+void batch_request::update_object_id(int job_index) {}
+
+batch_request::~batch_request() {}

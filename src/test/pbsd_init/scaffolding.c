@@ -117,6 +117,8 @@ int evaluated;
 int aborted;
 int freed_job_allocation;
 int job_state;
+int locked_job = 0;
+int unlocked_job = 0;
 
 bool dont_find_job;
 bool dont_find_node;
@@ -577,11 +579,13 @@ int insert_addr_name_info(
 
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
+  unlocked_job++;
   return(0);
   }
 
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
+  locked_job++;
   return(0);
   }
 
@@ -985,4 +989,18 @@ void job_array::update_array_values(
   int                   job_exit_status)
 
   {
+  }
+    
+int set_default_gpu_mode_int(const char *default_gpu_str)
+  {
+  return(0);
+  }
+
+int get_svr_attr_str(
+    
+  int    attr_index,
+  char **str)
+
+  {
+  return(0);
   }

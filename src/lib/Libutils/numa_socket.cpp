@@ -47,6 +47,49 @@ Socket::Socket(
 
 
 /*
+ * Legacy constructor for those upgrading from 6.1.0
+ */
+
+Socket::Socket(
+
+  const std::string        &json_layout,
+  std::vector<std::string> &valid_ids) : id(0), memory(0), totalCores(0), totalThreads(0),
+                                         availableCores(0), availableThreads(0), chips(),
+                                         socket_exclusive(false)
+
+  {
+  const char *chip_str = "\"numanode\":{";
+  const char *os_str = "\"os_index\":";
+  std::size_t chip_begin = json_layout.find(chip_str);
+  std::size_t os_begin = json_layout.find(os_str);
+
+  memset(socket_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(socket_nodeset_string, 0, MAX_NODESET_SIZE);
+
+  if ((os_begin == std::string::npos) ||
+      (os_begin > chip_begin))
+    return;
+  else
+    {
+    std::string os = json_layout.substr(os_begin + strlen(os_str));
+    this->id = strtol(os.c_str(), NULL, 10);
+    }
+  
+  while (chip_begin != std::string::npos)
+    {
+    std::size_t next = json_layout.find(chip_str, chip_begin + 1);
+    std::string one_chip = json_layout.substr(chip_begin, next - chip_begin);
+
+    Chip c(one_chip, valid_ids);
+    this->chips.push_back(c);
+
+    chip_begin = next;
+    }
+  }
+
+
+
+/*
  * Builds a copy of the machine's layout in from json which has no whitespace but 
  * if it did it'd look like:
  *
@@ -311,6 +354,26 @@ int Socket::getTotalChips() const
   return(this->chips.size());
   }
 
+int Socket::get_total_gpus() const
+  {
+  int total_gpus = 0;
+
+  for (size_t i = 0; i < this->chips.size(); i++)
+    total_gpus += this->chips[i].get_total_gpus();
+
+  return(total_gpus);
+  }
+
+int Socket::get_available_gpus() const
+  {
+  int available_gpus = 0;
+
+  for (size_t i = 0; i < this->chips.size(); i++)
+    available_gpus += this->chips[i].get_available_gpus();
+
+  return(available_gpus);
+  }
+
 int Socket::getAvailableChips() const
   {
   int available_numa_nodes = 0;
@@ -467,13 +530,13 @@ void Socket::update_internal_counts(
  * @return - the number of tasks from r that could be placed on this socket
  */
 
-float Socket::how_many_tasks_fit(
+double Socket::how_many_tasks_fit(
 
   const req &r,
   int        place_type) const
 
   {
-  float num_that_fit = 0;
+  double num_that_fit = 0;
 
   if ((this->socket_exclusive == false) &&
       ((place_type != exclusive_socket) ||
@@ -573,15 +636,13 @@ bool Socket::spread_place(
 
   req        &r,
   allocation &task_alloc,
-  int         execution_slots_per,
-  int        &execution_slots_remainder,
+  allocation &remaining,
+  allocation &remainder,
   bool        chip)
 
   {
   bool placed = false;
   int  numa_nodes_required  = 1;
-  int  per_numa = execution_slots_per;
-  int  per_numa_remainder = 0;
 
   // We must either be completely free or be placing on just one chip
   if ((this->is_completely_free()) ||
@@ -591,33 +652,33 @@ bool Socket::spread_place(
       {
       // If we're placing at the socket level, divide execution_slots_per by the number 
       // of chips and place multiple times
-      per_numa_remainder = per_numa % this->chips.size();
-      per_numa /= this->chips.size();
       numa_nodes_required = this->chips.size();
-    
       this->socket_exclusive = true;
       }
-
+    
+    // In order to evenly spread out resources across nodes, we divide number of nodes
+    // by resources required and are left with number of resources per node plus a
+    // remainder. As we iterate over the nodes and allocate resources, we take one
+    // resource from the remainder every step until there is nothing left in the remainder.
+    allocation numa_remainder(remaining);
+    numa_remainder.adjust_for_spread(numa_nodes_required, true);
+    
     for (int c = 0; c < numa_nodes_required; c++)
       {
-      for (unsigned int i = 0; i < this->chips.size(); i++)
+      allocation per_numa(remaining);
+      per_numa.adjust_for_spread(numa_nodes_required, false);
+      
+      per_numa.adjust_for_remainder(numa_remainder);
+
+      // This inner loop is for the case where we are not reserving the whole
+      // socket, but a single chip. In the case of a single chip, we iterate
+      // over all chips to see if there is a chip which is completely free.
+      for (unsigned int i = c; i < this->chips.size(); i++)
         {
-        if (per_numa_remainder > 0)
+        if (this->chips[i].spread_place(r, task_alloc, per_numa, remainder))
           {
-          if (this->chips[i].spread_place(r, task_alloc, per_numa + 1, execution_slots_remainder))
-            {
-            placed = true;
-            per_numa_remainder--;
-            break;
-            }
-          }
-        else
-          {
-          if (this->chips[i].spread_place(r, task_alloc, per_numa, execution_slots_remainder))
-            {
-            placed = true;
-            break;
-            }
+          placed = true;
+          break;
           }
         }
       }
@@ -834,17 +895,20 @@ bool Socket::fits_on_socket(
     if (remaining.place_cpus > 0)
       max_cpus = remaining.place_cpus;
 
-    if ((remaining.cores_only == true) &&
-        (this->get_free_cores() >= max_cpus))
-      fits = true;
-    else if (remaining.place_type == exclusive_legacy)
+    if (this->get_available_gpus() >= remaining.gpus)
       {
-      if (this->get_free_cores() >= max_cpus)
+      if ((remaining.cores_only == true) &&
+          (this->get_free_cores() >= max_cpus))
+        fits = true;
+      else if (remaining.place_type == exclusive_legacy)
+        {
+        if (this->get_free_cores() >= max_cpus)
+          fits = true;
+        }
+      else if ((remaining.cores_only == false) &&
+               (this->getAvailableThreads() >= max_cpus))
         fits = true;
       }
-    else if ((remaining.cores_only == false) &&
-             (this->getAvailableThreads() >= max_cpus))
-      fits = true;
     }
 
   return(fits);
@@ -925,6 +989,17 @@ int Socket::get_mics_remaining()
     }
 
   return(mics_available);
+  }
+
+
+
+void Socket::save_allocations(
+
+  const Socket &other)
+
+  {
+  for (size_t c = 0; c < this->chips.size() && c < other.chips.size(); c++)
+    this->chips[c].save_allocations(other.chips[c]);
   }
 
 

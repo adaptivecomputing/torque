@@ -106,7 +106,7 @@ static void execute(
     NULL, (char *)"enabled", NULL, (char *)"FALSE", SET
     };
 
-  if ((ct = cnt2server(server)) > 0)
+  if ((ct = cnt2server(server, false)) > 0)
     {
     merr = pbs_manager_err(ct, MGR_CMD_SET, MGR_OBJ_QUEUE, queue, &attr, NULL, &local_errno);
 

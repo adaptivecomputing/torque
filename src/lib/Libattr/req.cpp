@@ -34,12 +34,12 @@ const char *place_thread = "thread";
 const char *place_legacy = "legacy";
 const char *place_legacy2 = "legacy2";
 
-req::req() : execution_slots(1), mem(0), swap(0), disk(0), nodes(0),
-             socket(0), numa_nodes(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS), 
-             thread_usage_str(allow_threads), gpus(0), mics(0), maxtpn(0), gres(), os(), arch(),
-             node_access_policy(), features(), placement_str(), req_attr(), gpu_mode(),
-             placement_type(exclusive_none), task_count(1), pack(false), single_job_access(false),
-             per_task_cgroup(-1), index(0), hostlist(), task_allocations()
+req::req() : execution_slots(1), total_mem(0), mem_per_task(0), total_swap(0), swap_per_task(0),
+             disk(0), nodes(0), socket(0), numa_nodes(0), cores(0), threads(0),
+             thread_usage_policy(ALLOW_THREADS), thread_usage_str(allow_threads), gpus(0), mics(0),
+             maxtpn(0), gres(), os(), arch(), node_access_policy(), features(), placement_str(),
+             req_attr(), gpu_mode(), placement_type(exclusive_none), task_count(1), pack(false),
+             single_job_access(false), per_task_cgroup(-1), index(0), hostlist(), task_allocations()
 
   {
   }
@@ -48,12 +48,12 @@ req::req() : execution_slots(1), mem(0), swap(0), disk(0), nodes(0),
 
 req::req(
 
-  char *work_str) : execution_slots(1), mem(0), swap(0), disk(0), nodes(0), socket(0),
-                    numa_nodes(0), cores(0), threads(0), thread_usage_policy(ALLOW_THREADS),
-                    thread_usage_str(allow_threads), gpus(0), mics(0), maxtpn(0), gres(),
-                    os(), arch(), node_access_policy(), features(), placement_str(), gpu_mode(),
-                    task_count(1), pack(false), single_job_access(false), per_task_cgroup(-1),
-                    index(0), hostlist(), task_allocations()
+  char *work_str) : execution_slots(1), total_mem(0), mem_per_task(0), total_swap(0), swap_per_task(0),
+                    disk(0), nodes(0), socket(0), numa_nodes(0), cores(0), threads(0),
+                    thread_usage_policy(ALLOW_THREADS), thread_usage_str(allow_threads), gpus(0),
+                    mics(0), maxtpn(0), gres(), os(), arch(), node_access_policy(), features(),
+                    placement_str(), gpu_mode(), task_count(1), pack(false), single_job_access(false),
+                    per_task_cgroup(-1), index(0), hostlist(), task_allocations()
   
   {
   char *ptr = work_str;
@@ -109,8 +109,10 @@ req::req(
 req::req(
     
   const req &other) : execution_slots(other.execution_slots), 
-                      mem(other.mem), 
-                      swap(other.swap),
+                      total_mem(other.total_mem), 
+                      mem_per_task(other.mem_per_task),
+                      total_swap(other.total_swap),
+                      swap_per_task(other.swap_per_task),
                       disk(other.disk), 
                       nodes(other.nodes), 
                       socket(other.socket), 
@@ -535,7 +537,12 @@ int req::set_name_value_pair(
       rc = parse_positive_integer(value, this->execution_slots);
     }
   else if (!strcmp(name, "memory"))
-    rc = read_mem_value(value, this->mem);
+    {
+    rc = read_mem_value(value, this->mem_per_task);
+
+    if (rc == PBSE_NONE)
+      this->total_mem = this->mem_per_task * this->task_count;
+    }
   else if (!strcmp(name, "gpus"))
     rc = parse_positive_integer(value, this->gpus);
   else if (!strcmp(name, "mics"))
@@ -560,7 +567,12 @@ int req::set_name_value_pair(
   else if (!strcmp(name, "reqattr"))
     this->req_attr = value;
   else if (!strcmp(name, "swap"))
-    rc = read_mem_value(value, this->swap);
+    {
+    rc = read_mem_value(value, this->swap_per_task);
+    
+    if (rc == PBSE_NONE)
+      this->total_swap = this->swap_per_task * this->task_count;
+    }
   else
     return(PBSE_BAD_PARAMETER);
 
@@ -1111,15 +1123,16 @@ int req::set_from_submission_string(
 
 req::req(
 
-   const std::string &resource_request) : execution_slots(1), mem(0), swap(0), disk(0),
-                                         nodes(0), socket(0), numa_nodes(0),
-                                         cores(0), threads(0), thread_usage_policy(ALLOW_THREADS),
-                                         thread_usage_str(allow_threads), gpus(0), mics(0),
-                                         maxtpn(0), gres(), os(), arch(), node_access_policy(),
-                                         features(), placement_str(), req_attr(), gpu_mode(), 
-                                         task_count(1), pack(false), single_job_access(false),
-                                         per_task_cgroup(-1), index(-1), hostlist(),
-                                         task_allocations()
+   const std::string &resource_request) : execution_slots(1), total_mem(0), mem_per_task(0), 
+                                          total_swap(0), swap_per_task(0), disk(0), nodes(0), socket(0),
+                                          numa_nodes(0), cores(0), threads(0),
+                                          thread_usage_policy(ALLOW_THREADS),
+                                          thread_usage_str(allow_threads), gpus(0), mics(0),
+                                          maxtpn(0), gres(), os(), arch(), node_access_policy(),
+                                          features(), placement_str(), req_attr(), gpu_mode(), 
+                                          task_count(1), pack(false), single_job_access(false),
+                                          per_task_cgroup(-1), index(-1), hostlist(),
+                                          task_allocations()
 
   {
   char       *work_str = strdup(resource_request.c_str());
@@ -1145,8 +1158,10 @@ req &req::operator =(
     return(*this);
 
   this->execution_slots = other.execution_slots;
-  this->mem = other.mem;
-  this->swap = other.swap;
+  this->total_mem = other.total_mem;
+  this->mem_per_task = other.mem_per_task;
+  this->total_swap = other.total_swap;
+  this->swap_per_task = other.swap_per_task;
   this->disk = other.disk;
   this->nodes = other.nodes;
   this->socket = other.socket;
@@ -1211,15 +1226,27 @@ void req::toString(
       }
     }
 
-  if (this->mem != 0)
+  if (this->total_mem != 0)
     {
-    snprintf(buf, sizeof(buf), "      mem: %lukb\n", this->mem);
+    snprintf(buf, sizeof(buf), "      total_mem: %lukb\n", this->total_mem);
     str += buf;
     }
 
-  if (this->swap != 0)
+  if (this->mem_per_task != 0)
     {
-    snprintf(buf, sizeof(buf), "      swap: %lukb\n", this->swap);
+    snprintf(buf, sizeof(buf), "      mem: %lukb\n", this->mem_per_task);
+    str += buf;
+    }
+
+  if (this->total_swap != 0)
+    {
+    snprintf(buf, sizeof(buf), "      total_swap: %lukb\n", this->total_swap);
+    str += buf;
+    }
+
+  if (this->swap_per_task != 0)
+    {
+    snprintf(buf, sizeof(buf), "      swap: %lukb\n", this->swap_per_task);
     str += buf;
     }
 
@@ -1360,6 +1387,9 @@ void req::toString(
  *
  * Gets the name and value of each part of this class that is set
  *
+ * NOTE: these values are usually passed to encode_complete_req() and often
+ * later consumed by decode_complete_req() which calls set_value()
+ *
  * For each value that is set:
  * name=<name of field>:index value=<value of field
  * i.e. name=lprocs[index] value=10
@@ -1395,20 +1425,36 @@ void req::get_values(
       }
     }
 
-  if (this->mem != 0)
+  if (this->mem_per_task != 0)
     {
-    snprintf(buf, sizeof(buf), "memory.%d", this->index);
+    snprintf(buf, sizeof(buf), "total_memory.%d", this->index);
     names.push_back(buf);
-    snprintf(buf, sizeof(buf), "%lukb", this->mem);
+    snprintf(buf, sizeof(buf), "%lukb", this->total_mem);
     values.push_back(buf);
+
+    if (this->mem_per_task != 0)
+      {
+      snprintf(buf, sizeof(buf), "memory.%d", this->index);
+      names.push_back(buf);
+      snprintf(buf, sizeof(buf), "%lukb", this->mem_per_task);
+      values.push_back(buf);
+      }
     }
 
-  if (this->swap != 0)
+  if (this->swap_per_task != 0)
     {
-    snprintf(buf, sizeof(buf), "swap.%d", this->index);
+    snprintf(buf, sizeof(buf), "total_swap.%d", this->index);
     names.push_back(buf);
-    snprintf(buf, sizeof(buf), "%lukb", this->swap);
+    snprintf(buf, sizeof(buf), "%lukb", this->total_swap);
     values.push_back(buf);
+
+    if (this->swap_per_task != 0)
+      {
+      snprintf(buf, sizeof(buf), "swap.%d", this->index);
+      names.push_back(buf);
+      snprintf(buf, sizeof(buf), "%lukb", this->swap_per_task);
+      values.push_back(buf);
+      }
     }
 
   if (this->disk != 0)
@@ -1577,6 +1623,7 @@ void req::get_values(
   } // END get_values() 
 
 
+
 void req::get_task_stats(
 
   std::vector<int>                &task_index,
@@ -1665,8 +1712,10 @@ char *capture_until_newline_and_advance(
  * req[<index>]
  * task count: <task_count>
  * [lprocs: <execution_slots>]
- * [mem: <mem>kb]
- * [swap: <swap>kb]
+ * [total_mem: <mem>kb]
+ * [mem: <mem_per_task>kb]
+ * [total_swap: <swap>kb]
+ * [swap: <swap_per_task>kb]
  * [disk: <swap>kb]
  * [socket: <sockets>]
  * [numa chips: <numa chips>]
@@ -1712,7 +1761,8 @@ void req::set_from_string(
     }
 
   current += 2; // move past the ': '
-  this->task_count = strtol(current, &current, 10);
+  if ((this->task_count = strtol(current, &current, 10)) == 0)
+    this->task_count = 1;
 
   while (is_whitespace(*current))
     current++;
@@ -1733,21 +1783,45 @@ void req::set_from_string(
     move_past_whitespace(&current); 
     }
   
+  if (!strncmp(current, "total_mem", 9))
+    {
+    // found total mem
+    current += 11; // move past 'total_mem: '
+    this->total_mem = strtoll(current, &current, 10);
+    this->mem_per_task = this->total_mem / this->task_count;
+    current += 2; // move past 'kb'
+
+    move_past_whitespace(&current); 
+    }
+  
   if (!strncmp(current, "mem", 3))
     {
     // found mem
     current += 5; // move past 'mem: '
-    this->mem = strtoll(current, &current, 10);
+    this->mem_per_task = strtoll(current, &current, 10);
+    this->total_mem = this->mem_per_task * this->task_count;
     current += 2; // move past 'kb'
 
     move_past_whitespace(&current); 
+    }
+
+  if (!strncmp(current, "total_swap", 10))
+    {
+    // found total_swap
+    current += 12; // move past 'total_swap: '
+    this->total_swap = strtoll(current, &current, 10);
+    this->swap_per_task = this->total_swap / this->task_count;
+    current += 2; // move past kb
+    
+    move_past_whitespace(&current);
     }
 
   if (!strncmp(current, "swap", 4))
     {
     // found swap
     current += 6; // move past 'swap: '
-    this->swap = strtoll(current, &current, 10);
+    this->swap_per_task = strtoll(current, &current, 10);
+    this->total_swap = this->swap_per_task * this->task_count;
     current += 2; // move past kb
     
     move_past_whitespace(&current);
@@ -1990,6 +2064,8 @@ void req::set_from_string(
  * set_value()
  *
  * Sets a value on this class identified by name
+ * NOTE: this is called by decode_complete_req() and should match what is produced by get_values(),
+ * since get_values() is called by encode_complete_req()
  * @param name - the name of the value to be set
  * @param value - the value
  * @return PBSE_NONE if the name is valid or PBSE_BAD_PARAMETER for an invalid name
@@ -2025,22 +2101,44 @@ int req::set_value(
         }
       }
     }
+  else if (!strncmp(name, "total_memory", 12))
+    {
+    if ((!is_default) ||
+        (this->mem_per_task == 0))
+      {
+      if ((rc = read_mem_value(value, this->total_mem)) != PBSE_NONE)
+        return(rc);
+      }
+    }
   else if (!strncmp(name, "memory", 6))
     {
     if ((!is_default) ||
-        (this->mem == 0))
+        (this->mem_per_task == 0))
       {
-      if ((rc = read_mem_value(value, this->mem)) != PBSE_NONE)
+      if ((rc = read_mem_value(value, this->mem_per_task)) != PBSE_NONE)
+        return(rc);
+      else
+        this->total_mem = this->mem_per_task * this->task_count;
+      }
+    }
+  else if (!strncmp(name, "total_swap", 10))
+    {
+    if ((!is_default) ||
+        (this->mem_per_task == 0))
+      {
+      if ((rc = read_mem_value(value, this->total_swap)) != PBSE_NONE)
         return(rc);
       }
     }
   else if (!strncmp(name, "swap", 4))
     {
     if ((!is_default) ||
-        (this->swap == 0))
+        (this->swap_per_task == 0))
       {
-      if ((rc = read_mem_value(value, this->swap)) != PBSE_NONE)
+      if ((rc = read_mem_value(value, this->swap_per_task)) != PBSE_NONE)
         return(rc);
+      else
+        this->total_swap = this->swap_per_task * this->task_count;
       }
     }
   else if (!strncmp(name, "disk", 4))
@@ -2153,7 +2251,7 @@ int req::set_value(
 
 
 /*
- * set_value()
+ * set_task_value()
  *
  * Sets a value on this class identified by name
  * @param name - the name of the value to be set
@@ -2204,16 +2302,16 @@ int req::getExecutionSlots() const
   return(this->execution_slots);
   }
 
-unsigned long req::getMemory() const 
+unsigned long req::get_total_memory() const 
 
   {
-  return(this->mem);
+  return(this->total_mem);
   }
 
-unsigned long req::getSwap() const
+unsigned long req::get_total_swap() const
 
   {
-  return(this->swap);
+  return(this->total_swap);
   }
 
 unsigned long req::getDisk() const
@@ -2294,12 +2392,6 @@ int req::getMaxtpn() const
   return(this->maxtpn);
   }
 
-std::string req::getGpuMode() const
-
-  {
-  return(this->gpu_mode);
-  }
-
 std::string req::getReqAttr() const
 
   {
@@ -2318,7 +2410,7 @@ int req::getIndex() const
   return(this->index);
   }
 
-int req::getGpus() const
+int req::get_gpus() const
 
   {
   return(this->gpus);
@@ -2419,7 +2511,6 @@ int req::get_num_tasks_for_host(
           }
           
         task_count = num_ppn / this->execution_slots;
- 
         }
       }
     }
@@ -2483,10 +2574,10 @@ int req::get_task_allocation(
  *
  */
 
-unsigned long long req::get_swap_per_task()
+unsigned long long req::get_swap_per_task() const
 
   {
-  return(this->swap);
+  return(this->swap_per_task);
   }
 
 
@@ -2497,10 +2588,10 @@ unsigned long long req::get_swap_per_task()
  *
  */
 
-unsigned long long req::get_memory_per_task()
+unsigned long long req::get_memory_per_task() const
 
   {
-  return(this->mem);
+  return(this->mem_per_task);
   }
 
 /*
@@ -2516,9 +2607,7 @@ unsigned long long req::get_swap_for_host(
 
   {
   int           num_tasks = this->get_num_tasks_for_host(host);
-  unsigned long long swap = this->swap * num_tasks;
-
-  return(swap);
+  return(this->swap_per_task * num_tasks);
   } // END get_swap_for_host()
 
 
@@ -2535,10 +2624,8 @@ unsigned long long req::get_memory_for_host(
   const std::string &host) const
 
   {
-  int           num_tasks = this->get_num_tasks_for_host(host);
-  unsigned long long mem = this->mem * num_tasks;
-
-  return(mem);
+  int                num_tasks = this->get_num_tasks_for_host(host);
+  return(this->mem_per_task * num_tasks);
   } // END get_memory_for_host()
 
 
@@ -2557,6 +2644,7 @@ void req::clear_allocations()
 
   {
   this->task_allocations.clear();
+  this->hostlist.clear();
   } // END clear_allocations()
 
 
@@ -2588,7 +2676,8 @@ void req::set_memory(
   unsigned long mem)
 
   {
-  this->mem = mem;
+  this->total_mem = mem;
+  this->mem_per_task = this->total_mem / this->task_count;
   }
 
 void req::set_swap(
@@ -2596,7 +2685,8 @@ void req::set_swap(
   unsigned long swap)
 
   {
-  this->swap = swap;
+  this->total_swap = swap;
+  this->swap_per_task = this->total_swap / this->task_count;
   }
 
 int req::get_execution_slots() const

@@ -622,7 +622,7 @@ int return_file(
     return(0);
     }
 
-  prq = alloc_br(PBS_BATCH_MvJobFile);
+  prq = new batch_request(PBS_BATCH_MvJobFile);
 
   if (prq == NULL)
     {
@@ -1271,7 +1271,7 @@ int message_job(
     }
 
   /* only the child reaches here, become the user for root-squashing as well */
-  if (become_the_user(pjob) != PBSE_NONE)
+  if (become_the_user(pjob, false) != PBSE_NONE)
     {
     /* log_buffer is populated by become_the_user */
     log_err(errno, __func__, log_buffer);
@@ -4333,7 +4333,7 @@ batch_request *initialize_stageout_request(
   job *pjob)
 
   {
-  batch_request     *preq = alloc_br(PBS_BATCH_CopyFiles);
+  batch_request     *preq = new batch_request(PBS_BATCH_CopyFiles);
   struct rq_cpyfile *pcf = &preq->rq_ind.rq_cpyfile;
 
   pcf->rq_dir = STAGE_DIR_OUT;
@@ -4395,6 +4395,15 @@ batch_request *get_std_file_info(
       copy_stderr = false;
     else if (!strcmp(pjob->ji_wattr[JOB_ATR_join].at_val.at_str, "eo"))
       copy_stdout = false;
+    }
+
+  // if files are to be kept, don't copy since they are already at their destination
+  if (pjob->ji_wattr[JOB_ATR_keep].at_val.at_str != NULL)
+    {
+    if (strstr(pjob->ji_wattr[JOB_ATR_keep].at_val.at_str, "o"))
+      copy_stdout = false;
+    if (strstr(pjob->ji_wattr[JOB_ATR_keep].at_val.at_str, "e"))
+      copy_stderr = false;
     }
 
   preq = initialize_stageout_request(pjob);

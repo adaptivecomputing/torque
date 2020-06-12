@@ -309,6 +309,7 @@ extern mom_hierarchy_t    *mh;
 extern char               *stat_string_aggregate;
 extern unsigned int        ssa_index;
 extern u_long              localaddr;
+extern bool                force_layout_update;
 extern container::item_container<received_node *> received_statuses;
 std::vector<std::string>   global_gpu_status;
 std::vector<std::string>   mom_status;
@@ -700,6 +701,11 @@ void gen_layout(
   std::vector<std::string> &status)
 
   {
+  if (force_layout_update == true)
+    {
+    status.push_back("force_layout_update");
+    }
+
   std::stringstream layout;
   layout << name << "=";
   this_node.displayAsJson(layout, false);
@@ -1758,11 +1764,8 @@ int send_status_through_hierarchy()
 void mom_server_all_update_stat(void)
  
   {
-  pid_t        pid;
-  int          fd_pipe[2];
-  int          rc;
+  int          rc = -1;
   char         buf[LOCAL_LOG_BUF_SIZE];
-  size_t       len;
 
   time_now = time(NULL);
 
@@ -1793,16 +1796,10 @@ void mom_server_all_update_stat(void)
     {
     generate_alps_status(mom_status, apbasil_path, apbasil_protocol);
 
-    if (send_update_to_a_server() == PBSE_NONE)
-      {
-      ForceServerUpdate = false;
-      LastServerUpdateTime = time_now;
-      }
+    send_update_to_a_server();
     }
   else
     {
-    /* The NVIDIA NVML library has a problem when we use it after the first fork. Let's get the gpu status first
-       and then fork */
 #ifdef NVIDIA_GPUS
     global_gpu_status.clear();
     add_gpu_status(global_gpu_status);
@@ -1812,98 +1809,24 @@ void mom_server_all_update_stat(void)
     check_for_mics(global_mic_count);
 #endif 
 
-    /* It is possible that pbs_server may get busy and start queing incoming requests and not be able 
-       to process them right away. If pbs_mom is waiting for a reply to a statuys update that has 
-       been queued and at the same time the server makes a request to the mom we can get stuck
-       in a pseudo live-lock state. That is the server is waiting for a response from the mom and
-       the mom is waiting for a response from the server. neither of which will come until a request times out.
-       If we fork the status updates this alleviates the problem by making one less request from the
-       mom single threaded */
-    rc = pipe(fd_pipe);
-    if (rc != 0)
-      {
-      sprintf(buf, "pipe creation failed: %d", errno);
-      log_err(-1, __func__, buf);
-      }
-
-    pid = fork();
-
-    if (pid < 0)
-      {
-      log_record(PBSEVENT_SYSTEM, 0, __func__, "Failed to fork stat update process");
-      return;
-      }
-
-    if (pid > 0)
-      {
-      // PARENT 
-      close(fd_pipe[1]);
-      ForceServerUpdate = false;
-      LastServerUpdateTime = time_now;
-      UpdateFailCount = 0;
-      updates_waiting_to_send = 0;
-    
-      received_node                                             *rn;
-      received_statuses.lock();
-      container::item_container<received_node *>::item_iterator *iter = received_statuses.get_iterator();
-      
-      // clear cached statuses from hierarchy
-      while ((rn = iter->get_next_item()) != NULL)
-        rn->statuses.clear();
-
-      delete iter;
-      received_statuses.unlock();
-
-      len = read(fd_pipe[0], buf, LOCAL_LOG_BUF_SIZE);
-
-      close(fd_pipe[0]);
-
-      if (len <= 0)
-        {
-        log_err(-1, __func__, "read of pipe failed for status update");
-        return;
-        }
-
-      if (buf[0] != '0')
-        num_stat_update_failures++;
-      else
-        {
-        num_stat_update_failures = 0;
-        for (int sindex = 0; sindex < PBS_MAXSERVER; sindex++)
-          {
-          if (mom_servers[sindex].pbs_servername[0] == '\0')
-            continue;
-          mom_servers[sindex].MOMLastSendToServerTime = time_now;
-          }
-        }
-
-      return;
-      }
-
-    // CHILD
-    close(fd_pipe[0]);
-
 #ifdef NUMA_SUPPORT
     for (numa_index = 0; numa_index < num_node_boards; numa_index++)
 #endif /* NUMA_SUPPORT */
       {
       update_mom_status();
   
-      if (send_status_through_hierarchy() != PBSE_NONE)
+      if ((rc = send_status_through_hierarchy()) != PBSE_NONE)
         rc = send_update_to_a_server();
       }
 
-    sprintf(buf, "%d", rc);
-    len = strlen(buf);
-    write(fd_pipe[1], buf, len);
-
-    exit_called = true;
-  
-    exit(0);
+    if (rc == PBSE_NONE)
+      {
+      updates_waiting_to_send = 0;
+      force_layout_update = false;
+      }
     }
  
   }  /* END mom_server_all_update_stat() */
-
 
 
 
@@ -2437,6 +2360,11 @@ void reset_okclients()
           }
         }
       }
+    }
+
+  if (pbsclient != 0)
+    {
+    auth_hosts.add_authorized_address(pbsclient, 0, "");
     }
 
   // add localhost
@@ -3521,7 +3449,7 @@ bool is_for_this_host(
 void get_device_indices(
   
   const char *device_str, 
-  std::vector<unsigned int> &device_indices, 
+  std::vector<int> &device_indices, 
   const char *suffix)
 
   {
@@ -3577,7 +3505,7 @@ void get_device_indices(
 
     if (is_for_this_host(host_name_part, suffix) == true)
       {
-      unsigned int device_index = atoi(device_index_part.c_str());
+      int device_index = atoi(device_index_part.c_str());
 
       device_indices.push_back(device_index);
       }

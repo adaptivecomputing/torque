@@ -102,9 +102,10 @@
 #include <arpa/inet.h>
 #include <pthread.h> /* thread_func functions */
 
-#if defined(FD_SET_IN_SYS_SELECT_H)
-#include <sys/select.h>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
 #endif
+#include <poll.h>
 #if defined(NTOHL_NEEDS_ARPA_INET_H) && defined(HAVE_ARPA_INET_H)
 #include <arpa/inet.h>
 #endif
@@ -153,7 +154,7 @@ struct connection svr_conn[PBS_NET_MAX_CONNECTIONS];
 static int       max_connection = PBS_NET_MAX_CONNECTIONS;
 static int       num_connections = 0;
 pthread_mutex_t *num_connections_mutex = NULL;
-static fd_set   *GlobalSocketReadSet = NULL;
+static struct pollfd *GlobalSocketReadArray = NULL;
 static u_long   *GlobalSocketAddrSet = NULL;
 static u_long   *GlobalSocketPortSet = NULL;
 pthread_mutex_t *global_sock_read_mutex = NULL;
@@ -263,7 +264,7 @@ void netcounter_get(
 /**
  * init_network - initialize the network interface
  * allocate a socket and bind it to the service port,
- * add the socket to the readset for select(),
+ * add the socket to the read set for poll(),
  * add the socket to the connection structure and set the
  * processing function to accept_conn()
  */
@@ -323,7 +324,7 @@ int init_network(
 
     disiui_();
 
-    for (i = 0;i < PBS_NET_MAX_CONNECTIONS;i++)
+    for (i = 0; i < PBS_NET_MAX_CONNECTIONS; i++)
       {
       svr_conn[i].cn_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
       pthread_mutex_init(svr_conn[i].cn_mutex,NULL);
@@ -334,10 +335,41 @@ int init_network(
       pthread_mutex_unlock(svr_conn[i].cn_mutex);
       }
     
-    /* initialize global "read" socket FD bitmap */
-    GlobalSocketReadSet = (fd_set *)calloc(1,sizeof(char) * get_fdset_size());
-    GlobalSocketAddrSet = (u_long *)calloc(sizeof(ulong),get_max_num_descriptors());
-    GlobalSocketPortSet = (u_long *)calloc(sizeof(ulong),get_max_num_descriptors());
+    /* initialize global "read" socket array */
+    MaxNumDescriptors = get_max_num_descriptors();
+
+    GlobalSocketReadArray = (struct pollfd *)malloc(MaxNumDescriptors * sizeof(struct pollfd));
+    if (GlobalSocketReadArray == NULL)
+      {
+      return(-1); // no memory
+      }
+
+    // set initial values
+    for (i = 0; i < MaxNumDescriptors; i++)
+      {
+      GlobalSocketReadArray[i].fd = -1;
+      GlobalSocketReadArray[i].events = 0;
+      GlobalSocketReadArray[i].revents = 0;
+      }
+
+    GlobalSocketAddrSet = (u_long *)calloc(MaxNumDescriptors, sizeof(ulong));
+    if (GlobalSocketAddrSet == NULL)
+      {
+      free(GlobalSocketReadArray);
+      GlobalSocketReadArray = NULL;
+      return(-1); // no memory
+      }
+
+    GlobalSocketPortSet = (u_long *)calloc(MaxNumDescriptors, sizeof(ulong));
+    if (GlobalSocketPortSet == NULL)
+      {
+      free(GlobalSocketReadArray);
+      GlobalSocketReadArray = NULL;
+
+      free(GlobalSocketAddrSet);
+      GlobalSocketAddrSet = NULL;
+      return(-1); // no memory
+      }
 
     global_sock_read_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
     pthread_mutex_init(global_sock_read_mutex,&t_attr);
@@ -365,7 +397,7 @@ int init_network(
 
   if (port != 0)
     {
-    sock = socket(AF_INET, SOCK_STREAM, 0);
+    sock = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
 
     if (sock < 0)
       {
@@ -398,7 +430,7 @@ int init_network(
       return(-1);
       }
 
-    /* record socket in connection structure and select set */
+    /* record socket in connection structure and poll set */
 
     add_conn(sock, type, (pbs_net_t)0, 0, PBS_SOCK_INET, accept_conn);
 
@@ -417,7 +449,7 @@ int init_network(
     {
     /* setup unix domain socket */
 
-    unixsocket = socket(AF_UNIX, SOCK_STREAM, 0);
+    unixsocket = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
 
     if (unixsocket < 0)
       {
@@ -647,7 +679,7 @@ int check_network_port(
 
 /*
  * wait_request - wait for a request (socket with data to read)
- * This routine does a select on the readset of sockets,
+ * This routine does a poll on the read set of sockets,
  * when data is ready, the processing routine associated with
  * the socket is invoked.
  */
@@ -662,58 +694,71 @@ int wait_request(
   int             n;
   time_t          now;
 
-  fd_set          *SelectSet = NULL;
-  int             SelectSetSize = 0;
+  struct pollfd  *PollArray = NULL;
+  struct timespec ts;
+  int             PollArraySize = 0;
   int             MaxNumDescriptors = 0;
   int             SetSize = 0;
-  u_long   		  *SocketAddrSet = NULL;
-  u_long          *SocketPortSet = NULL;
+  u_long   	 *SocketAddrSet = NULL;
+  u_long         *SocketPortSet = NULL;
 
 
   char            tmpLine[1024];
-  struct timeval  timeout;
   long            OrigState = 0;
 
   if (SState != NULL)
     OrigState = *SState;
 
-  timeout.tv_usec = 0;
-  timeout.tv_sec  = waittime;
+  // set timeout for ppoll()
+  ts.tv_sec = waittime;
+  ts.tv_nsec = 0;
 
-  SelectSetSize = sizeof(char) * get_fdset_size();
-  SelectSet = (fd_set *)calloc(1,SelectSetSize);
+  MaxNumDescriptors = get_max_num_descriptors();
+
+  PollArraySize = MaxNumDescriptors * sizeof(struct pollfd);
+  PollArray = (struct pollfd *)malloc(PollArraySize);
   
-  if(SelectSet == NULL)
+  if (PollArray == NULL)
     {
     return(-1);
     }
-  pthread_mutex_lock(global_sock_read_mutex);
-  
-  memcpy(SelectSet,GlobalSocketReadSet,SelectSetSize);
 
-  /* selset = readset;*/  /* readset is global */
-  MaxNumDescriptors = get_max_num_descriptors();
-  SetSize = MaxNumDescriptors*sizeof(u_long);
+  // since we don't want to hold the mutex for too long,
+  //   just make a local copy of the data and act on it
+
+  pthread_mutex_lock(global_sock_read_mutex);
+ 
+  // copy global array to local one 
+  memcpy(PollArray, GlobalSocketReadArray, PollArraySize);
+
+  SetSize = MaxNumDescriptors * sizeof(u_long);
 
   SocketAddrSet = (u_long *)malloc(SetSize);
   SocketPortSet = (u_long *)malloc(SetSize);
-  if((SocketAddrSet == NULL) || (SocketPortSet == NULL))
+
+  if ((SocketAddrSet == NULL) || (SocketPortSet == NULL))
     {
-    free(SelectSet);
-    if(SocketAddrSet != NULL) free(SocketAddrSet);
-    if(SocketPortSet != NULL) free(SocketPortSet);
+    free(PollArray);
+
+    if (SocketAddrSet != NULL)
+      free(SocketAddrSet);
+    if (SocketPortSet != NULL)
+      free(SocketPortSet);
+
     pthread_mutex_unlock(global_sock_read_mutex);
     return (-1);
     }
-  memcpy(SocketAddrSet,GlobalSocketAddrSet,SetSize);
-  memcpy(SocketPortSet,GlobalSocketPortSet,SetSize);
+
+  memcpy(SocketAddrSet, GlobalSocketAddrSet, SetSize);
+  memcpy(SocketPortSet, GlobalSocketPortSet, SetSize);
 
   pthread_mutex_unlock(global_sock_read_mutex);
-  n = select(MaxNumDescriptors, SelectSet, (fd_set *)0, (fd_set *)0, &timeout);
+
+  n = ppoll(PollArray, MaxNumDescriptors, &ts, NULL);
 
   if (n == -1)
     {
-    if (errno == EINTR)
+     if (errno == EINTR)
       {
       n = 0; /* interrupted, cycle around */
       }
@@ -725,38 +770,48 @@ int wait_request(
 
       /* check all file descriptors to verify they are valid */
 
-      /* NOTE: selset may be modified by failed select() */
-
       for (i = 0; i < MaxNumDescriptors; i++)
         {
-        if (FD_ISSET(i, SelectSet) == 0)
+        // skip this entry, fd not set
+        if (PollArray[i].fd < 0)
           continue;
 
+        // skip this entry, return events present
+        if (PollArray[i].revents != 0)
+          continue;
+
+        // skip this entry, it's a valid descriptor
         if (fstat(i, &fbuf) == 0)
           continue;
 
-        /* clean up SdList and bad sd... */
-
+        // remove socket from the global set since it's no longer valid
         globalset_del_sock(i);
-        } /* END for each socket in global read set */
+        } /* END for each socket in global read array */
 
-      free(SelectSet);
+      free(PollArray);
       free(SocketAddrSet);
       free(SocketPortSet);
 
-      log_err(errno, __func__, "Unable to select sockets to read requests");
+      log_err(errno, __func__, "Unable to poll sockets to read requests");
 
       return(-1);
       }  /* END else (errno == EINTR) */
     }    /* END if (n == -1) */
 
-  for (i = 0; (i < max_connection) && (n > 0); i++)
+  for (i = 0; (n > 0) && (i < max_connection); i++)
     {
-    if (FD_ISSET(i, SelectSet))
+    // skip entry if it has no return events
+    if (PollArray[i].revents == 0)
+      continue;
+
+    // decrement the count of structures that have non-zero revents
+    n--;
+
+    // is there data ready to read?
+    if ((PollArray[i].revents & POLLIN))
       {
       pthread_mutex_lock(svr_conn[i].cn_mutex);
       /* this socket has data */
-      n--;
 
       svr_conn[i].cn_lasttime = time(NULL);
 
@@ -793,7 +848,7 @@ int wait_request(
 
         pthread_mutex_lock(num_connections_mutex);
 
-        sprintf(tmpLine, "closed connections to fd %d - num_connections=%d (select bad socket)",
+        sprintf(tmpLine, "closed connections to fd %d - num_connections=%d (poll bad socket)",
           i,
           num_connections);
 
@@ -803,7 +858,7 @@ int wait_request(
       }
     } /* END for i */
 
-  free(SelectSet);
+  free(PollArray);
   free(SocketAddrSet);
   free(SocketPortSet);
 
@@ -816,7 +871,7 @@ int wait_request(
 
   now = time((time_t *)0);
 
-  for (i = 0;i < max_connection;i++)
+  for (i = 0; i < max_connection; i++)
     {
     struct connection *cp;
 
@@ -878,7 +933,7 @@ int wait_request(
  * accept_conn - accept request for new connection
  * this routine is normally associated with the main socket,
  * requests for connection on the socket are accepted and
- * the new socket is added to the select set and the connection
+ * the new socket is added to the poll set and the connection
  * structure - the processing routine is set to the external
  * function: process_request(socket)
  *
@@ -937,7 +992,7 @@ void *accept_conn(
     }
   else
     {
-    /* add the new socket to the select set and connection structure */
+    /* add the new socket to the poll set and connection structure */
     add_conn(
       newsock,
       FromClientDIS,
@@ -962,7 +1017,9 @@ void globalset_add_sock(
 
   {
   pthread_mutex_lock(global_sock_read_mutex);
-  FD_SET(sock, GlobalSocketReadSet);
+  GlobalSocketReadArray[sock].fd = sock;
+  GlobalSocketReadArray[sock].events = POLLIN;
+  GlobalSocketReadArray[sock].revents = 0;
   GlobalSocketAddrSet[sock] = addr;
   GlobalSocketPortSet[sock] = port;
   pthread_mutex_unlock(global_sock_read_mutex);
@@ -977,7 +1034,9 @@ void globalset_del_sock(
 
   {
   pthread_mutex_lock(global_sock_read_mutex);
-  FD_CLR(sock, GlobalSocketReadSet);
+  GlobalSocketReadArray[sock].fd = -1;
+  GlobalSocketReadArray[sock].events = 0;
+  GlobalSocketReadArray[sock].revents = 0;
   GlobalSocketAddrSet[sock] = 0;
   GlobalSocketPortSet[sock] = 0;
   pthread_mutex_unlock(global_sock_read_mutex);
@@ -1000,7 +1059,7 @@ int add_connection(
   unsigned int   port,    /* port number (host order) on connected host */
   unsigned int   socktype, /* inet or unix */
   void *(*func)(void *),  /* function to invoke on data rdy to read */
-  int            add_wait_request) /* True to add into global select set */
+  int            add_wait_request) /* True to add into global poll set */
 
   {
   if ((sock < 0) ||
@@ -1182,10 +1241,10 @@ void close_conn(
 
   /* 
    * In the case of a -t cold start, this will be called prior to
-   * GlobalSocketReadSet being initialized
+   * GlobalSocketReadArray being initialized
    */
 
-  if (GlobalSocketReadSet != NULL)
+  if (GlobalSocketReadArray != NULL)
     {
     globalset_del_sock(sd);
     }
@@ -1252,10 +1311,10 @@ void clear_conn(
 
   /* 
    * In the case of a -t cold start, this will be called prior to
-   * GlobalSocketReadSet being initialized
+   * GlobalSocketReadArray being initialized
    */
 
-  if (GlobalSocketReadSet != NULL)
+  if (GlobalSocketReadArray != NULL)
     {
     globalset_del_sock(sd);
     }
@@ -1298,7 +1357,7 @@ void net_close(
   {
   int i;
 
-  for (i = 0;i < max_connection;i++)
+  for (i = 0; i < max_connection; i++)
     {
     if (i != but)
       {

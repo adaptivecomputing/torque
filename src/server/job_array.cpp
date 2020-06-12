@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <algorithm>
 
 #include "array.h"
 #include "list_link.h"
@@ -130,18 +131,22 @@ void job_array::set_submit_host(
 
 int job_array::set_slot_limit(
 
-  char *request)
+  const char *request)
 
   {
   char *pcnt;
+  char *request_copy;
   long  max_limit;
   char  log_buf[LOCAL_LOG_BUF_SIZE];
+
+  if ((request_copy = strdup(request)) == NULL)
+    return(-1);
 
   /* check for a max slot limit */
   if (get_svr_attr_l(SRV_ATR_MaxSlotLimit, &max_limit) != PBSE_NONE)
     max_limit = NO_SLOT_LIMIT;
 
-  if ((pcnt = strchr(request,'%')) != NULL)
+  if ((pcnt = strchr(request_copy, '%')) != NULL)
     {
     /* remove '%' from the request, or else it can't be parsed */
     while (*pcnt == '%')
@@ -164,6 +169,7 @@ int job_array::set_slot_limit(
           max_limit);
         log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, this->ai_qs.parent_id, log_buf);
 
+        free(request_copy);
         return(INVALID_SLOT_LIMIT);
         }
       }
@@ -177,6 +183,7 @@ int job_array::set_slot_limit(
     this->ai_qs.slot_limit = max_limit;
     }
 
+  free(request_copy);
   return(PBSE_NONE);
   } /* END set_slot_limit() */
 
@@ -239,15 +246,22 @@ int job_array::parse_array_request(
   long max_array_size;
   char log_buf[LOCAL_LOG_BUF_SIZE];
   this->uncreated_ids.clear();
+  std::string request_copy(request);
+  int loc;
 
-  if ((rc = translate_range_string_to_vector(request, this->uncreated_ids)) != PBSE_NONE)
+  // remove slot limit (begins with %) if present
+  if ((loc = request_copy.find_first_of("%")) >= 0)
+    request_copy.erase(loc);
+
+  if ((rc = translate_range_string_to_vector(request_copy.c_str(), this->uncreated_ids)) != PBSE_NONE)
     return(rc);
 
-  this->ai_qs.range_str = request;
+  this->ai_qs.range_str = request_copy.c_str();
   this->ai_qs.num_jobs = this->uncreated_ids.size();
 
   // size of array is the biggest index + 1
-  this->ai_qs.array_size = this->uncreated_ids[this->uncreated_ids.size() - 1] + 1;
+  this->ai_qs.array_size = *std::max_element(this->uncreated_ids.begin(),
+         this->uncreated_ids.end()) + 1;
 
   if (get_svr_attr_l(SRV_ATR_MaxArraySize, &max_array_size) == PBSE_NONE)
     {
@@ -569,4 +583,48 @@ bool job_array::is_deleted() const
   }
 
 
+
+/*
+ * mark_end_of_subjob()
+ * Takes care of noting that this subjob is being purged from the array
+ *
+ * @param pjob - the subjob that is being removed
+ * @return true if the array has no more subjobs, false otherwise
+ */
+
+bool job_array::mark_end_of_subjob(
+    
+  job *pjob)
+
+  {
+  bool no_more_subjobs = false;
+  int  index;
+
+  if (pjob != NULL)
+    {
+    if (this->job_ids != NULL)
+      {
+      index = pjob->ji_wattr[JOB_ATR_job_array_id].at_val.at_long;
+
+      if ((index >= 0) &&
+          (index < this->ai_qs.array_size))
+        {
+        if (this->job_ids[index] != NULL)
+          {
+          free(this->job_ids[index]);
+          this->job_ids[index] = NULL;
+          }
+          
+        this->ai_qs.num_purged++;
+        
+        if ((this->ai_qs.num_purged == this->ai_qs.num_jobs) ||
+            ((this->is_deleted() == true) &&
+             (this->ai_qs.num_idle == 0)))
+          no_more_subjobs = true;
+        }
+      }
+    }
+  
+  return(no_more_subjobs);
+  } // mark_end_of_subjob()
 

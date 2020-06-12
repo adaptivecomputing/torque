@@ -57,7 +57,8 @@ enum MOMCmdEnum
   momQuery,
   momReconfig,
   momShutdown,
-  momLayout
+  momLayout,
+  momUpdateLayout
   };
 
 enum MOMCmdEnum CmdIndex = momNONE;
@@ -126,7 +127,7 @@ int main(
   char **ArgV)  /* I */
 
   {
-  const char *OptString = "c:Cd:f:h:lp:q:r:sv";
+  const char *OptString = "c:Cd:f:h:lp:q:r:svu";
 
   char  HostList[65536];
 
@@ -368,6 +369,12 @@ int main(
         /* shutdown */
 
         CmdIndex = momShutdown;
+
+        break;
+
+      case 'u':
+
+        CmdIndex = momUpdateLayout;
 
         break;
 
@@ -838,6 +845,18 @@ int do_mom(
         fprintf(stdout, "%s", value);
         free(value);
         }
+
+      break;
+
+    case momUpdateLayout:
+
+      if ((send_command(chan, RM_CMD_UPDATE_LAYOUT) != PBSE_NONE) ||
+          (check_success(chan) != PBSE_NONE))
+        {
+        fprintf(stdout, "Update layout command failed to send to mom\n");
+        return(-1);
+        }
+
 
       break;
 

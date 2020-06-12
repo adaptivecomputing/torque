@@ -21,15 +21,16 @@
 
 int delete_inactive_job(job **, const char *);
 void force_purge_work(job *pjob);
-void *delete_all_work(void *vp);
+int delete_all_work(batch_request *);
 void ensure_deleted(struct work_task *ptask);
 int  apply_job_delete_nanny(job *pjob, int delay);
 void job_delete_nanny(struct work_task *ptask);
 void post_job_delete_nanny(batch_request *preq_sig);
 int forced_jobpurge(job *pjob, batch_request *preq);
 void post_delete_mom2(struct work_task *pwt);
-int handle_delete_all(batch_request *preq, batch_request *preq_tmp, char *Msg);
-int handle_single_delete(batch_request *preq, batch_request *preq_tmp, char *Msg);
+int handle_delete_all(batch_request *preq, char *Msg);
+int handle_single_delete(batch_request *preq, char *Msg);
+int perform_job_delete_array_bookkeeping(job *pjob, int cancel_exit_code);
 bool exit_called;
 extern int  depend_term_called;
 extern long keep_seconds;
@@ -39,6 +40,8 @@ extern int signal_issued;
 extern int nanny;
 extern bool br_freed;
 extern int alloc_work;
+extern int  updated_array_values;
+extern bool find_job_fail;
 struct server server;
 extern const char *delpurgestr;
 
@@ -75,59 +78,47 @@ int set_pbs_server_name()
   return 0;
   }
 
+START_TEST(test_perform_job_delete_array_bookkeeping)
+  {
+  job           *pjob = (job *)calloc(1, sizeof(job));
+  sprintf(pjob->ji_arraystructid, "1[].roshar");
+  sprintf(pjob->ji_qs.ji_jobid, "1[0].roshar");
+
+  find_job_fail = false;
+  updated_array_values = 0;
+  fail_unless(perform_job_delete_array_bookkeeping(pjob, 1) == PBSE_NONE);
+  fail_unless(updated_array_values == 1);
+  
+  find_job_fail = true;
+  fail_unless(perform_job_delete_array_bookkeeping(pjob, 1) != PBSE_NONE);
+  fail_unless(updated_array_values == 2);
+  }
+END_TEST
+
 START_TEST(test_handle_single_delete)
   {
-  batch_request *preq = (batch_request *)calloc(1,sizeof(batch_request));
+  batch_request *preq = new batch_request();
   strcpy(preq->rq_ind.rq_delete.rq_objname, "2.napali");
-  fail_unless(handle_single_delete(preq, preq, NULL) == PBSE_NONE);
+  fail_unless(handle_single_delete(preq, NULL) == PBSE_NONE);
   fail_unless(preq->rq_noreply == FALSE);
 
+  // Now an asynchronous delete
+  preq->rq_extend = strdup(DELASYNC);
   strcpy(preq->rq_ind.rq_delete.rq_objname, "1.napali");
-  fail_unless(handle_single_delete(preq, preq, NULL) == PBSE_NONE);
-  fail_unless(preq->rq_noreply == TRUE);
+  fail_unless(handle_single_delete(preq, NULL) == PBSE_NONE);
+  fail_unless(preq->rq_noreply == true);
   }
 END_TEST
 
 START_TEST(test_handle_delete_all)
   {
   batch_request preq;
-  memset(&preq, 0, sizeof(preq));
+  preq.rq_extend = strdup(DELASYNC);
 
-  fail_unless(handle_delete_all(&preq, &preq, NULL) == PBSE_NONE);
-  fail_unless(preq.rq_noreply == TRUE);
+  fail_unless(handle_delete_all(&preq, NULL) == PBSE_NONE);
+  fail_unless(preq.rq_noreply == true);
   }
 END_TEST
-
-START_TEST(test_duplicate_request)
-  {
-  batch_request *preq = (batch_request *)calloc(1, sizeof(batch_request));
-  batch_request *dup;
-  alloc_work = 0;
-  fail_unless(duplicate_request(preq) == NULL);
-
-  alloc_work = 1;
-  preq->rq_perm = 1;
-  strcpy(preq->rq_user, "dbeer");
-  strcpy(preq->rq_host, "napali");
-  preq->rq_extend = strdup("tom");
-  preq->rq_type = PBS_BATCH_RunJob;
-  preq->rq_ind.rq_run.rq_destin = strdup("napali");
-
-  dup = duplicate_request(preq);
-  fail_unless(dup != NULL);
-  fail_unless(!strcmp(dup->rq_extend, "tom"));
-  fail_unless(!strcmp(dup->rq_user, "dbeer"));
-  fail_unless(!strcmp(dup->rq_host, "napali"));
-  fail_unless(!strcmp(dup->rq_extend, "tom"));
-  fail_unless(!strcmp(dup->rq_ind.rq_run.rq_destin, "napali"));
-
-  preq->rq_type = PBS_BATCH_Rerun;
-  const char *rerun_jobid = "4.roshar";
-  strcpy(preq->rq_ind.rq_rerun, rerun_jobid);
-  batch_request *rerun_dep = duplicate_request(preq, -1);
-  fail_unless(!strcmp(rerun_dep->rq_ind.rq_rerun, rerun_jobid));
-  }
-END_TEST 
 
 START_TEST(test_post_delete_mom2)
   {
@@ -154,7 +145,7 @@ START_TEST(test_forced_jobpurge)
   batch_request *preq;
 
   pjob = new job();
-  preq = (batch_request *)calloc(1, sizeof(batch_request));
+  preq = new batch_request();
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
   memset(pjob->ji_arraystructid, 0, sizeof(pjob->ji_arraystructid));
 
@@ -175,14 +166,8 @@ END_TEST
 START_TEST(test_delete_all_work)
   {
   //struct all_jobs  alljobs;
-  job             *pjob;
-  batch_request   *preq;
-
-  pjob = new job();
-  pjob->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
-  pthread_mutex_init(pjob->ji_mutex,NULL);
-
-  preq = (batch_request *)calloc(1, sizeof(batch_request));
+  job           *pjob = new job();
+  batch_request *preq = new batch_request();
   preq->rq_extend = strdup(delpurgestr);
   nanny = 0;
 
@@ -190,7 +175,8 @@ START_TEST(test_delete_all_work)
 
   // no lock should remain on job after delete_all_work() 
   //  so test by making sure we can set lock 
-  fail_unless(delete_all_work((void *) preq) == NULL && pthread_mutex_trylock(pjob->ji_mutex) == 0);
+  fail_unless(delete_all_work(preq) == PBSE_NONE);
+  fail_unless(pthread_mutex_trylock(pjob->ji_mutex) == 0);
 
   nanny = 1;
   }
@@ -200,37 +186,22 @@ START_TEST(test_post_job_delete_nanny)
   {
   batch_request *preq_sig;
   
-  br_freed = FALSE;
-  post_job_delete_nanny(NULL);
-  fail_unless(br_freed == FALSE);
-
-  preq_sig = (batch_request *)calloc(1, sizeof(batch_request));
-  br_freed = FALSE;
+  preq_sig = new batch_request();
   nanny = 0;
   post_job_delete_nanny(preq_sig);
-  fail_unless(br_freed == TRUE);
 
-  preq_sig = (batch_request *)calloc(1, sizeof(batch_request));
-  br_freed = FALSE;
   nanny = 1;
   strcpy(preq_sig->rq_ind.rq_signal.rq_jid, "2.napali");
   post_job_delete_nanny(preq_sig);
-  fail_unless(br_freed == TRUE);
 
-  preq_sig = (batch_request *)calloc(1, sizeof(batch_request));
-  br_freed = FALSE;
   nanny = 1;
   strcpy(preq_sig->rq_ind.rq_signal.rq_jid, "1.napali");
   post_job_delete_nanny(preq_sig);
-  fail_unless(br_freed == TRUE);
 
-  preq_sig = (batch_request *)calloc(1, sizeof(batch_request));
-  br_freed = FALSE;
   nanny = 1;
   strcpy(preq_sig->rq_ind.rq_signal.rq_jid, "1.napali");
   preq_sig->rq_reply.brp_code = PBSE_UNKJOBID;
   post_job_delete_nanny(preq_sig);
-  fail_unless(br_freed == TRUE);
   }
 END_TEST
 
@@ -321,6 +292,7 @@ START_TEST(test_force_purge_work)
   {
   job *pjob = new job();
 
+  sprintf(pjob->ji_qs.ji_jobid, "17.roshar");
   pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str = strdup("bob");
   depend_term_called = 0;
   force_purge_work(pjob);
@@ -416,9 +388,9 @@ Suite *req_delete_suite(void)
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("more");
-  tcase_add_test(tc_core, test_duplicate_request);
   tcase_add_test(tc_core, test_handle_delete_all);
   tcase_add_test(tc_core, test_handle_single_delete);
+  tcase_add_test(tc_core, test_perform_job_delete_array_bookkeeping);
   suite_add_tcase(s, tc_core);
 
   return s;

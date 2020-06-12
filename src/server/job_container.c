@@ -111,14 +111,15 @@ id_map          job_mapper;
  *
  * allocs the correct job name
  * @param jobid (I) - the jobid as passed in (NUM.SERVER_NAME)
- * @return a pointer to the correct job name (alloc'd)
+ * @param correct (O) - the correct job id as a string object
+ * @return a pointer to the correct job name
  */
-char *get_correct_jobname(
+const char *get_correct_jobname(
 
-  const char *jobid) /* I */
+  const char  *jobid,
+  std::string &correct)
 
   {
-  char *correct = NULL;
   char *dot;
   char *work_jobid = strdup(jobid);
   /* first suffix could be the server name or the alias */
@@ -161,47 +162,31 @@ char *get_correct_jobname(
       {
       if (strcmp(second_suffix,alias) == 0)
         {
-        correct = strdup(jobid);
+        correct = jobid;
 
-        if (correct == NULL)
-          log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
-      
         free(work_jobid);
 
-        return(correct);
+        return(correct.c_str());
         }
       }
     else if (first_suffix == NULL)
       {
       /* alloc memory and sprint, add 3 for 2 '.' and NULL terminator */
       len = strlen(work_jobid) + strlen(server_name) + strlen(alias) + 3;
-      correct = (char *)calloc(1, len);
-
-      if (correct == NULL)
-        {
-        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
-        free(work_jobid);
-        return(NULL);
-        }
-
-      snprintf(correct,len,"%s.%s.%s",
-        work_jobid,server_name,alias);
+      correct = work_jobid;
+      correct += ".";
+      correct += server_name;
+      correct += ".";
+      correct += alias;
       }
     else
       {
       /* add 2 for null terminator and '.' */
       len = strlen(alias) + 2 + strlen(work_jobid);
 
-      correct = (char *)calloc(1, len);
-
-      if (correct == NULL)
-        {
-        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
-        free(work_jobid);
-        return(NULL);
-        }
-
-      snprintf(correct,len,"%s.%s",work_jobid,alias);
+      correct = work_jobid;
+      correct += ".";
+      correct += alias;
       }
     } /* END if (server_suffix && alias) */
   else if (server_suffix == TRUE)
@@ -210,30 +195,15 @@ char *get_correct_jobname(
 
     if (first_suffix != NULL)
       {
-      correct = strdup(work_jobid);
-
-      if (correct == NULL)
-        {
-        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
-        free(work_jobid);
-        return(NULL);
-        }
+      correct = work_jobid;
       }
     else
       {
       len = strlen(work_jobid) + strlen(server_name) + 2;
 
-      correct = (char *)calloc(1, len);
-
-      if (correct == NULL)
-        {
-        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
-        free(work_jobid);
-        return(NULL);
-        }
-
-      snprintf(correct,len,"%s.%s",
-        work_jobid,server_name);
+      correct = work_jobid;
+      correct += ".";
+      correct += server_name;
       }
     } /* END if (just server_suffix) */
   else if (alias != NULL)
@@ -244,16 +214,9 @@ char *get_correct_jobname(
       {
       len = strlen(work_jobid) + strlen(alias) + 2;
 
-      correct = (char *)calloc(1, len);
-
-      if (correct == NULL)
-        {
-        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
-        free(work_jobid);
-        return(NULL);
-        }
-
-      snprintf(correct,len,"%s.%s",work_jobid,alias);
+      correct = work_jobid;
+      correct += ".";
+      correct += alias;
       }
     else
       {
@@ -263,18 +226,10 @@ char *get_correct_jobname(
       *dot = '\0';
 
       len += strlen(work_jobid);
-      correct = (char *)calloc(1, len);
 
-      if (correct == NULL)
-        {
-        log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
-        free(work_jobid);
-        return(NULL);
-        }
-
-      snprintf(correct,len,"%s.%s",
-        work_jobid,
-        alias);
+      correct = work_jobid;
+      correct += ".";
+      correct += alias;
 
       *dot = '.';
       }
@@ -289,16 +244,8 @@ char *get_correct_jobname(
       }
 
     len = strlen(work_jobid) + 1;
-    correct = (char *)calloc(1, len);
 
-    if (correct == NULL)
-      {
-      log_err(-1, __func__, "ERROR:    Fatal - Cannot allocate memory\n");
-      free(work_jobid);
-      return(NULL);
-      }
-
-    snprintf(correct,len,"%s",work_jobid);
+    correct = work_jobid;
 
     if (first_suffix != NULL)
       *dot = '.';
@@ -306,7 +253,7 @@ char *get_correct_jobname(
 
   free(work_jobid);
 
-  return(correct);
+  return(correct.c_str());
   } /* END get_correct_jobname() */
 
 
@@ -389,8 +336,6 @@ job *svr_find_job(
 
   {
   char *at;
-  char *comp = NULL;
-  int   different = FALSE;
   char *dash = NULL;
   char *dot = NULL;
   char  without_dash[PBS_MAXSVRJOBID + 1];
@@ -398,6 +343,8 @@ job *svr_find_job(
   char *jid_ptr = NULL;
 
   job  *pj = NULL;
+
+  std::string comp;
 
   if (NULL == jobid)
     {
@@ -440,11 +387,7 @@ job *svr_find_job(
   if ((is_svr_attr_set(SRV_ATR_display_job_server_suffix)) ||
       (is_svr_attr_set(SRV_ATR_job_suffix_alias)))
     {
-    comp = get_correct_jobname(jid_ptr);
-    different = TRUE;
-
-    if (comp == NULL)
-      return(NULL);
+    get_correct_jobname(jid_ptr, comp);
     }
   else
     {
@@ -456,7 +399,7 @@ job *svr_find_job(
     /* if we're searching for the external we want find_job_by_array to 
      * return the parent, but if we're searching for the cray subjob then
      * we want find_job_by_array to return the sub job */
-    pj = find_job_by_array(&alljobs, comp, (dash != NULL) ? FALSE : get_subjob, false);
+    pj = find_job_by_array(&alljobs, comp.c_str(), (dash != NULL) ? FALSE : get_subjob, false);
     }
 
   /* when remotely routing jobs, they are removed from the 
@@ -466,7 +409,7 @@ job *svr_find_job(
   if (pj == NULL)
     {
     /* see the comment on the above call to find_job_by_array() */
-    pj = find_job_by_array(&array_summary, comp, (dash != NULL) ? FALSE : get_subjob, false);
+    pj = find_job_by_array(&array_summary, comp.c_str(), (dash != NULL) ? FALSE : get_subjob, false);
     }
 
   if (at)
@@ -499,9 +442,6 @@ job *svr_find_job(
         }
       }
     }
-
-  if (different)
-    free(comp);
 
   return(pj);  /* may be NULL */
   }   /* END svr_find_job() */

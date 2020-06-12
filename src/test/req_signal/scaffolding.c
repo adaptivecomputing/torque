@@ -7,16 +7,21 @@
 #include "node_func.h" /* node_info */
 #include "attribute.h"
 
+bool find_job = true;
+bool nullify_pointer = false;
+int  unlocked_job = 0;
+int  found_job = 0;
+int  relay_rc = 0;
 
 attribute_def job_attr_def[10];
 
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 char scaff_buffer[1024];
 
-struct batch_request *alloc_br(int type)
+batch_request *alloc_br(int type)
   {
-  fprintf(stderr, "The call to alloc_br to be mocked!!\n");
-  exit(1);
+  static batch_request preq;
+  return(&preq);
   }
 
 void set_old_nodes(job *pjob)
@@ -63,9 +68,19 @@ char *pbse_to_txt(int err)
 
 job *svr_find_job(const char *jobid, int get_subjob)
   {
-  fprintf(stderr, "The call to find_job to be mocked!!\n");
-  exit(1);
+  static job pjob;
+
+  if (find_job)
+    {
+    found_job++;
+    strcpy(pjob.ji_qs.ji_jobid, jobid);
+    return(&pjob);
+    }
+
+  return(NULL);
   }
+
+
 
 job *chk_job_request(char *jobid, struct batch_request *preq)
   {
@@ -82,7 +97,7 @@ void free_br(struct batch_request *b) {}
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);
@@ -98,6 +113,8 @@ int get_batch_request_id(
 
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging)
   {
+  unlocked_job++;
+
   return(0);
   }
 
@@ -111,7 +128,10 @@ void log_record(int eventtype, int objclass, const char *objname, const char *te
 
 int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct work_task *))
   {
-  return(0);
+  if (nullify_pointer)
+    *pjob_ptr = NULL;
+
+  return(relay_rc);
   }
 
 batch_request *duplicate_request(batch_request *preq, int type) 
@@ -134,7 +154,11 @@ char * netaddr_long(long ap, char *out)
   return(NULL);
   }
 
-job::job() {}
+job::job() 
+  {
+  memset(&this->ji_qs, 0, sizeof(this->ji_qs));
+  }
+
 job::~job() {}
 
 int svr_setjobstate(
@@ -163,4 +187,20 @@ void rel_resc(
   return;
   }
 
+batch_request::~batch_request()
 
+  {
+  }
+
+batch_request::batch_request(const batch_request &other)
+
+  {
+  }
+
+batch_request::batch_request()
+  {
+  }
+
+batch_request::batch_request(int type) : rq_type(type)
+  {
+  }

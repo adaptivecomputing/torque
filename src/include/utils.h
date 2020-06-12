@@ -145,6 +145,7 @@ extern char *OriginalPath;
 /* group functions in u_groups.c */
 extern void free_grname(struct group *, char *);
 extern void free_pwnam(struct passwd *pwdp, char *buf);
+extern bool is_group_member(char *user_name, char *group_name);
 extern struct group *getgrnam_ext (char **, char *);
 extern struct group *getgrgid_ext (char **, gid_t);
 
@@ -208,6 +209,9 @@ int put_env_var(const char *, const char *);
 int rmdir_ext(const char *dir, int retry_limit = 20);
 int unlink_ext(const char *filename, int retry_limit = 20);
 int mkdir_wrapper(const char *pathname, mode_t mode);
+
+/* from parse_config.c */
+int setbool(const char *value);
 
 #endif /* END #ifndef UTILS_H */
  

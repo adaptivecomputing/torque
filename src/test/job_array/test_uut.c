@@ -1,8 +1,9 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
-
+#include "pbs_job.h"
 #include "pbs_error.h"
 #include "array.h"
 #include <check.h>
@@ -72,6 +73,9 @@ START_TEST(test_set_slot_limit)
   request = strdup("0-99%2");
   fail_unless(pa.set_slot_limit(request) == PBSE_NONE);
   fail_unless(pa.ai_qs.slot_limit == 2);
+
+  // make sure request not modified
+  fail_unless(strcmp(request, "0-99%2") == 0);
  
   max_slot = 1;
   request = strdup("0-99%2");
@@ -113,7 +117,7 @@ START_TEST(test_parse_array_request)
 
   // submit a valid array
   array_size = 10000;
-  fail_unless(pa.parse_array_request("0-9") == PBSE_NONE);
+  fail_unless(pa.parse_array_request("0-9%1") == PBSE_NONE);
   fail_unless(pa.ai_qs.array_size == 10);
   fail_unless(pa.ai_qs.num_jobs == 10);
   fail_unless(pa.ai_qs.range_str == "0-9");
@@ -135,6 +139,42 @@ START_TEST(test_parse_array_request)
   pa.create_job_if_needed();
   fail_unless(pa.job_ids[1] != NULL);
   fail_unless(pa.ai_qs.highest_id_created == 1);
+  }
+END_TEST
+
+
+START_TEST(test_mark_end_of_subjob)
+  {
+  job_array pa;
+  array_size = 1000;
+
+  pa.parse_array_request("0-9");
+  for (int i = 0; i < 10; i++)
+    pa.create_job_if_needed();
+
+  fail_unless(pa.ai_qs.highest_id_created == 9);
+
+  fail_unless(pa.mark_end_of_subjob(NULL) == false);
+
+  job pjob;
+
+  // Make sure a bad index doesn't crash
+  pjob.ji_wattr[JOB_ATR_job_array_id].at_val.at_long = -1;
+  fail_unless(pa.mark_end_of_subjob(&pjob) == false);
+
+  for (int i = 0; i < 10; i++)
+    {
+    pjob.ji_wattr[JOB_ATR_job_array_id].at_val.at_long = i;
+    
+    if (i == 9)
+      fail_unless(pa.mark_end_of_subjob(&pjob) == true);
+    else
+      fail_unless(pa.mark_end_of_subjob(&pjob) == false);
+    }
+
+  // Make sure a repeated index doesn't crash
+  pjob.ji_wattr[JOB_ATR_job_array_id].at_val.at_long = 1;
+  fail_unless(pa.mark_end_of_subjob(&pjob) == false);
   }
 END_TEST
 
@@ -203,6 +243,7 @@ Suite *job_array_suite(void)
   tcase_add_test(tc_core, update_array_values_test);
   tcase_add_test(tc_core, test_set_slot_limit);
   tcase_add_test(tc_core, test_initialize_uncreated_ids);
+  tcase_add_test(tc_core, test_mark_end_of_subjob);
   suite_add_tcase(s, tc_core);
 
   return s;

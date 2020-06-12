@@ -212,7 +212,7 @@ PbsErrClient(PBSE_NOJOBARRAYS, (char *)"Queue does not allow job arrays")
 /* 15090 */
 PbsErrClient(PBSE_RELAYED_TO_MOM, (char *)"request was relayed to a MOM") /* */
 PbsErrClient(PBSE_MEM_MALLOC, (char *)"Error allocating memory - out of memory")
-PbsErrClient(PBSE_MUTEX, (char *)"Error allocating controling mutex (lock/unlock)")
+PbsErrClient(PBSE_MUTEX, (char *)"Error allocating controlling mutex (lock/unlock)")
 PbsErrClient(PBSE_THREADATTR, (char *)"Error setting thread attributes")
 PbsErrClient(PBSE_THREAD, (char *)"Error creating thread")
 PbsErrClient(PBSE_SELECT, (char *)"Error in socket select")
@@ -298,6 +298,8 @@ PbsErrClient(PBSE_CGROUP_CREATE_FAIL, (char *)"Could not create all of the cgrou
 PbsErrClient(PBSE_EOF, (char *)"This stream has already been closed. End of File.")
 PbsErrClient(PBSE_GPU_PROHIBITED_MODE, (char *)"Invalid gpu mode requested. Prohibited mode is not allowed. Check the spelling of the mode request for errors")
 PbsErrClient(PBSE_NODE_DELETED,      (char *)"Node was deleted during work")
+PbsErrClient(PBSE_STATE_SLOT_LIMIT, (char *)"The requested state or substate can't be set from the job's current state (slot limit in effect).")
+PbsErrClient(PBSE_BAD_GROUP, (char *)"Bad group entry")
 /* pbs client errors ceiling (max_client_err + 1) */
 PbsErrClient(PBSE_CEILING,           (char*)0)
 #endif
@@ -313,8 +315,8 @@ PbsErrRm(PBSE_RMBADPARAM,            (char *)"parameter could not be used")
 PbsErrRm(PBSE_RMNOPARAM,             (char *)"a parameter needed did not exist")
 /* something specified didn't exist */
 PbsErrRm(PBSE_RMEXIST,               (char *)"something specified didn't exist")
-/* a system error occured */
-PbsErrRm(PBSE_RMSYSTEM,              (char *)"a system error occured")
+/* a system error occurred */
+PbsErrRm(PBSE_RMSYSTEM,              (char *)"a system error occurred")
 /* only part of reservation made */
 PbsErrRm(PBSE_RMPART,                (char *)"only part of reservation made")
 /* pbs rm errors ceiling (max_rm_err + 1) */

@@ -226,3 +226,13 @@ void authorized_hosts::add_authorized_address(unsigned long addr, unsigned short
 authorized_hosts::authorized_hosts() {}
 authorized_hosts auth_hosts;
 
+int read_mem_value(
+
+  const char    *value,
+  unsigned long &parsed)
+
+  {
+  parsed = 10;
+  return(0);
+  }
+

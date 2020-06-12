@@ -89,6 +89,7 @@
 
 #include <pthread.h>
 
+#include <string>
 #include <stdio.h>
 #include <signal.h>
 #include <ctype.h>
@@ -117,8 +118,8 @@
 #include "mutex_mgr.hpp"
 #include "threadpool.h"
 #include "req_delete.h"
+#include "lib_ifl.h"
 #include "delete_all_tracker.hpp"
-#include <string>
 
 #define PURGE_SUCCESS 1
 #define MOM_DELETE    2
@@ -138,8 +139,6 @@ extern char server_host[];
 extern struct server server;
 extern int   LOGLEVEL;
 extern all_jobs alljobs;
-
-extern int issue_signal(job **, const char *, void (*)(batch_request *), void *, char *);
 
 /* Private Functions in this file */
 
@@ -168,10 +167,11 @@ extern void set_resc_assigned(job *, enum batch_op);
 extern job  *chk_job_request(char *, struct batch_request *);
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 extern int   svr_chk_owner(struct batch_request *, job *);
+extern int  svr_authorize_jobreq(struct batch_request *, job *);
 void chk_job_req_permissions(job **,struct batch_request *);
 void          on_job_exit_task(struct work_task *);
 void           remove_stagein(job **pjob_ptr);
-extern void removeBeforeAnyDependencies(const char *pJobID);
+extern void removeBeforeAnyDependencies(job **pjob_ptr);
 
 
 
@@ -313,7 +313,7 @@ void remove_stagein(
         "unable to remove staged in files for job");
       }
 
-    free_br(preq);
+    delete preq;
     }
 
   return;
@@ -322,9 +322,59 @@ void remove_stagein(
 
 
 /*
+ * perform_job_delete_array_bookkeeping()
+ *
+ * Updates the array values to account for pjob's deletion if pjob is an array subjob
+ * @param pjob - the job being deleted
+ * @param cancel_exit_code - the exit code for this job
+ * @return PBSE_NONE on success, PBSE_JOBNOTFOUND if the job disappears
+ */
+
+int perform_job_delete_array_bookkeeping(
+
+  job *pjob,
+  int  cancel_exit_code)
+
+  {
+  int rc = PBSE_NONE;
+
+  if ((pjob->ji_arraystructid[0] != '\0') &&
+      (pjob->ji_is_array_template == FALSE))
+    {
+    job_array *pa = get_jobs_array(&pjob);
+
+    if (pjob == NULL)
+      return(PBSE_JOBNOTFOUND);
+
+    if (pa != NULL)
+      {
+      int old_state = pjob->ji_qs.ji_state;
+      std::string jobid(pjob->ji_qs.ji_jobid);
+
+      unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
+        
+      pa->update_array_values(old_state,
+                              aeTerminate,
+                              jobid.c_str(),
+                              cancel_exit_code);
+            
+      if ((pjob = svr_find_job((char *)jobid.c_str(),FALSE)) == NULL)
+        rc = PBSE_JOBNOTFOUND;
+
+      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
+      }
+    }
+
+  return(rc);
+  } // END perform_job_delete_array_bookkeeping()
+
+
+
+/*
  * force_purge_work()
  *
- * Performs the work of purging an individual job (qdel -p)
+ * Performs the work of purging an individual job (qdel -p). The job comes in locked, 
+ * but is never locked when this function exits.
  * @param pjob - the job that will be purged
  */
 
@@ -354,31 +404,14 @@ void force_purge_work(
       }
     }
 
-  depend_on_term(pjob);
-  
-  if ((pjob->ji_arraystructid[0] != '\0') &&
-      (pjob->ji_is_array_template == false))
+  // On error, the job has disappeared, which should happen once we're done with this function
+  // anyway.
+  if (perform_job_delete_array_bookkeeping(pjob, cancel_exit_code) == PBSE_NONE)
     {
-    job_array *pa = get_jobs_array(&pjob);
-
-    if (pjob == NULL)
-      throw (int)PBSE_JOB_RECYCLED;
-
-    if (pa != NULL)
-      {
-      pa->update_array_values(pjob->ji_qs.ji_state,
-                              aeTerminate,
-                              pjob->ji_qs.ji_jobid,
-                              cancel_exit_code);
-
-      unlock_ai_mutex(pa, __func__, "", LOGLEVEL);
-      }
-    }
-
-  svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
+    depend_on_term(pjob);
+    
+    svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
   
-  if (pjob != NULL)
-    {
     if (is_ms_on_server(pjob))
       {
       char  log_buf[LOCAL_LOG_BUF_SIZE];
@@ -392,9 +425,10 @@ void force_purge_work(
     else
       svr_job_purge(pjob);
     }
+  else
+    throw (int)PBSE_JOB_RECYCLED;
+
   } /* END force_purge_work() */
-
-
 
 
 
@@ -436,7 +470,6 @@ void ensure_deleted(
 
 
 
-
 void setup_apply_job_delete_nanny(
 
   job    *pjob,           /* I */
@@ -455,7 +488,63 @@ void setup_apply_job_delete_nanny(
 
 
 /*
- * execut_job_delete()
+ * notify_waiting_terminal()
+ *
+ * @param pjob - the interactive job whose terminal we need to notify
+ */
+
+void notify_waiting_terminal(
+
+  job *pjob)
+
+  {
+  unsigned int  pport = pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long;
+  char         *hostname = pjob->ji_wattr[JOB_ATR_submit_host].at_val.at_str;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
+  pbs_net_t     hostaddr;
+  int           local_errno;
+
+  if (hostname != NULL)
+    {
+    hostaddr = get_hostaddr(&local_errno, hostname);
+
+    if (hostaddr != (pbs_net_t)0)
+      {
+      char err_msg[MAXLINE];
+      int s = client_to_svr(hostaddr, pport, 0, err_msg);
+
+      if (s >= 0)
+        {
+        // Write the letter 'C' to cancel the job
+        write_ac_socket(s, "C", 1);
+        close(s);
+        }
+      else
+        {
+        sprintf(log_buf, "Couldn't open a socket to cancel interactive job '%s' : %s",
+          pjob->ji_qs.ji_jobid, err_msg);
+        log_err(errno, __func__, log_buf);
+        }
+      }
+    else
+      {
+      sprintf(log_buf, "Couldn't get the address for host '%s' to cancel interactive job '%s'",
+        hostname, pjob->ji_qs.ji_jobid);
+      log_err(errno, __func__, log_buf);
+      }
+    }
+  else
+    {
+    sprintf(log_buf, "Couldn't find a submission host for interactive job '%s'", pjob->ji_qs.ji_jobid);
+    log_err(-1, __func__, log_buf);
+    }
+
+  } // END notify_waiting_terminal()
+
+
+
+/*
+ * execute_job_delete()
  *
  * Deletes an individual job, contacting the mom if necessary
  * @param pjob - the job being deleted
@@ -482,12 +571,21 @@ int execute_job_delete(
   long              force_cancel = FALSE;
   long              status_cancel_queue = FALSE;
 
-  chk_job_req_permissions(&pjob,preq);
+  chk_job_req_permissions(&pjob, preq);
 
   if (pjob == NULL)
     {
     /* preq is rejected in chk_job_req_permissions here */
     return(-1);
+    }
+
+  removeBeforeAnyDependencies(&pjob);
+
+  // The job disappeared unexpectedly
+  if (pjob == NULL)
+    {
+    reply_ack(preq);
+    return(PBSE_NONE);
     }
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
@@ -553,7 +651,7 @@ int execute_job_delete(
 
     log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,pjob->ji_qs.ji_jobid,log_buf);
 
-    pwtnew = set_task(WORK_Timed,time_now + 1,post_delete_route,preq,FALSE);
+    pwtnew = set_task(WORK_Timed,time_now + 1, post_delete_route, new batch_request(*preq),FALSE);
 
     if (pwtnew == NULL)
       {
@@ -653,7 +751,7 @@ jump:
      */
     get_batch_request_id(preq);
 
-    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1, strdup(del), strdup(preq->rq_id))))
+    if ((rc = issue_signal(&pjob, sigt, post_delete_mom1, strdup(del), strdup(preq->rq_id.c_str()))))
       {
       /* cant send to MOM */
 
@@ -671,57 +769,29 @@ jump:
 
     return(-1);
     }  /* END if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING) */
-  else if ((pjob->ji_qs.ji_state < JOB_STATE_RUNNING) &&
-           (status_cancel_queue != 0))
+  else if (pjob->ji_qs.ji_state < JOB_STATE_RUNNING)
     {
-    /*
-     * If a task is not running yet and is still on the queue, we
-     * need to set an exit status
-     */
-
-    pjob->ji_qs.ji_un.ji_exect.ji_exitstat = status_cancel_queue;
-
-    pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = status_cancel_queue;
-    pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
-    }
-
-  // Update the array book-keeping values if this is an array subjob
-  if ((pjob->ji_arraystructid[0] != '\0') &&
-      (pjob->ji_is_array_template == false))
-    {
-    job_array *pa = get_jobs_array(&pjob);
-
-    if (pjob == NULL)
+    if (status_cancel_queue != 0)
       {
-      job_mutex.set_unlock_on_exit(false);
-      return(-1);
+      /*
+       * If a task is not running yet and is still on the queue, we
+       * need to set an exit status
+       */
+
+      pjob->ji_qs.ji_un.ji_exect.ji_exitstat = status_cancel_queue;
+
+      pjob->ji_wattr[JOB_ATR_exitstat].at_val.at_long = status_cancel_queue;
+      pjob->ji_wattr[JOB_ATR_exitstat].at_flags |= ATR_VFLAG_SET;
       }
 
-    std::string dup_job_id(pjob->ji_qs.ji_jobid);
-
-    if (pa != NULL)
-      {
-      if (pjob != NULL)
-        {
-        if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
-          {
-          int job_exit_status = pjob->ji_qs.ji_un.ji_exect.ji_exitstat;
-          int job_state = pjob->ji_qs.ji_state;
-
-          job_mutex.unlock();
-          pa->update_array_values(job_state, aeTerminate, dup_job_id.c_str(), job_exit_status);
-
-          if ((pjob = svr_find_job((char *)dup_job_id.c_str(),FALSE)) != NULL)
-            job_mutex.mark_as_locked();
-          }
-        }
-
-      unlock_ai_mutex(pa, __func__, "1", LOGLEVEL);
-      }
+    // Send cancel to the waiting terminal 
+    if (pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
+      notify_waiting_terminal(pjob);
     }
 
-  if (pjob == NULL)
+  if (perform_job_delete_array_bookkeeping(pjob, status_cancel_queue) != PBSE_NONE)
     {
+    // The job disappeared while updating the array
     job_mutex.set_unlock_on_exit(false);
     return -1;
     }
@@ -771,197 +841,26 @@ jump:
 
 
 
-int copy_attribute_list(
-
-  batch_request *preq,
-  batch_request *preq_tmp)
-
-  {
-  svrattrl             *pal = (svrattrl *)GET_NEXT(preq->rq_ind.rq_manager.rq_attr);
-  tlist_head           *phead = &preq_tmp->rq_ind.rq_manager.rq_attr;
-  svrattrl             *newpal = NULL;
-  
-  while (pal != NULL)
-    {
-    newpal = (svrattrl *)calloc(1, pal->al_tsize + 1);
-    if (!newpal)
-      {
-      free_br(preq_tmp);
-      return(PBSE_SYSTEM);
-      }
-
-    CLEAR_LINK(newpal->al_link);
-    
-    newpal->al_atopl.next = 0;
-    newpal->al_tsize = pal->al_tsize + 1;
-    newpal->al_nameln = pal->al_nameln;
-    newpal->al_flags  = pal->al_flags;
-    newpal->al_atopl.name = (char *)newpal + sizeof(svrattrl);
-    strcpy((char *)newpal->al_atopl.name, pal->al_atopl.name);
-    newpal->al_nameln = pal->al_nameln;
-    newpal->al_atopl.resource = newpal->al_atopl.name + newpal->al_nameln;
-
-    if (pal->al_atopl.resource != NULL)
-      strcpy((char *)newpal->al_atopl.resource, pal->al_atopl.resource);
-
-    newpal->al_rescln = pal->al_rescln;
-    newpal->al_atopl.value = newpal->al_atopl.name + newpal->al_nameln + newpal->al_rescln;
-    strcpy((char *)newpal->al_atopl.value, pal->al_atopl.value);
-    newpal->al_valln = pal->al_valln;
-    newpal->al_atopl.op = pal->al_atopl.op;
-    
-    pal = (struct svrattrl *)GET_NEXT(pal->al_link);
-    }
-  
-  if ((phead != NULL) &&
-      (newpal != NULL))
-    append_link(phead, &newpal->al_link, newpal);
-
-  return(PBSE_NONE);
-  } /* END copy_attribute_list() */
-
-
-
-
 /*
- * duplicate_request()
- * duplicates preq and returns the duplicate request
- * @param preq - the request to duplicate
- * @param job_index - if desired, replace the job id with the sub job id. 
- * The sub-job has the index job_index and this is only performed if this
- * value isn't -1
+ * delete_all_work()
+ *
+ * Does the work to delete all jobs
+ * @param preq - the batch_request to delete all jobs.
+ * @return PBSE_NONE on success or the number of failed deletes.
  */
 
-batch_request *duplicate_request(
+int delete_all_work(
 
-  batch_request *preq,      /* I */
-  int            job_index) /* I - optional */
-
-  {
-  batch_request *preq_tmp = alloc_br(preq->rq_type);
-  char          *ptr1;
-  char          *ptr2;
-  char           newjobname[PBS_MAXSVRJOBID+1];
-
-  if (preq_tmp == NULL)
-    return(NULL);
-
-  preq_tmp->rq_perm = preq->rq_perm;
-  preq_tmp->rq_fromsvr = preq->rq_fromsvr;
-  preq_tmp->rq_conn = preq->rq_conn;
-  preq_tmp->rq_time = preq->rq_time;
-  preq_tmp->rq_orgconn = preq->rq_orgconn;
-
-  memcpy(preq_tmp->rq_ind.rq_manager.rq_objname,
-    preq->rq_ind.rq_manager.rq_objname, PBS_MAXSVRJOBID + 1);
-
-  strcpy(preq_tmp->rq_user, preq->rq_user);
-  strcpy(preq_tmp->rq_host, preq->rq_host);
-
-  if (preq->rq_extend != NULL)
-    preq_tmp->rq_extend = strdup(preq->rq_extend);
-
-  switch (preq->rq_type)
-    {
-    /* This function was created for a modify array request (PBS_BATCH_ModifyJob)
-       the preq->rq_ind structure was allocated in dis_request_read. If other
-       BATCH types are needed refer to that function to see how the rq_ind structure
-       was allocated and then copy it here. */
-    case PBS_BATCH_DeleteJob:
-    case PBS_BATCH_HoldJob:
-    case PBS_BATCH_CheckpointJob:
-    case PBS_BATCH_ModifyJob:
-    case PBS_BATCH_AsyModifyJob:
-      
-      /* based on how decode_DIS_Manage allocates data */
-      CLEAR_HEAD(preq_tmp->rq_ind.rq_manager.rq_attr);
-      
-      preq_tmp->rq_ind.rq_manager.rq_cmd = preq->rq_ind.rq_manager.rq_cmd;
-      preq_tmp->rq_ind.rq_manager.rq_objtype = preq->rq_ind.rq_manager.rq_objtype;
-      
-      if (job_index != -1)
-        {
-        /* If this is a job array it is possible we only have the array name
-           and not the individual job. We need to find out what we have and
-           modify the name if needed */
-        ptr1 = strstr(preq->rq_ind.rq_manager.rq_objname, "[]");
-        if (ptr1)
-          {
-          ptr1++;
-          strcpy(newjobname, preq->rq_ind.rq_manager.rq_objname);
-
-          if ((ptr2 = strstr(newjobname, "[]")) != NULL)
-            {
-            ptr2++;
-            *ptr2 = 0;
-            }
-
-          sprintf(preq_tmp->rq_ind.rq_manager.rq_objname,"%s%d%s", 
-            newjobname, job_index, ptr1);
-          }
-        else
-          strcpy(preq_tmp->rq_ind.rq_manager.rq_objname, preq->rq_ind.rq_manager.rq_objname);
-        }
-
-      /* copy the attribute list */
-      if (copy_attribute_list(preq, preq_tmp) != PBSE_NONE)
-        return(NULL);
-      
-      break;
-
-    case PBS_BATCH_SignalJob:
-
-      strcpy(preq_tmp->rq_ind.rq_signal.rq_jid, preq->rq_ind.rq_signal.rq_jid);
-      strcpy(preq_tmp->rq_ind.rq_signal.rq_signame, preq->rq_ind.rq_signal.rq_signame);
-      preq_tmp->rq_extra = strdup((char *)preq->rq_extra);
-
-      break;
-
-    case PBS_BATCH_MessJob:
-
-      strcpy(preq_tmp->rq_ind.rq_message.rq_jid, preq->rq_ind.rq_message.rq_jid);
-      preq_tmp->rq_ind.rq_message.rq_file = preq->rq_ind.rq_message.rq_file;
-      strcpy(preq_tmp->rq_ind.rq_message.rq_text, preq->rq_ind.rq_message.rq_text);
-
-      break;
-
-    case PBS_BATCH_RunJob:
-    case PBS_BATCH_AsyrunJob:
-  
-      if (preq->rq_ind.rq_run.rq_destin)
-        preq_tmp->rq_ind.rq_run.rq_destin = strdup(preq->rq_ind.rq_run.rq_destin);
-
-      break;
-
-    case PBS_BATCH_Rerun:
-
-      strcpy(preq_tmp->rq_ind.rq_rerun, preq->rq_ind.rq_rerun);
-      break;
-      
-    default:
-
-      break;
-    }
-  
-  return(preq_tmp);
-  } /* END duplicate_request() */
-
-
-
-void *delete_all_work(
-
-  void *vp)
+  batch_request *preq)
 
   {
-  batch_request *preq = (batch_request *)vp;
-
   if (qdel_all_tracker.start_deleting_all_if_possible(preq->rq_user, preq->rq_perm) == false)
     {
     reply_ack(preq);
-    return(NULL);
+    return(PBSE_NONE);
     }
 
-  batch_request         *preq_dup = duplicate_request(preq);
+  batch_request          preq_dup(*preq);
   job                   *pjob;
   all_jobs_iterator     *iter = NULL;
   int                    failed_deletes = 0;
@@ -978,7 +877,8 @@ void *delete_all_work(
   while ((pjob = next_job(&alljobs, iter)) != NULL)
     {
     if ((pjob->ji_arraystructid[0] != '\0') &&
-        (pjob->ji_is_array_template == false))
+        (pjob->ji_is_array_template == false) &&
+        (svr_authorize_jobreq(preq, pjob) == 0))
       {
       // Mark this array as being deleted if it hasn't yet been marked
       if (marked_arrays.find(pjob->ji_arraystructid) == marked_arrays.end())
@@ -1002,7 +902,7 @@ void *delete_all_work(
     // use mutex manager to make sure job mutex locks are properly handled at exit
     mutex_mgr job_mutex(pjob->ji_mutex, true);
  
-    if ((rc = forced_jobpurge(pjob, preq_dup)) == PURGE_SUCCESS)
+    if ((rc = forced_jobpurge(pjob, &preq_dup)) == PURGE_SUCCESS)
       {
       job_mutex.set_unlock_on_exit(false);
 
@@ -1013,12 +913,6 @@ void *delete_all_work(
       {
       job_mutex.unlock();
       
-      if (rc == -1)
-        {
-        //forced_jobpurge freed preq_dup so reallocate it.
-        preq_dup = duplicate_request(preq);
-        preq_dup->rq_noreply = TRUE;
-        }
       continue;
       }
     
@@ -1027,29 +921,16 @@ void *delete_all_work(
     /* mutex is freed below */
     if (rc == PBSE_NONE)
       {
-      if ((rc = execute_job_delete(pjob, Msg, preq_dup)) == PBSE_NONE)
+      if ((rc = execute_job_delete(pjob, Msg, &preq_dup)) == PBSE_NONE)
         {
         // execute_job_delete() handles mutex so don't unlock on exit
         job_mutex.set_unlock_on_exit(false);
-        reply_ack(preq_dup);
         }
        
-      /* preq_dup has been freed at this point. Either reallocate it or set it to NULL*/
-      if (rc == PURGE_SUCCESS)
-        {
-        preq_dup = duplicate_request(preq);
-        preq_dup->rq_noreply = TRUE;
-        }
-      else
-        preq_dup = NULL;
       }
     
     if (rc != PURGE_SUCCESS)
       {
-      /* duplicate the preq so we don't have a problem with double frees */
-      preq_dup = duplicate_request(preq);
-      preq_dup->rq_noreply = TRUE;
-      
       if ((rc == MOM_DELETE) ||
           (rc == ROUTE_DELETE))
         failed_deletes++;
@@ -1063,14 +944,7 @@ void *delete_all_work(
   if (failed_deletes == 0)
     {
     reply_ack(preq);
-
-    /* PURGE SUCCESS means this was qdel -p all. In this case no reply_*() 
-     * functions have been called */
-    if (rc == PURGE_SUCCESS)
-      {
-      free_br(preq_dup);
-      preq_dup = NULL;
-      }
+    rc = PBSE_NONE;
     }
   else
     {
@@ -1079,32 +953,62 @@ void *delete_all_work(
       total_jobs);
     
     req_reject(PBSE_SYSTEM, 0, preq, NULL, tmpLine);
+    rc = failed_deletes;
     }
     
-  /* preq_dup happens at the end of the loop, so free the extra one if
-   * it is there */
-  if (preq_dup != NULL)
-    free_br(preq_dup);
-
-  return(NULL);
+  return(rc);
   } /* END delete_all_work() */
 
 
 
+/*
+ * delete_all_task()
+ *
+ * The asynchronous work task for deleting all jobs
+ * @param vp - the batch_request to delete all jobs. Always deleted by the end of this function,
+ *             unless it is NULL.
+ */
+
+void *delete_all_task(
+
+  void *vp)
+
+  {
+  batch_request *preq = (batch_request *)vp;
+
+  if (preq != NULL)
+    {
+    delete_all_work(preq);
+
+    delete preq;
+    }
+
+  return(NULL);
+  } // END delete_all_task()
+
+
+
+/*
+ * handle_delete_all()
+ *
+ * Handles the logic for deleting all jobs
+ * @param preq - tells us what to delete and how.
+ * @param Msg - (optional) a message explaining why we're deleting these jobs
+ * @return PBSE_NONE
+ */
 
 int handle_delete_all(
 
   batch_request *preq,
-  batch_request *preq_tmp,
   char          *Msg)
 
   {
-  /* preq_tmp is not null if this is an asynchronous request */
-  if (preq_tmp != NULL)
+  if ((preq->rq_extend != NULL) &&
+      (!strncmp(preq->rq_extend,delasyncstr,strlen(delasyncstr))))
     {
-    reply_ack(preq_tmp);
-    preq->rq_noreply = TRUE; /* set for no more replies */
-    enqueue_threadpool_request(delete_all_work, preq, request_pool);
+    reply_ack(preq);
+    preq->rq_noreply = true; /* set for no more replies */
+    enqueue_threadpool_request(delete_all_task, new batch_request(*preq), request_pool);
     }
   else
     delete_all_work(preq);
@@ -1114,13 +1018,20 @@ int handle_delete_all(
 
 
 
-void *single_delete_work(
+/*
+ * single_delete_work()
+ *
+ * Performs the work of deleting a single job
+ * @param preq - the batch_request instructing us what to delete and how
+ * @return PBSE_* to indicate status
+ */
 
-  void *vp)
+int single_delete_work(
+
+  batch_request *preq)
 
   {
   int              rc = -1;
-  batch_request   *preq = (batch_request *)vp;
   char            *jobid = preq->rq_ind.rq_delete.rq_objname;
   job             *pjob;
   char            *Msg = preq->rq_extend;
@@ -1131,7 +1042,8 @@ void *single_delete_work(
 
   if (pjob == NULL)
     {
-    req_reject(PBSE_JOBNOTFOUND, 0, preq, NULL, "job unexpectedly deleted");
+    rc = PBSE_JOBNOTFOUND;
+    req_reject(rc, 0, preq, NULL, "job unexpectedly deleted");
     }
   else
     {
@@ -1141,17 +1053,57 @@ void *single_delete_work(
  
     if ((rc == PBSE_NONE) ||
         (rc == PURGE_SUCCESS))
+      {
       reply_ack(preq);
+      rc = PBSE_NONE;
+      }
+    }
+
+  return(rc);
+  } /* END single_delete_work() */
+
+
+
+/*
+ * single_delete_task()
+ *
+ * The taskpool task for performing a single job delete
+ *
+ * @param vp - a void pointer to the batch_request pointer we need. This is always deleted
+ *             by the end of this function, unless it is NULL.
+ */
+
+void *single_delete_task(
+
+  void *vp)
+
+  {
+  if (vp != NULL)
+    {
+    batch_request *preq = (batch_request *)vp;
+
+    single_delete_work(preq);
+
+    delete preq;
     }
 
   return(NULL);
-  } /* END single_delete_work() */
+  } // END single_delete_task()
 
+
+
+/*
+ * handle_single_delete()
+ *
+ * Handles the logic for deleting a single a job.
+ * @param preq - the batch_request telling us what to delete and how.
+ * @param Msg - (optional) a message stating why we're deleting this job.
+ * @return PBSE_NONE
+ */
 
 int handle_single_delete(
 
   batch_request *preq,
-  batch_request *preq_tmp,
   char          *Msg)
 
   {
@@ -1166,17 +1118,15 @@ int handle_single_delete(
     }
   else
     {
-    std::string jobID = pjob->ji_qs.ji_jobid;
     unlock_ji_mutex(pjob, __func__, NULL, LOGLEVEL);
-    removeBeforeAnyDependencies(jobID.c_str());
-
 
     /* send the asynchronous reply if needed */
-    if (preq_tmp != NULL)
+    if ((preq->rq_extend != NULL) &&
+        (!strncmp(preq->rq_extend, delasyncstr, strlen(delasyncstr))))
       {
-      reply_ack(preq_tmp);
-      preq->rq_noreply = TRUE; /* set for no more replies */
-      enqueue_threadpool_request(single_delete_work, preq, async_pool);
+      reply_ack(preq);
+      preq->rq_noreply = true; /* set for no more replies */
+      enqueue_threadpool_request(single_delete_task, new batch_request(*preq), async_pool);
       }
     else
       single_delete_work(preq);
@@ -1184,7 +1134,6 @@ int handle_single_delete(
 
   return(PBSE_NONE);
   } /* END handle_single_delete() */
-
 
 
 
@@ -1235,7 +1184,6 @@ int req_deletejob(
 
   {
   char                 *Msg = NULL;
-  struct batch_request *preq_tmp = NULL;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
 
   /* check if we are getting a purgecomplete from scheduler */
@@ -1275,18 +1223,16 @@ int req_deletejob(
        */
       snprintf(log_buf,sizeof(log_buf), "Deleting job asynchronously");
       log_event(PBSEVENT_JOB,PBS_EVENTCLASS_JOB,preq->rq_ind.rq_delete.rq_objname,log_buf);
-
-      preq_tmp = duplicate_request(preq);
       }
     }
 
   if (strcasecmp(preq->rq_ind.rq_delete.rq_objname,"all") == 0)
     {
-    handle_delete_all(preq, preq_tmp, Msg);
+    handle_delete_all(preq, Msg);
     }
   else
     {
-    handle_single_delete(preq, preq_tmp, Msg);
+    handle_single_delete(preq, Msg);
     }
 
   return(PBSE_NONE);
@@ -1356,10 +1302,13 @@ void post_delete_route(
   struct work_task *pwt)
 
   {
-  batch_request *preq = get_remove_batch_request((char *)pwt->wt_parm1);
+  batch_request *preq = (batch_request *)pwt->wt_parm1;
 
   if (preq != NULL)
+    {
     req_deletejob(preq);
+    delete preq;
+    }
 
   free(pwt->wt_mutex);
   free(pwt);
@@ -1401,7 +1350,6 @@ void post_delete_mom1(
     {
     preq_clt = get_remove_batch_request(preq_sig->rq_extend);
     }
-  free_br(preq_sig);
 
   /* the client request has been handled another way, nothing left to do */
   if (preq_clt == NULL)
@@ -1526,7 +1474,7 @@ void post_delete_mom2(
 
     if (pjob->ji_qs.ji_state == JOB_STATE_RUNNING)
       {
-      issue_signal(&pjob, sigk, free_br, NULL, NULL);
+      issue_signal(&pjob, sigk, NULL, NULL, NULL);
       
       if (pjob != NULL)
         {
@@ -1709,7 +1657,7 @@ void job_delete_nanny(
         log_err(-1, "job nanny", log_buf);
         
         /* build up a Signal Job batch request */
-        if ((newreq = alloc_br(PBS_BATCH_SignalJob)) != NULL)
+        if ((newreq = new batch_request(PBS_BATCH_SignalJob)) != NULL)
           {
           strcpy(newreq->rq_ind.rq_signal.rq_jid, pjob->ji_qs.ji_jobid);
           snprintf(newreq->rq_ind.rq_signal.rq_signame, sizeof(newreq->rq_ind.rq_signal.rq_signame), "%s", sigk);
@@ -1766,7 +1714,6 @@ void post_job_delete_nanny(
   if (!nanny)
     {
     /* the admin disabled nanny within the last minute or so */
-    free_br(preq_sig);
 
     return;
     }
@@ -1779,8 +1726,6 @@ void post_job_delete_nanny(
     sprintf(log_buf, "job delete nanny: the job disappeared (this is a BUG!)");
 
     log_event(PBSEVENT_ERROR,PBS_EVENTCLASS_JOB,preq_sig->rq_ind.rq_signal.rq_jid,log_buf);
-
-    free_br(preq_sig);
 
     return;
     }
@@ -1796,18 +1741,13 @@ void post_job_delete_nanny(
     free_nodes(pjob);
 
     set_resc_assigned(pjob, DECR);
-  
-    free_br(preq_sig);
-
+ 
     job_mutex.set_unlock_on_exit(false);
 
     svr_job_purge(pjob);
 
     return;
     }
-
-  /* free task */
-  free_br(preq_sig);
 
   return;
   } /* END post_job_delete_nanny() */

@@ -225,7 +225,7 @@ struct batch_request *setup_cpyfiles(
     {
     /* allocate and initialize the batch request struct */
 
-    preq = alloc_br(PBS_BATCH_CopyFiles);
+    preq = new batch_request(PBS_BATCH_CopyFiles);
 
     if (preq == NULL)
       {
@@ -286,7 +286,7 @@ struct batch_request *setup_cpyfiles(
     {
     /* FAILURE */
 
-    free_br(preq);
+    delete preq;
 
     log_event(
       PBSEVENT_ERROR | PBSEVENT_JOB,
@@ -383,7 +383,7 @@ struct batch_request *return_stdfile(
 
   if (preq == NULL)
     {
-    preq = alloc_br(PBS_BATCH_ReturnFiles);
+    preq = new batch_request(PBS_BATCH_ReturnFiles);
     }
 
   strcpy(preq->rq_ind.rq_returnfiles.rq_jobid, pjob->ji_qs.ji_jobid);
@@ -430,7 +430,7 @@ struct batch_request *cpy_stdfile(
     {
     /* the job is interactive, don't bother to return output file */
     if (preq != NULL)
-      free_br(preq);
+      delete preq;
 
     return(NULL);
     }
@@ -461,7 +461,7 @@ struct batch_request *cpy_stdfile(
       log_buf);
 
     if (preq != NULL)
-      free_br(preq);
+      delete preq;
 
     return(NULL);
     }
@@ -1078,8 +1078,7 @@ int handle_returnstd(
      * "faking" the immediate work task and falling through to
      * the next case.
      */
-    
-    free_br(preq);
+    delete preq;
     }
 
   if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
@@ -1339,7 +1338,7 @@ int handle_stageout(
       preq->rq_extra = NULL;
       }
 
-    free_br(preq);
+    delete preq;
 
     preq = NULL;
     } /* END if preq != NULL */
@@ -1356,7 +1355,7 @@ handle_stageout_cleanup:
 
   if (preq != NULL)
     {
-    free_br(preq);
+    delete preq;
     }
   
   if (job_momname != NULL)
@@ -1490,7 +1489,7 @@ int handle_stagedel(
       unlock_ji_mutex(pjob, __func__, "5", LOGLEVEL);
       }
     
-    free_br(preq);
+    delete preq;
     }
 
   if ((pjob = svr_find_job(job_id, TRUE)) != NULL)
@@ -1532,7 +1531,7 @@ int handle_exited(
     }
 
   /* tell mom to delete the job, send final track and purge it */
-  preq = alloc_br(PBS_BATCH_DeleteJob);
+  preq = new batch_request(PBS_BATCH_DeleteJob);
   
   if (preq != NULL)
     {
@@ -1540,7 +1539,7 @@ int handle_exited(
     
     if ((handle = mom_comm(pjob, on_job_exit_task)) < 0)
       {
-      free_br(preq);
+      delete preq;
       return(PBSE_CONNECT);
       }
     else
@@ -1559,12 +1558,12 @@ int handle_exited(
         }
       }
 
-    free_br(preq);
+    delete preq;
+
+    preq = NULL;
     }
   else
     job_mutex.unlock();
-
-  preq = NULL;
   
   if ((pjob = svr_find_job(job_id, TRUE)) == NULL)
     return(PBSE_JOBNOTFOUND);
@@ -2020,6 +2019,7 @@ void on_job_exit(
   job                  *pjob;
   int                   type = WORK_Deferred_Reply;
   char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  int                   old_state = PTHREAD_CANCEL_ENABLE;
 
   if (preq == NULL)
     type = WORK_Immed;
@@ -2048,7 +2048,7 @@ void on_job_exit(
     return;
     }
   
-  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
   job_mutex.set_unlock_on_exit(false);
@@ -2184,7 +2184,7 @@ void on_job_exit(
   if (job_id != NULL)
     free(job_id);
 
-  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+  pthread_setcancelstate(old_state, NULL);
 
   return;
   }  /* END on_job_exit() */
@@ -2333,7 +2333,7 @@ void on_job_rerun(
           /* ask mom to send them back to the server */
           /* mom deletes her copy if returned ok */
 
-          if ((preq = alloc_br(PBS_BATCH_Rerun)) == NULL)
+          if ((preq = new batch_request(PBS_BATCH_Rerun)) == NULL)
             return;
           
           strcpy(preq->rq_ind.rq_rerun, pjob->ji_qs.ji_jobid);
@@ -2623,7 +2623,7 @@ void on_job_rerun(
     case JOB_SUBSTATE_RERUN3:
 
       /* need to have MOM delete her copy of the job */
-      preq = alloc_br(PBS_BATCH_DeleteJob);
+      preq = new batch_request(PBS_BATCH_DeleteJob);
 
       if (preq != NULL)
         {
@@ -3308,6 +3308,18 @@ int update_substate_from_exit_status(
           set_job_comment(pjob, pbse_to_txt(PBSE_CGROUP_CREATE_FAIL));
 
           // Fall through intentionally
+        
+        case JOB_EXEC_RETRY_PROLOGUE:
+
+          if (exitstatus == JOB_EXEC_RETRY_PROLOGUE)
+            {
+            snprintf(log_buf, sizeof(log_buf),
+              "Job %s is being retried due to a failed prologue. See the syslog on the mother superior for more details",
+              pjob->ji_qs.ji_jobid);
+            log_err(-1, __func__, log_buf);
+            }
+
+          // Fall through intentionally
 
         case JOB_EXEC_RETRY:
 
@@ -3412,6 +3424,9 @@ bool is_job_finished(
     // Must be a version 6.1.0 node or higher for the mom to have cleaned up the job
     if (pnode->get_version() >= 610)
       {
+      // unlock the node first
+      node_mutex.unlock();
+
       /* see if job has any dependencies */
       if (pjob->ji_wattr[JOB_ATR_depend].at_flags & ATR_VFLAG_SET)
         {
@@ -3421,8 +3436,6 @@ bool is_job_finished(
           return(done);
           }
         }
-
-      node_mutex.unlock();
 
       rel_resc(pjob);
       svr_setjobstate(pjob, JOB_STATE_COMPLETE, JOB_SUBSTATE_COMPLETE, FALSE);
@@ -3677,7 +3690,7 @@ int req_jobobit(
         "No resources used found");
       }
 
-    tmppreq = alloc_br(PBS_BATCH_JobObit);
+    tmppreq = new batch_request(PBS_BATCH_JobObit);
 
     if (tmppreq == NULL)
       {

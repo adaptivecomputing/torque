@@ -52,10 +52,9 @@ void release_req(struct work_task *pwt)
   exit(1);
   }
 
-int issue_to_svr(const char *servern, struct batch_request **preq, void (*replyfunc)(struct work_task *))
+int issue_to_svr(const char *servern, batch_request *preq, void (*replyfunc)(struct work_task *))
   {
-  fprintf(stderr, "The call to issue_to_svr to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 void free_br(batch_request *preq) {}
@@ -84,6 +83,24 @@ int mutex_mgr::unlock()
 
 mutex_mgr::~mutex_mgr()
 
+  {
+  }
+
+batch_request::~batch_request()
+
+  {
+  }
+
+batch_request::batch_request(const batch_request &other)
+
+  {
+  }
+
+batch_request::batch_request()
+  {
+  }
+
+batch_request::batch_request(int type) : rq_type(type)
   {
   }
 

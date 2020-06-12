@@ -144,7 +144,7 @@ static void execute(
 
   /* The request to change mode */
 
-  if ((ct = cnt2server(server)) > 0)
+  if ((ct = cnt2server(server, false)) > 0)
     {
     merr = pbs_gpureset_err(ct, node, gpuid, ecc_perm, ecc_vol, &local_errno);
 

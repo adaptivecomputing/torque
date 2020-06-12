@@ -88,6 +88,8 @@
 
 const int MEM_INDICES = 0;
 const int CPU_INDICES = 1;
+const int GPU_INDICES = 2;
+const int MIC_INDICES = 3;
 
 const int exclusive_none   = 0;
 const int exclusive_node   = 1;
@@ -157,8 +159,8 @@ allocation::allocation(
 
   {
   this->cpus = r.getExecutionSlots();
-  this->memory = r.getMemory();
-  this->gpus = r.getGpus();
+  this->memory = r.get_memory_per_task();
+  this->gpus = r.get_gpus();
   this->mics = r.getMics();
 
   if (r.getThreadUsageString() == use_cores)
@@ -233,10 +235,41 @@ void allocation::place_indices_in_string(
   int          which)
 
   {
-  if (which == MEM_INDICES)
-    translate_vector_to_range_string(output, this->mem_indices);
-  else
-    translate_vector_to_range_string(output, this->cpu_indices);
+  switch (which)
+    {
+    case MEM_INDICES:
+    
+      translate_vector_to_range_string(output, this->mem_indices);
+      break;
+
+    case CPU_INDICES:
+    
+      translate_vector_to_range_string(output, this->cpu_indices);
+      break;
+
+    case GPU_INDICES:
+    
+      translate_vector_to_range_string(output, this->gpu_indices);
+      break;
+
+    case MIC_INDICES:
+    
+      translate_vector_to_range_string(output, this->mic_indices);
+      break;
+    }
+  } // END place_indices_in_string()
+
+
+
+void allocation::place_indices_in_string(
+
+  cgroup_info &cgi)
+
+  {
+  this->place_indices_in_string(cgi.mem_string, MEM_INDICES);
+  this->place_indices_in_string(cgi.cpu_string, CPU_INDICES);
+  this->place_indices_in_string(cgi.gpu_string, GPU_INDICES);
+  this->place_indices_in_string(cgi.mic_string, MIC_INDICES);
   } // END place_indices_in_string()
 
 
@@ -289,12 +322,27 @@ void allocation::write_task_information(
   {
   std::string cpus;
   std::string mems;
+  std::string gpus;
+  std::string mics;
   char        buf[256];
 
   translate_vector_to_range_string(cpus, this->cpu_indices);
   translate_vector_to_range_string(mems, this->mem_indices);
   task_info = "{\"task\":{\"cpu_list\":\"" + cpus;
   task_info += "\",\"mem_list\":\"" + mems;
+
+  if (this->gpu_indices.size() > 0)
+    {
+    translate_vector_to_range_string(gpus, this->gpu_indices);
+    task_info += "\",\"gpu_list\":\"" + gpus;
+    }
+
+  if (this->mic_indices.size() > 0)
+    {
+    translate_vector_to_range_string(mics, this->mic_indices);
+    task_info += "\",\"mic_list\":\"" + mics;
+    }
+
   if (this->task_cput_used != 0)
     {
     unsigned long cput_used = this->task_cput_used;
@@ -554,11 +602,82 @@ bool allocation::partially_placed(
 
   {
   return ((this->cpus != r.getExecutionSlots()) ||
-          (this->memory != r.getMemory()) ||
-          (this->gpus != r.getGpus()) ||
+          (this->memory != r.get_memory_per_task()) ||
+          (this->gpus != r.get_gpus()) ||
           (this->mics != r.getMics()) ||
           ((r.getPlaceCores() > 0) &&
            (this->place_cpus != r.getPlaceCores())) ||
           ((r.getPlaceThreads() > 0) &&
            (this->place_cpus != r.getPlaceThreads())));
   }
+
+
+
+/*
+ * adjust_for_spread()
+ *
+ * Reduces the amount of resources to place for this allocation according to how
+ * many things it is being spread across.
+ *
+ * @param quantity - the number of things it is being spread across
+ * @param finding_remainder - tells us whether or not we're dividing or finding a remainder
+ */
+
+void allocation::adjust_for_spread(
+
+  unsigned int quantity, 
+  bool         finding_remainder)
+
+  {
+  if (quantity != 0)
+    {
+    if (finding_remainder == false)
+      {
+      this->cpus /= quantity;
+      this->gpus /= quantity;
+      this->mics /= quantity;
+      }
+    else
+      {
+      this->cpus %= quantity;
+      this->gpus %= quantity;
+      this->mics %= quantity;
+      }
+    }
+  } // END adjust_for_spread()
+
+
+
+/*
+ * adjust_for_remainder()
+ *
+ * Optionally increases the amount of resources to place for this allocation according to the 
+ * remainder parameter. Also, reduces remainder to account for the adjustment.
+ *
+ * @param remainder - the remainder that needs to be accounted for.
+ */
+
+void allocation::adjust_for_remainder(
+
+  allocation &remainder)
+
+  {
+  if (remainder.cpus > 0)
+    {
+    this->cpus++;
+    remainder.cpus--;
+    }
+
+  if (remainder.mics > 0)
+    {
+    this->mics++;
+    remainder.mics--;
+    }
+
+  if (remainder.gpus > 0)
+    {
+    this->gpus++;
+    remainder.gpus--;
+    }
+  } // END adjust_for_remainder()
+

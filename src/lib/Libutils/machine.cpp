@@ -2,7 +2,9 @@
 #include <vector>
 #include <map>
 #include <errno.h>
+
 #include "pbs_config.h"
+#include "log.h"
 
 #ifdef PENABLE_LINUX_CGROUPS
 #include <hwloc.h>
@@ -29,7 +31,6 @@
 using namespace std;
 
 const int   ALL_TASKS = -1;
-
 
 /* 26 August 2014
  * Currently Intel and AMD NUMA hardware
@@ -155,6 +156,75 @@ void Machine::update_internal_counts()
 
 
 
+/*
+ * legacy_initialize_from_json()
+ *
+ * Exists to help people transition from 6.1.0. Deprecated.
+ */
+
+int Machine::legacy_initialize_from_json(
+
+  const std::string        &json_str,
+  std::vector<std::string> &valid_ids)
+
+  {
+  int rc = PBSE_NONE;
+
+  const char *socket_str = "\"socket\":{";
+  std::size_t socket_begin = json_str.find(socket_str);
+  
+  while (socket_begin != std::string::npos)
+    {
+    std::size_t next = json_str.find(socket_str, socket_begin + 1);
+    std::string one_socket = json_str.substr(socket_begin, next - socket_begin);
+
+    Socket s(one_socket, valid_ids);
+
+    this->sockets.push_back(s);
+    this->totalSockets++;
+
+    socket_begin = next;
+    }
+
+  if (this->totalSockets == 0)
+    rc = -1;
+  else
+    {
+    update_internal_counts();
+    this->initialized = true;
+    }
+
+  return(rc);
+  } // END legacy_initialize_from_json()
+
+
+
+/*
+ * Initialize everything in machine to 0
+ */
+
+void Machine::clear()
+
+  {
+  memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
+  memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
+  this->hardwareStyle = 0;
+  this->totalMemory = 0;
+  this->totalSockets = 0;
+  this->totalChips = 0;
+  this->totalCores = 0;
+  this->totalThreads = 0;
+  this->availableSockets = 0;
+  this->availableChips = 0;
+  this->availableCores = 0;
+  this->availableThreads = 0;
+  this->sockets.clear();
+  this->NVIDIA_device.clear();
+  this->allocations.clear();
+  }
+
+
+
 void Machine::initialize_from_json(
 
   const std::string        &json_str,
@@ -176,16 +246,37 @@ void Machine::initialize_from_json(
       this->sockets.push_back(s);
       this->totalSockets++;
       }
-
+      
     update_internal_counts();
-    this->initialized = true;
+
+    if (this->totalCores == 0)
+      {
+      this->clear();
+
+      if (this->legacy_initialize_from_json(json_str, valid_ids) != PBSE_NONE)
+        {
+        char log_buf[LOCAL_LOG_BUF_SIZE];
+
+        snprintf(log_buf, sizeof(log_buf), "Couldn't initialize from json: '%s'", json_str.c_str());
+        log_err(-1, __func__, log_buf);
+        }
+      }
+    else
+      {
+      this->initialized = true;
+      }
     }
   catch (...)
     {
-    char log_buf[LOCAL_LOG_BUF_SIZE];
+    this->clear();
 
-    snprintf(log_buf, sizeof(log_buf), "Couldn't initialize from json: '%s'", json_str.c_str());
-    log_err(-1, __func__, log_buf);
+    if (this->legacy_initialize_from_json(json_str, valid_ids) != PBSE_NONE)
+      {
+      char log_buf[LOCAL_LOG_BUF_SIZE];
+
+      snprintf(log_buf, sizeof(log_buf), "Couldn't initialize from json: '%s'", json_str.c_str());
+      log_err(-1, __func__, log_buf);
+      }
     }
   } // END initialize_from_json()
 
@@ -197,21 +288,7 @@ void Machine::reinitialize_from_json(
   std::vector<std::string> &valid_ids)
 
   {
-  memset(allowed_cpuset_string, 0, MAX_CPUSET_SIZE);
-  memset(allowed_nodeset_string, 0, MAX_NODESET_SIZE);
-  this->hardwareStyle = 0;
-  this->totalMemory = 0;
-  this->totalSockets = 0;
-  this->totalChips = 0;
-  this->totalCores = 0;
-  this->totalThreads = 0;
-  this->availableSockets = 0;
-  this->availableChips = 0;
-  this->availableCores = 0;
-  this->availableThreads = 0;
-  this->sockets.clear();
-  this->NVIDIA_device.clear();
-  this->allocations.clear();
+  this->clear();
 
   this->initialize_from_json(json_layout, valid_ids);
   } // END reinitialize_from_json()
@@ -426,9 +503,29 @@ hwloc_uint64_t Machine::getTotalMemory() const
   return(this->totalMemory);
   }
 
+hwloc_uint64_t Machine::getAvailableMemory() const
+  {
+  hwloc_uint64_t available = 0;
+
+  for (size_t i = 0; i < this->sockets.size(); i++)
+    available += this->sockets[i].getAvailableMemory();
+
+  return(available);
+  }
+
 int Machine::getTotalSockets() const
   {
   return(this->totalSockets);
+  }
+
+int Machine::get_total_gpus() const
+  {
+  int total_gpus = 0;
+
+  for (size_t i = 0; i < this->sockets.size(); i++)
+    total_gpus += this->sockets[i].get_total_gpus();
+
+  return(total_gpus);
   }
 
 int Machine::getTotalChips() const
@@ -611,6 +708,61 @@ void Machine::place_all_execution_slots(
 
 
 /*
+ * compare_remaining_values()
+ *
+ * Looks at what couldn't be placed in the allocation remaining and logs an appropriate message.
+ * @param remaining - the allocation that couldn't be completely placed.
+ * @param caller - the name of the calling function.
+ */
+
+void Machine::compare_remaining_values(
+
+  allocation &remaining,
+  const char *caller) const
+
+  {
+  char        log_buf[LOCAL_LOG_BUF_SIZE];
+  std::string error;
+
+  if (remaining.cpus != 0)
+    {
+    sprintf(log_buf, "Couldn't place %d cpus, have %d/%d cores and threads available. ",
+      remaining.cpus, this->getAvailableCores(), this->getAvailableThreads());
+    error += log_buf;
+    }
+
+  if (remaining.memory != 0)
+    {
+    sprintf(log_buf, "Couldn't place %lukb memory, have %lukb available. ",
+      remaining.memory, (unsigned long)this->getAvailableMemory());
+    error += log_buf;
+    }
+
+  if (remaining.mics != 0)
+    {
+    sprintf(log_buf, "Couldn't place %d mics. ", remaining.mics);
+    error += log_buf;
+    }
+
+  if (remaining.gpus != 0)
+    {
+    sprintf(log_buf, "Couldn't place %d gpus. ", remaining.gpus);
+    error += log_buf;
+    }
+
+  if (remaining.place_cpus != 0)
+    {
+    sprintf(log_buf, "Couldn't place %d place cpus, have %d/%d cores and threads available. ",
+      remaining.place_cpus, this->getAvailableCores(), this->getAvailableThreads());
+    error += log_buf;
+    }
+  
+  log_err(-1, caller, error.c_str());
+  } // END compare_remaining_values()
+
+
+
+/*
  * place_remaining()
  *
  * Places any tasks remaining - these tasks don't fit within a single numa node
@@ -726,9 +878,12 @@ void Machine::place_remaining(
       master.set_place_type(place_legacy);
       }
 
+    // If it didn't get placed, log what prevented it from being placed
     if (fit_somewhere == false)
+      {
+      compare_remaining_values(remaining, __func__);
       break;
-
+      }
    
     remaining_tasks--;
     }
@@ -770,7 +925,7 @@ int Machine::spread_place_pu(
 
     pu_per_task_remaining = pu_per_task;
     lprocs_per_task_remaining = lprocs_per_task;
-    gpus_remaining = r.getGpus();
+    gpus_remaining = r.get_gpus();
     mics_remaining = r.getMics();
 
     for (unsigned int j = 0; j < this->totalSockets; j++)
@@ -853,6 +1008,7 @@ int Machine::spread_place(
   bool chips = false;
   int  quantity = r.get_sockets();
   int  tasks_placed = 0;
+  char log_buf[LOCAL_LOG_BUF_SIZE];
 
   if (quantity == 0)
     {
@@ -869,7 +1025,7 @@ int Machine::spread_place(
   else
     {
     // Make sure we are grabbing enough memory
-    unsigned long mem_needed = r.getMemory();
+    unsigned long mem_needed = r.get_memory_per_task();
     unsigned long mem_count = 0;
     int           mem_quantity = 0;
 
@@ -896,27 +1052,33 @@ int Machine::spread_place(
     // If we don't have enough memory, reject the job
     if (mem_needed > mem_count)
       {
+      snprintf(log_buf, sizeof(log_buf),
+        "Job %s requires at least %lukb memory from host %s, but only %lukb is available",
+        master.jobid.c_str(), mem_needed, hostname, mem_count);
+      log_err(-1, __func__, log_buf);
+
       return(PBSE_RESCUNAV);
       }
     }
 
   // Spread the placement evenly across the number of sockets or numa nodes
-  int execution_slots_per = r.getExecutionSlots() / quantity;
-  int execution_slots_remainder = r.getExecutionSlots() % quantity;
-
   for (int i = 0; i < tasks_for_node; i++)
     {
     bool partial_place = false;
     allocation task_alloc(master.jobid.c_str());
     task_alloc.set_place_type(r.getPlacementType());
+    allocation remaining(r);
+    allocation remainder(r);
+
+    remaining.adjust_for_spread(quantity, false);
+    remainder.adjust_for_spread(quantity, true);
 
     for (int j = 0; j < quantity; j++)
       {
 
       for (unsigned int s = 0; s < this->sockets.size(); s++)
         {
-        if (this->sockets[s].spread_place(r, task_alloc, execution_slots_per,
-                                          execution_slots_remainder, chips))
+        if (this->sockets[s].spread_place(r, task_alloc, remaining, remainder, chips))
           {
           partial_place = true;
 
@@ -943,7 +1105,14 @@ int Machine::spread_place(
     }
 
   if (tasks_placed != tasks_for_node)
+    {
+    snprintf(log_buf, sizeof(log_buf),
+      "Job %s needed to place %d tasks on node %s, but could only place %d",
+      master.jobid.c_str(), tasks_for_node, hostname, tasks_placed);
+    log_err(-1, __func__, log_buf);
+
     return(PBSE_IVALREQ);
+    }
 
   return(PBSE_NONE);
   } // END spread_place()
@@ -987,11 +1156,10 @@ int Machine::fit_tasks_within_sockets(
 
 int Machine::place_job(
 
-  job        *pjob,
-  string     &cpu_string,
-  string     &mem_string,
-  const char *hostname,
-  bool        legacy_vmem)
+  job         *pjob,
+  cgroup_info &cgi,
+  const char  *hostname,
+  bool         legacy_vmem)
 
   {
   int rc = PBSE_NONE;
@@ -1001,6 +1169,7 @@ int Machine::place_job(
   vector<int>   partially_place;
   allocation    job_alloc(pjob->ji_qs.ji_jobid);
   vector<req>   to_split;
+  char          log_buf[LOCAL_LOG_BUF_SIZE];
 
   // See if the tasks fit completely on a socket, and if they do then place them there
   for (int i = 0; i < num_reqs; i++)
@@ -1039,7 +1208,14 @@ int Machine::place_job(
 
           // Placing 0 tasks is an error
           if (this->sockets[j].place_task(r, job_alloc, tasks_for_node, hostname) == 0)
+            {
+            snprintf(log_buf, sizeof(log_buf),
+              "Socket %u for node %s was thought to fit at least %d tasks, but couldn't fit any",
+              j, hostname, tasks_for_node);
+            log_err(-1, __func__, log_buf);
+
             return(-1);
+            }
 
           break;
           }
@@ -1079,51 +1255,21 @@ int Machine::place_job(
     if (remaining_tasks > 0)
       {
       // this allocation so that the cleanup happens correctly
+      snprintf(log_buf, sizeof(log_buf),
+        "Job %s could not place %d tasks from req %d on host %s",
+        pjob->ji_qs.ji_jobid, remaining_tasks, partially_place[i], hostname);
+      log_err(-1, __func__, log_buf);
+
       rc = -1;
       }
     }
 
-  job_alloc.place_indices_in_string(mem_string, MEM_INDICES);
-  job_alloc.place_indices_in_string(cpu_string, CPU_INDICES);
+  job_alloc.place_indices_in_string(cgi);
 
   this->allocations.push_back(job_alloc);
   
   return(rc);
   } // END place_job()
-
-
-
-/*
- * get_jobs_cpusets()
- *
- * Gets the cpusets corresponding to this job_id so that the child can place them
- * @param job_id (I) - the id of the job
- * @param cpus (O) - put the string representing the cpus here
- * @param mems (O) - put the string representing the memory nodes here
- * @return PBSE_NONE if we found the job, -1 otherwise
- */
-
-int Machine::get_jobs_cpusets(
-
-  const char *job_id,
-  string     &cpus,
-  string     &mems)
-
-  {
-  int rc = -1;
-
-  for (unsigned int i = 0; i < this->allocations.size(); i++)
-    {
-    if (this->allocations[i].jobid == job_id)
-      {
-      this->allocations[i].place_indices_in_string(mems, MEM_INDICES);
-      this->allocations[i].place_indices_in_string(cpus, CPU_INDICES);
-      rc = PBSE_NONE;
-      }
-    }
-
-  return(rc);
-  } // END get_jobs_cpusets()
 
 
 
@@ -1158,10 +1304,12 @@ void Machine::free_job_allocation(
 
 void Machine::store_device_on_appropriate_chip(
     
-  PCI_Device &device)
+  PCI_Device &device,
+  bool        no_info)
 
   {
-  if (this->isNUMA == false)
+  if ((this->isNUMA == false) ||
+      (no_info == true))
     {
     this->sockets[0].store_pci_device_appropriately(device, true);
     }
@@ -1256,6 +1404,21 @@ bool Machine::is_initialized() const
   {
   return(this->initialized);
   }
+
+
+
+void Machine::save_allocations(
+
+  const Machine &other)
+
+  {
+  this->allocations = other.allocations;
+
+  for (size_t s = 0; s < other.sockets.size() && s < this->sockets.size(); s++)
+    {
+    this->sockets[s].save_allocations(other.sockets[s]);
+    }
+  } // END save_allocations()
 
 
 

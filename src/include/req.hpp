@@ -116,8 +116,10 @@ extern const char *place_legacy2;
 class req
   {
     int               execution_slots;
-    unsigned long     mem;
-    unsigned long     swap;
+    unsigned long     total_mem;
+    unsigned long     mem_per_task;
+    unsigned long     total_swap;
+    unsigned long     swap_per_task;
     unsigned long     disk;
     int               nodes;
     int               socket;
@@ -172,8 +174,8 @@ class req
     void          get_values(std::vector<std::string> &names, std::vector<std::string> &values) const;
     void          toString(std::string &str) const;
     int           getExecutionSlots() const;
-    unsigned long getMemory() const;
-    unsigned long getSwap() const;
+    unsigned long get_total_memory() const;
+    unsigned long get_total_swap() const;
     int           get_cores() const;
     int           get_threads() const;
     int           get_sockets() const;
@@ -182,7 +184,7 @@ class req
     int           getPlaceThreads() const;
     unsigned long getDisk() const;
     int           getMaxtpn() const;
-    int           getGpus() const;
+    int           get_gpus() const;
     int           getMics() const;
     std::string   getGpuMode() const;
     std::string   getGres() const;
@@ -202,9 +204,9 @@ class req
     bool          cgroup_preference_set() const;
     int           get_task_allocation(unsigned int index, allocation &task_allocation) const;
     unsigned long long get_memory_for_host(const std::string &host) const;
-    unsigned long long get_memory_per_task();
+    unsigned long long get_memory_per_task() const;
     unsigned long long get_swap_for_host(const std::string &host) const;
-    unsigned long long get_swap_per_task();
+    unsigned long long get_swap_per_task() const;
     void          get_task_stats(std::vector<int> &task_index, std::vector<unsigned long> &cput_used,
                                  std::vector<unsigned long long> &mem_used);
     int           get_execution_slots() const;
@@ -223,5 +225,8 @@ class req
     void          clear_allocations();
     void          set_task_usage_stats(int task_index, unsigned long cput_used, unsigned long long mem_used);
   };
+
+
+int read_mem_value(const char *value, unsigned long &parsed);
 
 #endif /* _REQ_HPP */

@@ -116,7 +116,7 @@ int unlock_queue(struct pbs_queue *the_queue, const char *id, const char *msg, i
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);
@@ -158,3 +158,7 @@ AvlTree AVL_clear_tree(AvlTree a)
   fprintf(stderr, "The call to AVL_clear_tree needs to be mocked!!\n");
   exit(1);
   }
+
+batch_request::batch_request(const batch_request &other) {}
+batch_request::~batch_request() {}
+

@@ -436,6 +436,9 @@ enum job_atr
   JOB_ATR_memset_string,
   JOB_ATR_user_kill_delay,
   JOB_ATR_idle_slot_limit,
+  JOB_ATR_LRequest,
+  JOB_ATR_gpus_reserved,
+  JOB_ATR_mics_reserved,
   JOB_ATR_UNKN,  /* the special "unknown" type    */
   JOB_ATR_LAST  /* This MUST be LAST */
   };
@@ -527,6 +530,18 @@ typedef std::set<pid_t> job_pid_set_t;
 #ifdef PBS_MOM
 // forward declare task so it can be part of the job
 class task;
+
+class task_usage_info
+  {
+  public:
+
+    unsigned long      cput;
+    unsigned long long mem;
+
+    task_usage_info() : cput(0), mem(0)
+      {
+      }
+  };
 #endif
 
 #define COUNTED_GLOBALLY 0x0001
@@ -806,6 +821,7 @@ class job
   unsigned          ji_queue_counted;
   bool              ji_being_deleted;
   int               ji_commit_done;   /* req_commit has completed. If in routing queue job can now be routed */
+  bool              ji_routed; // false if the job is an array template that is stuck in a routing queue.
 
   /*
    * fixed size internal data - maintained via "quick save"
@@ -842,6 +858,7 @@ class job
 
   void encode_plugin_resource_usage(tlist_head *phead) const;
   void add_plugin_resource_usage(std::string &acct_data) const;
+  size_t number_of_plugin_resources() const;
   };
 #endif
 
@@ -1139,6 +1156,7 @@ class send_job_request
 //#define JOB_SVFLG_RescAssn             0x2000 // Not used on the mom
 //#define JOB_SVFLG_CHECKPOINT_COPIED    0x4000 // Not used on the mom
 #define JOB_SVFLG_INTERMEDIATE_MOM       0x8000 // This is for job_radix. I am an intermediate mom
+#define JOB_SVFLG_PROLOGUES_RAN          0x10000 // job has run prologues
 #endif
 
 
@@ -1285,6 +1303,7 @@ dir so that job can be restarted */
 #define JOB_EXEC_OVERLIMIT_WT   -11  /* job exceeded a walltime limit */
 #define JOB_EXEC_OVERLIMIT_CPUT -12  /* job exceeded a cpu time limit */
 #define JOB_EXEC_RETRY_CGROUP   -13  /* couldn't create the job's cgroups */
+#define JOB_EXEC_RETRY_PROLOGUE -14  /* prologue failed */
 
 extern void  depend_clrrdy(job *);
 extern int   depend_on_que(pbs_attribute *, void *, int);
@@ -1307,7 +1326,8 @@ job         *job_clone(job *,struct job_array *, int, bool);
 job         *svr_find_job(const char *jobid, int get_subjob);
 job         *svr_find_job_by_id(int internal_job_id);
 job         *find_job_by_array(all_jobs *aj, const char *job_id, int get_subjob, bool locked);
-bool         job_id_exists(const std::string &job_id_string, int *rcode);
+bool         job_id_exists(const std::string &job_id_string);
+void        *svr_job_purge_task(void *vp);
 bool         internal_job_id_exists(int internal_id);
 #else
 extern job  *mom_find_job(const char *);
@@ -1337,6 +1357,8 @@ bool   have_reservation(job *, struct pbs_queue *);
 
 int lock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
 int unlock_ji_mutex(job *pjob, const char *id, const char *msg, int logging);
+int issue_signal(job **, const char *, void(*)(struct batch_request *), void *, char *);
+
 #ifdef BATCH_REQUEST_H
 extern job  *chk_job_request(char *, struct batch_request *);
 extern int   net_move(job *, struct batch_request *);
@@ -1345,7 +1367,6 @@ extern int   svr_chk_owner(struct batch_request *, job *);
 extern struct batch_request *cpy_stage(struct batch_request *, job *, enum job_atr, int);
 extern struct batch_request *setup_cpyfiles(struct batch_request *, job *, char *, char *, int, int);
 extern struct batch_request *cpy_checkpoint(struct batch_request *, job *, enum job_atr, int);
-int issue_signal(job **, const char *, void(*)(struct batch_request *), void *, char *);
 
 #endif /* BATCH_REQUEST_H */
 

@@ -99,6 +99,7 @@
 #include <arpa/inet.h>
 #endif
 #include <sys/wait.h>
+#include <poll.h>
 
 #include "libpbs.h"
 #include "list_link.h"
@@ -209,7 +210,7 @@ struct routefd
   unsigned short    r_fd;
   };
 
-fd_set readset;
+struct pollfd *readset = NULL;
 
 
 /* external functions */
@@ -2628,10 +2629,7 @@ int im_join_job_as_sister(
       }
     }
 
-  bool good;
-
-  good = check_pwd(pjob);
-  if (good == false)
+  if (check_pwd(pjob) != PBSE_NONE)
     {
     /* log_buffer populated in check_pwd() */
     
@@ -4979,7 +4977,31 @@ void create_contact_list(
     if (node_addr != ipaddr_connect)
       sister_list.insert(i);
     }
-  }
+  } // END create_contact_list()
+
+
+
+/*
+ * process_kill_or_abort_error_from_ms()
+ *
+ * I sent a kill or abort to mother superior and got an error back; mother superior
+ * must've already cleaned up the job, so I should too.
+ *
+ * @param pjob - the job we're about to delete
+ * @return PBSE_NONE
+ */
+
+int process_kill_or_abort_error_from_ms(
+    
+  job *pjob)
+
+  {
+  int rc = PBSE_NONE;
+
+  mom_deljob(pjob);
+
+  return(rc);
+  } // END process_kill_or_abort_error_from_ms()
 
 
 
@@ -5157,6 +5179,22 @@ int im_poll_error(
 
 
 
+/*
+ * is_mother_superior()
+ *
+ * @return true if np describes mother superior for its job, false otherwise
+ */
+
+bool is_mother_superior(
+    
+  hnodent *np)
+
+  {
+  return(np->hn_node == 0);
+  } // END is_mother_superior()
+
+
+
 
 /*
  * process_error_reply
@@ -5246,6 +5284,10 @@ int process_error_reply(
     case IM_KILL_JOB:
 
       rc = process_end_job_error_reply(pjob, np, pSockAddr, errcode);
+
+      if ((rc == IM_FAILURE) &&
+          (is_mother_superior(np) == true))
+        rc = process_kill_or_abort_error_from_ms(pjob);
      
      break;
      
@@ -6349,7 +6391,7 @@ void im_request(
       chan->sock = -1;
 
       snprintf(log_buffer, LOCAL_LOG_BUF_SIZE,
-        "Error response received from client %s (%d) jobid %s",
+        "response received from client %s (%d) jobid %s",
         netaddr(pSockAddr), sender_port, jobid);
       log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, jobid, log_buffer);
      
@@ -8319,7 +8361,7 @@ static int adoptSession(
   char            jobid_copy[PBS_MAXSVRJOBID+1];
   int             other_id_len;
 
-#ifdef PENABLE_LINUX26_CPUSETS
+#if !defined(PENABLE_LINUX_CGROUPS) and defined(PENABLE_LINUX26_CPUSETS)
   unsigned int len;
 
   FILE *fp;
@@ -8838,6 +8880,8 @@ int run_prologue_scripts(
   ret = PBSE_NONE;
 
 done:
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_PROLOGUES_RAN;
+
   return(ret);
   } /* END run_prologue_scripts() */
 
@@ -8856,6 +8900,10 @@ int readit(
   char    buf[READ_BUF_SIZE];
   size_t  ret;
 
+  // confirm readset has been initialized
+  if (readset == NULL)
+    return(-2);
+
   if ((amt = recv(sock, buf, READ_BUF_SIZE, 0)) > 0)
     {
     ret = send(fd, buf, amt, 0);
@@ -8863,14 +8911,21 @@ int readit(
       {
       close(sock);
       close(fd);
-      FD_CLR(sock, &readset);
+
+      // remove sock from readset
+      readset[sock].fd = -1;
+      readset[sock].events = 0;
+      readset[sock].revents = 0;
       }
     }
   else
     {
     close(sock);
 
-    FD_CLR(sock, &readset);
+    // remove sock from readset
+    readset[sock].fd = -1;
+    readset[sock].events = 0;
+    readset[sock].revents = 0;
     }
 
   return(amt);
@@ -8895,7 +8950,6 @@ void fork_demux(
 
   {
   pid_t             cpid;
-  struct timeval    timeout;
   int               i;
   int               retries;
   int               maxfd;
@@ -8905,7 +8959,6 @@ void fork_demux(
   int               fd2;
   int               im_mom_stdout; 
   int               im_mom_stderr;
-  fd_set            selset;
   pid_t             parent;
   u_long            ipaddr;
 	struct sigaction  act;
@@ -8915,6 +8968,8 @@ void fork_demux(
   int               pipes[2];
   int               pipe_failed = FALSE;
   char              buf[MAXLINE];
+  int               pollset_size_bytes;
+  struct pollfd    *pollset;
 
   if ((maxfd = sysconf(_SC_OPEN_MAX)) < 0)
     {
@@ -9011,9 +9066,35 @@ void fork_demux(
 
   /*  maxfd = sysconf(_SC_OPEN_MAX); */
 
-  FD_ZERO(&readset);
-  FD_SET(im_mom_stdout, &readset);
-  FD_SET(im_mom_stderr, &readset);
+  pollset_size_bytes = maxfd * sizeof(struct pollfd);
+
+  readset = (struct pollfd *)malloc(maxfd * sizeof(struct pollfd));
+  if (readset == NULL)
+    {
+    perror("failed to malloc memory for readset");
+    _exit(5);
+    }
+
+  // set initial values
+  for (i = 0; i < maxfd; i++)
+    {
+    readset[i].fd = -1;
+    readset[i].events = 0;
+    readset[i].revents = 0;
+    }
+
+  readset[im_mom_stdout].fd = im_mom_stdout;
+  readset[im_mom_stdout].events = POLLIN;
+
+  readset[im_mom_stderr].fd = im_mom_stderr;
+  readset[im_mom_stderr].events = POLLIN;
+
+  pollset = (struct pollfd *)malloc(pollset_size_bytes);
+  if (pollset == NULL)
+    {
+    perror("failed to malloc memory for pollset");
+    _exit(5);
+    }
 
   if (listen(im_mom_stdout, TORQUE_LISTENQUEUE) < 0)
     {
@@ -9094,11 +9175,11 @@ void fork_demux(
   
   while (1)
     {
-    selset = readset;
-    timeout.tv_usec = 0;
-    timeout.tv_sec  = 20;
-    
-    n = select(FD_SETSIZE, &selset, (fd_set *)0, (fd_set *)0, &timeout);
+    // copy readset to local set for poll
+    memcpy(pollset, readset, pollset_size_bytes);
+
+    // wait for up to 20sec
+    n = poll(pollset, maxfd, 20000);
     
     if (n == -1)
       {
@@ -9108,7 +9189,7 @@ void fork_demux(
         }
       else
         {
-        perror("fork_demux: select failed\n");
+        perror("fork_demux: poll failed\n");
         close(im_mom_stdout);
         close(im_mom_stderr);
         close(fd1);
@@ -9131,12 +9212,18 @@ void fork_demux(
       }    /* END else if (n == 0) */
     
     
-    for (i = 0;(n != 0) && (i < maxfd);++i)
+    for (i = 0; (n > 0) && (i < maxfd); i++)
       {
-      if (FD_ISSET(i, &selset))
+      // skip entry with no return events
+      if (pollset[i].revents == 0)
+        continue;
+
+      // decrement count of structures that have return events
+      n--;
+
+      if ((pollset[i].revents & POLLIN))
         {
         /* this socket has data */
-        n--;
         
         switch (routem[i].r_which)
           {
@@ -9159,8 +9246,11 @@ void fork_demux(
             routem[newsock].r_which = routem[i].r_which == listen_out ? new_out : new_err;
             routem[newsock].r_fd = newsock;
             open_sockets++;
-            
-            FD_SET(newsock, &readset);
+           
+            // add new socket to readset for future polling 
+            readset[newsock].fd = newsock;
+            readset[newsock].events = POLLIN;
+            readset[newsock].revents = 0;
             
             break;
             

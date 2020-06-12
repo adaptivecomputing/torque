@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <grp.h>
 #include <time.h>
+#include <poll.h>
 #include "u_hash_map_structs.h"
 #include "port_forwarding.h"
 #include "req.hpp"
@@ -28,7 +29,13 @@ bool  find_mpp = false;
 bool  find_nodes = false;
 bool  find_size = false;
 bool  validate_path = false;
+bool  mem_fail = false;
 int   req_val = 0;
+bool  init_work_dir = false;
+
+int   global_poll_rc = 0;
+short global_poll_revents = 0;
+int   global_poll_errno = 0;
 
 std::string added_value;
 std::string added_name;
@@ -44,6 +51,7 @@ char *pbs_geterrmsg(int connect)
 
 int hash_find(job_data_container *head, const char *name, job_data **env_var)
   {
+  static job_data ev("a", "b", 0, 0);
   if ((find_mpp == true) &&
       (!strcmp(name, "mppwidth")))
     return(1);
@@ -56,6 +64,19 @@ int hash_find(job_data_container *head, const char *name, job_data **env_var)
   else if ((validate_path == true) &&
            (!strcmp(name, "validate_path")))
     return(1);
+  else if ((init_work_dir == true) &&
+           (!strcmp(name, "init_work_dir")))
+    {
+    // set env_var to point to a legit directory, ".."
+    *env_var = new job_data(strdup("foo"), strdup(".."), 0, 0);
+    return(1);
+    }
+  else if (mem_fail == true)
+    {
+    ev.value = "1";
+    *env_var = &ev;
+    return(1);
+    }
   
   for (unsigned int i = 0; i < in_hash.size(); i++)
     {
@@ -102,7 +123,7 @@ int locate_job(char *job_id, char *parent_server, char *located_server)
   exit(1);
   }
 
-void port_forwarder( struct pfwdsock *socks, int (*connfunc)(char *, long, char *), char *phost, int pport, char *EMsg)
+void port_forwarder(std::vector<pfwdsock> *socks, int (*connfunc)(char *, long, char *), char *phost, int pport, char *EMsg)
   {
   fprintf(stderr, "The call to port_forwarder to be mocked!!\n");
   exit(1);
@@ -273,7 +294,7 @@ int pbs_disconnect(int connect)
   exit(1);
   }
 
-int cnt2server(const char *SpecServer)
+int cnt2server(const char *SpecServer, bool silence)
   {
   fprintf(stderr, "The call to cnt2server to be mocked!!\n");
   exit(1);
@@ -480,4 +501,27 @@ struct group *getgrnam_ext(
   return(grp);
   } /* END getgrnam_ext() */
 
+int ppoll(struct pollfd *fds, nfds_t nfds, const struct timespec *timeout, const sigset_t *sigmask)
+  {
+  fds->revents = global_poll_revents;
+  errno = global_poll_errno;
 
+  return(global_poll_rc);
+  }
+
+int read_mem_value(const char *value, unsigned long &parsed)
+  {
+  static int count = 0;
+
+  if (mem_fail)
+    {
+    if (count++ % 2 == 0)
+      parsed = 1;
+    else
+      parsed = 2;
+    }
+  else
+    parsed = 0;
+
+  return(0);
+  }

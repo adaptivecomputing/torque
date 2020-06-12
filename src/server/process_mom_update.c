@@ -113,16 +113,16 @@ int gpu_has_job(struct pbsnode *pnode, int gpuid);
 
 void move_past_mic_status(
 
-  unsigned int             &i,
+  unsigned int             &status_index,
   std::vector<std::string> &status_info)
 
   {
-  while (i < status_info.size())
+  while (status_index < status_info.size())
     {
-    if (!strcmp(status_info[i].c_str(), END_MIC_STATUS))
+    if (!strcmp(status_info[status_index].c_str(), END_MIC_STATUS))
       break;
 
-    i++;
+    status_index++;
     }
   } /* END move_past_mic_status() */
 
@@ -154,7 +154,7 @@ int save_single_mic_status(
 int process_mic_status(
     
   struct pbsnode           *pnode, 
-  unsigned int             &i,
+  unsigned int             &status_index,
   std::vector<std::string> &status_info)
 
   {
@@ -168,13 +168,13 @@ int process_mic_status(
   if ((rc = decode_arst(&temp, NULL, NULL, NULL, 0)) != PBSE_NONE)
     {
     log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, __func__, "cannot initialize attribute");
-    move_past_mic_status(i, status_info);
+    move_past_mic_status(status_index, status_info);
     return(rc);
     }
 
-  for (i++; i < status_info.size(); i++)
+  for (status_index++; status_index < status_info.size(); status_index++)
     {
-    const char *str = status_info[i].c_str();
+    const char *str = status_info[status_index].c_str();
 
     if (!strcmp(str, END_MIC_STATUS))
       break;
@@ -214,7 +214,7 @@ int process_mic_status(
       }
     }
 
-  move_past_mic_status(i, status_info);
+  move_past_mic_status(status_index, status_info);
   
   node_micstatus_list(&temp, pnode, ATR_ACTION_ALTER);
 
@@ -749,13 +749,15 @@ int save_node_status(
 void update_layout_if_needed(
 
   pbsnode           *pnode,
-  const std::string &layout)
+  const std::string &layout,
+  bool               force)
 
   {
   char                     log_buf[LOCAL_LOG_BUF_SIZE];
   std::vector<std::string> valid_ids;
 
-  if (pnode->nd_layout.is_initialized() == false)
+  if ((pnode->nd_layout.is_initialized() == false) ||
+      (force == true))
     {
     for (size_t i = 0; i < pnode->nd_job_usages.size(); i++)
       {
@@ -765,9 +767,15 @@ void update_layout_if_needed(
         valid_ids.push_back(id);
       }
 
-    pnode->nd_layout.reinitialize_from_json(layout, valid_ids);
+    Machine m(layout, valid_ids);
+
+    if (pnode->nd_layout.is_initialized() == true)
+      m.save_allocations(pnode->nd_layout);
+
+    pnode->nd_layout = m;
     }
-  else if ((pnode->nd_layout.getTotalThreads() != pnode->nd_slots.get_total_execution_slots()) &&
+  else if (((pnode->nd_layout.getTotalThreads() != pnode->nd_slots.get_total_execution_slots()) ||
+            (pnode->nd_ngpus != pnode->nd_layout.get_total_gpus())) &&
            (pnode->nd_job_usages.size() == 0))
     {
     int old_count = pnode->nd_layout.getTotalThreads();
@@ -824,6 +832,9 @@ int process_status_info(
   int             rc = PBSE_NONE;
   bool            send_hello = false;
   std::string     temp;
+#ifdef PENABLE_LINUX_CGROUPS
+  bool            force_layout_update = false;
+#endif
 
   get_svr_attr_b(SRV_ATR_MomJobSync, &mom_job_sync);
   get_svr_attr_b(SRV_ATR_AutoNodeNP, &auto_np);
@@ -905,18 +916,26 @@ int process_status_info(
     else if (!strcmp(str, START_GPU_STATUS))
       {
       is_gpustat_get(current, i, status_info);
-      str = status_info[i].c_str();
+      continue;
       }
     else if (!strcmp(str, START_MIC_STATUS))
       {
       process_mic_status(current, i, status_info);
-      str = status_info[i].c_str();
+      continue;
       }
 #ifdef PENABLE_LINUX_CGROUPS
+    else if (!strcmp(str, "force_layout_update"))
+      {
+      force_layout_update = true;
+      continue;
+      }
     else if (!strncmp(str, "layout", 6))
       {
       // Add 7 to skip "layout="
-      update_layout_if_needed(current, str + 7);
+      update_layout_if_needed(current, str + 7, force_layout_update);
+
+      // reset this to false in case we have a mom hierarchy in place
+      force_layout_update = false;
 
       continue;
       }
@@ -947,9 +966,12 @@ int process_status_info(
       
       /* reset gpu data in case mom reconnects with changed gpus */
       clear_nvidia_gpus(current);
+
+      continue;
       }
     else 
       {
+      // Save this string to our status line.
       if (temp.size() > 0)
         temp += ",";
 
@@ -968,52 +990,53 @@ int process_status_info(
         }
       else
         temp += str;
-      }
-
-    if (!strncmp(str, "state", 5))
-      {
-      if (dont_change_state == FALSE)
-        process_state_str(current, str);
-      }
-    else if ((allow_any_mom == TRUE) &&
-             (!strncmp(str, "uname", 5))) 
-      {
-      process_uname_str(current, str);
-      }
-    else if (!strncmp(str, "me", 2))  /* shorter str compare than "message" */
-      {
-      if ((!strncmp(str, "message=ERROR", 13)) &&
-          (down_on_error == TRUE))
+    
+      if (!strncmp(str, "state", 5))
         {
-        update_node_state(current, INUSE_DOWN);
-        dont_change_state = TRUE;
-
-        if (note_append_on_error == true)
+        if (dont_change_state == FALSE)
+          process_state_str(current, str);
+        }
+      else if ((allow_any_mom == TRUE) &&
+               (!strncmp(str, "uname", 5))) 
+        {
+        process_uname_str(current, str);
+        }
+      else if (!strncmp(str, "me", 2))  /* shorter str compare than "message" */
+        {
+        if ((!strncmp(str, "message=ERROR", 13)) &&
+            (down_on_error == TRUE))
           {
-          set_note_error(current, str);
+          update_node_state(current, INUSE_DOWN);
+          dont_change_state = TRUE;
+
+          if (note_append_on_error == true)
+            {
+            set_note_error(current, str);
+            }
           }
         }
-      }
-    else if (!strncmp(str,"macaddr=",8))
-      {
-      update_node_mac_addr(current,str + 8);
-      }
-    else if ((mom_job_sync == true) &&
-             (!strncmp(str, "jobdata=", 8)))
-      {
-      /* update job attributes based on what the MOM gives us */      
-      update_job_data(current, str + strlen("jobdata="));
-      }
-    else if ((auto_np) &&
-             (!(strncmp(str, "ncpus=", 6))))
+      else if (!strncmp(str,"macaddr=",8))
+        {
+        update_node_mac_addr(current,str + 8);
+        }
+      else if ((mom_job_sync == true) &&
+               (!strncmp(str, "jobdata=", 8)))
+        {
+        /* update job attributes based on what the MOM gives us */      
+        update_job_data(current, str + strlen("jobdata="));
+        }
+      else if ((auto_np) &&
+               (!(strncmp(str, "ncpus=", 6))))
 
-      {
-      handle_auto_np(current, str);
+        {
+        handle_auto_np(current, str);
+        }
+      else if (!strncmp(str, "version=", 8))
+        {
+        current->set_version(str + 8);
+        }
       }
-    else if (!strncmp(str, "version=", 8))
-      {
-      current->set_version(str + 8);
-      }
+
     } /* END processing strings */
 
   if (current != NULL)

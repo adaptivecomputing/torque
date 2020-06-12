@@ -173,15 +173,9 @@ int decode_resc(
 
   if (prdef == NULL)
     {
-    /*
-     * didn't find resource with matching name, use unknown;
-     * but return PBSE_UNKRESC in case caller doesn`t wish to
-     * accept unknown resources
-     */
-
+    // Don't accept unknown resources as this strands jobs.
     rc = PBSE_UNKRESC;
-
-    prdef = svr_resc_def + (svr_resc_size - 1);
+    return(rc);
     }
 
   prsc = find_resc_entry(patr, prdef);
@@ -217,8 +211,6 @@ int decode_resc(
 
   return(rv);
   }
-
-
 
 
 
@@ -763,6 +755,8 @@ int action_resc(
   int            actmode)
 
   {
+  int rc = PBSE_NONE;
+
   if (pattr->at_val.at_ptr != NULL)
     {
     std::vector<resource> *resources = (std::vector<resource> *)pattr->at_val.at_ptr;
@@ -773,12 +767,17 @@ int action_resc(
       
       if ((r.rs_value.at_flags & ATR_VFLAG_MODIFY) &&
           (r.rs_defin->rs_action))
-        r.rs_defin->rs_action(&r, pattr, actmode);
+        {
+        int tmp_rc = r.rs_defin->rs_action(&r, pattr, actmode);
+        if ((tmp_rc != PBSE_NONE) &&
+            (rc == PBSE_NONE))
+          rc = tmp_rc;
+        }
 
       resources->at(i).rs_value.at_flags &= ~ATR_VFLAG_MODIFY;
       }
     }
 
-  return(PBSE_NONE);
+  return(rc);
   } // END action_resc()
 

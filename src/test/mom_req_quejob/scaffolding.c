@@ -56,10 +56,9 @@ void mom_job_purge(job *pjob)
   exit(1);
   }
 
-bool check_pwd(job *pjob)
+int check_pwd(job *pjob)
   {
-  fprintf(stderr, "The call to check_pwd needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int reply_send_mom(struct batch_request *request_mom)
@@ -229,3 +228,6 @@ void free_pwnam(struct passwd *pwdp, char *buf)
 
 void send_update_soon()
   {}
+
+batch_request::batch_request() {}
+batch_request::~batch_request() {}

@@ -11,6 +11,7 @@
 #include <string> /* std::string */
 #include <sys/types.h>
 #include <grp.h>
+#include <poll.h>
 
 #include "attribute.h" /* attribute_def, pbs_attribute, svrattrl */
 #include "resource.h" /* resource_def */
@@ -103,6 +104,9 @@ int ac_errno;
 int job_saved;
 int task_saved;
 std::string presetup_prologue;
+
+int global_poll_fd = -1;
+int global_poll_timeout_sec = -1;
 
 #ifdef NUMA_SUPPORT
 nodeboard node_boards[MAX_NODE_BOARDS];
@@ -695,7 +699,10 @@ proc_stat_t *get_proc_stat(int pid)
 
 int setuid_ext(uid_t uid, int set_euid)
   {
-  return(0);
+  if (set_euid == TRUE)
+    return(seteuid(uid));
+
+  return(setuid(uid));
   }
 
 int destroy_alps_reservation(char *reservation_id, char *apbasil_path, char *apbasil_protocol, int retries)
@@ -1098,3 +1105,30 @@ void register_jobs_nspace(job *pjob, pjobexec_t *TJE) {}
 int setup_gpus_for_job(job *pjob)
   {return(0);}
 
+
+int ppoll(struct pollfd *fds, nfds_t nfds, const struct timespec *timeout, const sigset_t *sigmask)
+  {
+  if (nfds > 0)
+    {
+    global_poll_fd = fds[0].fd;
+    global_poll_timeout_sec = timeout->tv_sec;
+    }
+
+  return(0);
+  }
+
+int get_local_address(struct sockaddr_in &new_sockaddr)
+  {
+  // return 127.0.0.1
+  new_sockaddr.sin_addr.s_addr = (uint32_t)2130706433;
+  return(0);
+  }
+
+bool islocalhostaddr(struct sockaddr_in *saip)
+  {
+  if (saip == NULL)
+    return(false);
+
+  // is 127.0.0.1?
+  return((saip->sin_addr.s_addr == (uint32_t)((127 << 24) + 1)));
+}

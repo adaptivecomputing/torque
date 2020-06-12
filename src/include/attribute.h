@@ -147,7 +147,6 @@ typedef struct svrattrl svrattrl;
 #define al_op  al_atopl.op
 
 
-
 /*
  * The value of an attribute is contained in the following structure.
  *
@@ -384,6 +383,7 @@ void attr_atomic_kill(pbs_attribute *temp, attribute_def *pdef, int);
 
 void overwrite_complete_req(pbs_attribute *attr, pbs_attribute *new_attr);
 
+long time_str_to_seconds(const char *str);
 int  decode_b(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
 int  decode_c(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);
 int  decode_l(pbs_attribute *patr, const char *name, const char *rn, const char *val, int);

@@ -109,9 +109,10 @@
 /* hostlist=name1+name2,mppnodes=name1+name2,param=val1+val23+val24+val25*/
 
 int add_verify_resources(
+
   job_data_container *res_attr, /* M */
-  char           *resources, /* I */
-  int             p_type)    /* I */
+  char               *resources, /* I */
+  int                 p_type)    /* I */
 
   {
   char *r;
@@ -289,7 +290,7 @@ int add_verify_resources(
       else
         snprintf(value, vlen, "%s", v);
 
-      hash_add_or_exit(res_attr, name, value, p_type);
+      hash_priority_add_or_exit(res_attr, name, value, p_type);
       }
     else
       {

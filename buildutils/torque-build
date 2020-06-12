@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 POSIXLY_CORRECT=1
 
@@ -29,7 +29,8 @@ usage() {
     echo   "                                  /opt/coverity/default/bin/cov-build)"
     echo   "    -C|--no-coverity            Do not run coverity (default)"
     echo   ""
-    echo   "    -g|--enable-cgroups         Enable cgroups"
+    echo   "    -g|--enable-cgroups         Enable cgroups (default)"
+    echo   "    -G|--disable-cgroups        Do not enable cgroups"
     echo   "    -u|--unit-tests             Run unit-tests (default)"
     echo   "    -U|--no-unit-tests          Do not run unit tests"
     echo   ""
@@ -134,6 +135,11 @@ do
             cgroups=1
             shift
             ;;
+        -G|--disable-cgroups)
+            cgroups=0
+            with_option="$with_option --without cgroups --without hwloc"
+            shift
+            ;;
         *)
             echo "Invalid argument '${1}' specified." >&2
             usage
@@ -225,6 +231,7 @@ then
   cgroupsopts="--enable-cgroups"
   configure_options="$configure_options --enable-cgroups --with-hwloc-path=$hwloc_path"
 else
+  hwloc_path=none
   cgroupsopts="--disable-cgroups"
 fi
 
@@ -289,8 +296,10 @@ then
     mkdir -p buildutils/rpmbuild/SOURCES
     mkdir -p buildutils/rpmbuild/SPECS
     mkdir -p buildutils/rpmbuild/RPMS/{i386,i686,noarch,x86_64}
-    # get the distro
-    distro=$(buildutils/determine.distro -r)
+
+    # ignore SP version suffix for SLES12
+    echo "${distro}" | fgrep -q sles12. && distro=sles12
+
     if [ "${distro}" = el7 ]; then
       cp buildutils/torque.adaptive.spec.el7 \
           buildutils/rpmbuild/SPECS/torque.adaptive.spec

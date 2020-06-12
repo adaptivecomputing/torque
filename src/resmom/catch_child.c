@@ -108,6 +108,7 @@ int send_back_std_and_staged_files(job *pjob, int exit_status);
 
 /* END external prototypes */
 
+void update_jobs_usage(job *pjob);
 void exit_mom_job(job *pjob, int mom_radix);
 
 /*
@@ -1069,6 +1070,12 @@ int run_epilogues(
   int       rc;
 
 
+  if (!(pjob->ji_qs.ji_svrflags & JOB_SVFLG_PROLOGUES_RAN))
+    {
+    log_err(-1, __func__, "prologues were not run; skipping epilogues");
+    return(PBSE_NONE);
+    }
+
   if ((pjob->ji_wattr[JOB_ATR_interactive].at_flags & ATR_VFLAG_SET) &&
       pjob->ji_wattr[JOB_ATR_interactive].at_val.at_long)
     {
@@ -1174,7 +1181,7 @@ int send_job_obit(
 
   /* send the job obiturary notice to the server */
 
-  preq = alloc_br(PBS_BATCH_JobObit);
+  preq = new batch_request(PBS_BATCH_JobObit);
 
   if (preq == NULL)
     {
@@ -1202,9 +1209,17 @@ int send_job_obit(
 
   resc_access_perm = ATR_DFLAG_RDACC;
 
-  if (check_rur == true)
+  if (is_login_node == TRUE)
     {
-    get_energy_used(pjob);
+    if (check_rur == true)
+      {
+      get_energy_used(pjob);
+      }
+
+    if (get_cray_taskstats)
+      {
+      update_jobs_usage(pjob);
+      }
     }
   
   encode_used(pjob, resc_access_perm, NULL, &preq->rq_ind.rq_jobobit.rq_attr);
@@ -1490,7 +1505,7 @@ void *obit_reply(
 
   /* read and decode the reply */
 
-  if ((preq = alloc_br(PBS_BATCH_JobObit)) == NULL)
+  if ((preq = new batch_request(PBS_BATCH_JobObit)) == NULL)
     return(NULL);
 
   CLEAR_HEAD(preq->rq_ind.rq_jobobit.rq_attr);
@@ -1754,10 +1769,9 @@ void init_abort_jobs(
       DBPRT(("init_abort_jobs: setting grpcache for job %s\n",
         pj->ji_qs.ji_jobid));
       
-      bool good;
+      
 
-      good = check_pwd(pj);
-      if (good == false)
+      if (check_pwd(pj) != PBSE_NONE)
         {
         /* somehow a job that was legally executing (had a password entry)
          * no longer has a password entry?? */

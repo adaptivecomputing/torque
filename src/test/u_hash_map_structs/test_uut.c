@@ -25,6 +25,31 @@ void callocVal(char **dest, const char *src)
   strcpy(*dest, src);
   }
 
+
+START_TEST(test_hash_priority_add_or_exit)
+  {
+  job_data_container map;
+
+  hash_priority_add_or_exit(&map, "planet", "sel", CMDLINE_DATA);
+  hash_priority_add_or_exit(&map, "planet", "nalthis", SCRIPT_DATA);
+
+  job_data *stored;
+  fail_unless(hash_find(&map, "planet", &stored) == TRUE);
+  fail_unless(stored->value == "sel"); // command line is higher priority than script
+  
+  hash_priority_add_or_exit(&map, "planet", "roshar", ENV_DATA);
+  fail_unless(hash_find(&map, "planet", &stored) == TRUE);
+  fail_unless(stored->value == "roshar"); // environment data is higher priority than command line
+ 
+  // insert a duplicate item
+  char *planet_name = strdup("mars");
+  hash_priority_add_or_exit(&map, "planet", planet_name, ENV_DATA);
+  fail_unless(hash_find(&map, "planet", &stored) == TRUE);
+  fail_unless(stored->value == planet_name); // should retrieve lastest entry added
+  }
+END_TEST
+
+
 START_TEST(test_hash_add_item_new_count_clear)
   {
   int rc = FALSE;
@@ -196,6 +221,7 @@ Suite *u_hash_map_structs_suite(void)
   tcase_add_test(tc_core, test_hash_print);
   /*tcase_add_exit_test(tc_core, test_add_or_exit, 1);*/
   tcase_add_test(tc_core, test_hash_add_hash);
+  tcase_add_test(tc_core, test_hash_priority_add_or_exit);
 
   suite_add_tcase(s, tc_core);
   return s;

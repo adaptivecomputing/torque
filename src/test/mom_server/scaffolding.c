@@ -26,6 +26,7 @@
 
 #define MAXLINE 1024
 
+bool force_layout_update = false;
 std::list<job *> alljobs_list;
 char log_buffer[LOG_BUF_SIZE];
 char *apbasil_protocol = NULL;

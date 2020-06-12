@@ -116,6 +116,7 @@ extern char            *auto_ideal_load;
 extern char            *auto_max_load;
 extern int              exec_with_exec;
 extern int              ServerStatUpdateInterval;
+extern int              varattr_tv;
 extern char            *AllocParCmd;
 extern char             PBSNodeCheckPath[];
 extern int              PBSNodeCheckProlog;
@@ -174,6 +175,10 @@ extern int              resend_join_job_wait_time;
 extern int              mom_hierarchy_retry_time;
 extern int              MOMJobDirStickySet;
 extern std::string      presetup_prologue;
+extern unsigned long    max_memory;
+extern unsigned long    max_swap;
+extern bool             get_cray_taskstats;
+extern u_long           pbsclient;
 
 struct specials
   {
@@ -193,6 +198,8 @@ unsigned long setenablemomrestart(const char *value);
 unsigned long setrcpcmd(const char *value);
 unsigned long setjobdirectorysticky(const char *value);
 unsigned long setcudavisibledevices(const char *value);
+unsigned long setnodecheckonjobstart(const char *value);
+unsigned long setnodecheckonjobend(const char *value);
 
 #ifdef PENABLE_LINUX26_CPUSETS
 unsigned long setmempressthr(const char *);

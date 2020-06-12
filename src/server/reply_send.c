@@ -95,8 +95,9 @@ static int dis_reply_write(
   int              rc = PBSE_NONE;
   char             log_buf[LOCAL_LOG_BUF_SIZE];
   struct tcp_chan *chan = NULL;
+  int              old_state = PTHREAD_CANCEL_ENABLE;
   
-  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, 0);
+  pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_state);
 
   /* setup for DIS over tcp */
   if ((chan = DIS_tcp_setup(sfds)) != NULL)
@@ -116,7 +117,7 @@ static int dis_reply_write(
     DIS_tcp_cleanup(chan);
     }
   
-  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, 0);
+  pthread_setcancelstate(old_state, NULL);
 
   return(rc);
   }  /* END dis_reply_write() */
@@ -168,7 +169,7 @@ int reply_send_svr(
     {
     /* Otherwise, the reply is to be sent to a remote client */
 
-    if (request->rq_noreply != TRUE)
+    if (request->rq_noreply != true)
       {
       rc = dis_reply_write(sfds, &request->rq_reply);
 
@@ -181,14 +182,6 @@ int reply_send_svr(
         log_record(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
         }
       }
-    }
-
-  if (((request->rq_type != PBS_BATCH_AsyModifyJob) && 
-       (request->rq_type != PBS_BATCH_AsyrunJob) &&
-       (request->rq_type != PBS_BATCH_AsySignalJob)) ||
-      (request->rq_noreply == TRUE))
-    {
-    free_br(request);
     }
 
   return(rc);

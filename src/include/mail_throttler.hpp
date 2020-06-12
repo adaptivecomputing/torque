@@ -7,20 +7,28 @@
 #include <vector>
 #include <pthread.h>
 
+#include "pbs_job.h"
+#include "resource.h"
 
 class mail_info
   {
   public:
-  std::string mailto;
-  std::string exec_host;
-  std::string jobid;
-  std::string jobname;
-  std::string text;        /* additional optional text */
-  std::string errFile;
-  std::string outFile;
-  int   mail_point;
+  std::string           mailto;
+  std::string           exec_host;
+  std::string           jobid;
+  std::string           jobname;
+  std::string           text; // additional optional text
+  std::string           errFile;
+  std::string           outFile;
+  int                   mail_point;
+  std::string           queue_name;
+  std::string           owner;
+  std::string           working_directory;
+  std::vector<resource> resources_requested;
+  std::vector<resource> resources_used;
 
   mail_info();
+  mail_info(job *pjob);
   mail_info(const mail_info &other);
   mail_info &operator =(const mail_info &other);
   };

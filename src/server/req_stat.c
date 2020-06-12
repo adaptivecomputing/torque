@@ -731,21 +731,35 @@ int stat_to_mom(
   struct stat_cntl *cntl)  /* M */
 
   {
-  struct batch_request *newrq;
-  int                   rc = PBSE_NONE;
-  unsigned long         addr;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE+1];
-  struct pbsnode       *node;
-  int                   handle = -1;
-  unsigned long         job_momaddr = -1;
-  unsigned short        job_momport = -1;
-  char                 *job_momname = NULL;
-  job                  *pjob = NULL;
+  batch_request   newrq(PBS_BATCH_StatusJob);
+  int             rc = PBSE_NONE;
+  unsigned long   addr;
+  char            log_buf[LOCAL_LOG_BUF_SIZE+1];
+  pbsnode        *node;
+  int             handle = -1;
+  unsigned long   job_momaddr = -1;
+  unsigned short  job_momport = -1;
+  char           *job_momname = NULL;
+  job            *pjob = NULL;
 
   if ((pjob = svr_find_job(job_id, FALSE)) == NULL)
     return(PBSE_JOBNOTFOUND);
 
   mutex_mgr job_mutex(pjob->ji_mutex, true);
+
+  // don't continue if job no longer running
+  if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+    {
+    if (LOGLEVEL >= 6)
+      {
+      snprintf(log_buf, sizeof(log_buf),
+          "stat_to_mom(): job is no longer in running state. Not contacting mom.");
+
+      log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, job_id, log_buf);
+      }
+
+    return(PBSE_BADSTATE);
+    }
 
   if ((pjob->ji_qs.ji_un.ji_exect.ji_momaddr == 0) || 
       (!pjob->ji_wattr[JOB_ATR_exec_host].at_val.at_str))
@@ -765,18 +779,12 @@ int stat_to_mom(
   if (job_momname == NULL)
     return PBSE_MEM_MALLOC;
 
-  if ((newrq = alloc_br(PBS_BATCH_StatusJob)) == NULL)
-    {
-    free(job_momname);
-    return PBSE_MEM_MALLOC;
-    }
-
   if (cntl->sc_type == 1)
-    snprintf(newrq->rq_ind.rq_status.rq_id, sizeof(newrq->rq_ind.rq_status.rq_id), "%s", job_id);
+    snprintf(newrq.rq_ind.rq_status.rq_id, sizeof(newrq.rq_ind.rq_status.rq_id), "%s", job_id);
   else
-    newrq->rq_ind.rq_status.rq_id[0] = '\0';  /* get stat of all */
+    newrq.rq_ind.rq_status.rq_id[0] = '\0';  /* get stat of all */
 
-  CLEAR_HEAD(newrq->rq_ind.rq_status.rq_attr);
+  CLEAR_HEAD(newrq.rq_ind.rq_status.rq_attr);
 
   /* if MOM is down just return stale information */
   addr = job_momaddr;
@@ -785,7 +793,10 @@ int stat_to_mom(
   free(job_momname);
 
   if (node == NULL)
+    {
     return PBSE_UNKNODE;
+    }
+
   if ((node->nd_state & INUSE_NOT_READY)||(node->nd_power_state != POWER_STATE_RUNNING))
     {
     if (LOGLEVEL >= 6)
@@ -798,7 +809,6 @@ int stat_to_mom(
       }
 
     node->unlock_node(__func__, "no rely mom", LOGLEVEL);
-    free_br(newrq);
 
     return PBSE_NORELYMOM;
     }
@@ -809,9 +819,9 @@ int stat_to_mom(
 
   if (handle >= 0)
     {
-    if ((rc = issue_Drequest(handle, newrq, true)) == PBSE_NONE)
+    if ((rc = issue_Drequest(handle, &newrq, true)) == PBSE_NONE)
       {
-      stat_update(newrq, cntl);
+      stat_update(&newrq, cntl);
       }
     }
   else
@@ -819,8 +829,6 @@ int stat_to_mom(
 
   if (rc == PBSE_SYSTEM)
     rc = PBSE_MEM_MALLOC;
-
-  free_br(newrq);
 
   return(rc);
   }  /* END stat_to_mom() */
@@ -835,8 +843,8 @@ int stat_to_mom(
 
 void stat_update(
     
-  struct batch_request *preq,
-  struct stat_cntl     *cntl)
+  batch_request    *preq,
+  struct stat_cntl *cntl)
 
   {
   job                  *pjob;
@@ -916,18 +924,33 @@ void stat_update(
          directory is cleared, set its state to queued so job_abt doesn't
          think it is still running */
       mutex_mgr job_mutex(pjob->ji_mutex, true);
-      
-      snprintf(log_buf, sizeof(log_buf),
-        "mother superior no longer recognizes %s as a valid job, aborting. Last reported time was %ld",
-        preq->rq_ind.rq_status.rq_id, pjob->ji_last_reported_time);
-      log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
-      
-      svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
-      rel_resc(pjob);
-      job_mutex.set_unlock_on_exit(false);
-      job_abt(&pjob, "Job does not exist on node");
 
-      /* TODO, if the job is rerunnable we should set its state back to queued */
+      if (pjob->ji_qs.ji_state != JOB_STATE_RUNNING)
+        {
+        // don't abort if job no longer in running state
+        if (LOGLEVEL >= 6)
+          {
+          snprintf(log_buf, sizeof(log_buf),
+              "stat_update(): job %s is no longer in running state. Ignoring unknown job id reply from mom.",
+              preq->rq_ind.rq_status.rq_id);
+
+          log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_JOB, __func__, log_buf);
+          }
+        }
+      else
+        {
+        snprintf(log_buf, sizeof(log_buf),
+          "mother superior no longer recognizes %s as a valid job, aborting. Last reported time was %ld",
+          preq->rq_ind.rq_status.rq_id, pjob->ji_last_reported_time);
+        log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buf);
+        
+        svr_setjobstate(pjob, JOB_STATE_QUEUED, JOB_SUBSTATE_ABORT, FALSE);
+        rel_resc(pjob);
+        job_mutex.set_unlock_on_exit(false);
+        job_abt(&pjob, "Job does not exist on node");
+
+        /* TODO, if the job is rerunnable we should set its state back to queued */
+        }
       }
     }
   else

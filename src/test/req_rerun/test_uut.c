@@ -35,8 +35,6 @@ START_TEST(test_handle_requeue_all)
   {
   batch_request preq;
 
-  memset(&preq, 0, sizeof(preq));
-
   // fail due to lack of permissions
   fail_unless(handle_requeue_all(&preq) == PBSE_PERM);
 

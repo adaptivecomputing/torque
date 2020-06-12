@@ -192,6 +192,7 @@ char        *path_undeliv;
 char        *path_aux;
 char        *path_home = (char *)PBS_SERVER_HOME;
 char        *mom_home;
+char        mom_ipaddr[INET_ADDRSTRLEN];
 
 bool         use_path_home = false;
 
@@ -279,9 +280,10 @@ int             use_nvidia_gpu = TRUE;
 
 pjobexec_t      TMOMStartInfo[TMAX_JE];
 
-
+const char     *taskstats_basepath = "/var/opt/cray/log/partition-current/messages-";
 /* prototypes */
 
+void            read_rur_stats_file(const char *basepath);
 void            read_mom_hierarchy();
 void            sort_paths();
 void            resend_things();
@@ -299,12 +301,12 @@ extern int      check_for_mics(uint32_t& mic_count);
 
 #ifdef NVIDIA_GPUS
 #ifdef NVML_API
-extern int      init_nvidia_nvml(unsigned int &device_count);
 extern int      shut_nvidia_nvml();
 #endif  /* NVML_API */
 extern int      check_nvidia_setup();
 #endif  /* NVIDIA_GPUS */
 
+int read_all_devices();
 int send_join_job_to_a_sister(job *pjob, int stream, eventent *ep, tlist_head phead, int node_id);
 void prepare_child_tasks_for_delete();
 static void mom_lock(int fds, int op);
@@ -344,6 +346,7 @@ char           *path_log;
 int                     LOGLEVEL = 0;  /* valid values (0 - 10) */
 int                     DEBUGMODE = 0;
 bool                    daemonize_mom = true;
+bool                    force_layout_update = false;
 long                    TJobStartTimeout = PBS_PROLOG_TIME; /* seconds to wait for job to launch before purging */
 
 
@@ -709,10 +712,6 @@ void die(
     }
 
   cleanup();
-
-#if defined(NVIDIA_GPUS) && defined(NVML_API)
-  shut_nvidia_nvml();
-#endif  /* NVIDIA_GPUS and NVML_API */
 
   log_close(1);
 
@@ -1647,7 +1646,8 @@ void add_diag_header(
 
   {
   output << "\nHost: " << mom_short_name << "/" << mom_host << "   Version: ";
-  output << PACKAGE_VERSION << "   PID: " << getpid() << "\n";
+  output << PACKAGE_VERSION << "   IP address: " << mom_ipaddr;
+  output << "   PID: " << getpid() << "\n";
   } /* END add_diag_header() */
 
 
@@ -2501,6 +2501,45 @@ void set_report_mom_cuda_visible_devices(
 
 
 
+void set_report_node_check_on_job_start(
+
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  int enable;
+
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    if ((enable = setbool(curr + 1)) != -1)
+      PBSNodeCheckProlog = enable;
+    }
+
+  output << "node_check_on_job_start=" << PBSNodeCheckProlog;
+
+  } /* END set_node_check_on_job_start() */
+
+
+
+void set_report_node_check_on_job_end(
+
+  std::stringstream &output,
+  char              *curr)
+
+  {
+  int enable;
+
+  if ((*curr == '=') && ((*curr) + 1 != '\0'))
+    {
+    if ((enable = setbool(curr + 1)) != -1)
+      PBSNodeCheckEpilog = enable;
+    }
+
+  output << "node_check_on_job_end=" << PBSNodeCheckEpilog;
+  } /* END set_node_check_on_job_end() */
+
+
+
 void set_report_rcpcmd(
 
   std::stringstream &output,
@@ -2762,6 +2801,14 @@ int process_rm_cmd_request(
        else if (!strncasecmp(name, "cuda_visible_devices", strlen("cuda_visible_devices")))
         {
         set_report_mom_cuda_visible_devices(output, curr);
+        }
+       else if (!strncasecmp(name, "node_check_on_job_start", strlen("node_check_on_job_start")))
+        {
+        set_report_node_check_on_job_start(output, curr);
+        }
+       else if (!strncasecmp(name, "node_check_on_job_end", strlen("node_check_on_job_end")))
+        {
+        set_report_node_check_on_job_end(output, curr);
         }
       else
         {
@@ -3083,10 +3130,6 @@ int rm_request(
 
       cleanup();
 
-#if defined(NVIDIA_GPUS) && defined(NVML_API)
-      shut_nvidia_nvml();
-#endif  /* NVIDIA_GPUS and NVML_API */
-
       /* We use delete_job_files_sem to make sure
          there are no outstanding job cleanup routines
          in progress before we exit. delete_job_files_sem
@@ -3125,6 +3168,15 @@ int rm_request(
 
       if (process_layout_request(chan) != DIS_SUCCESS)
         goto bad;
+
+      break;
+
+    case RM_CMD_UPDATE_LAYOUT:
+
+      // Force an over-write of the layout on the next successful send to pbs_server
+      force_layout_update = true;
+      diswsi(chan, RM_RSP_OK);
+      DIS_tcp_wflush(chan);
 
       break;
 
@@ -3342,13 +3394,14 @@ int do_tcp(
     default:
 
       {
-      struct sockaddr_in *addr = NULL;
       struct sockaddr     s_addr;
       unsigned int        len = sizeof(s_addr);
       
       if (getpeername(chan->sock, &s_addr, &len) == 0)
         {
-        addr = (struct sockaddr_in *)&s_addr;
+#if DEBUG > 0
+        struct sockaddr_in *addr = (struct sockaddr_in *)&s_addr;
+#endif
         DBPRT(("%s: unknown request %d from %s",
           __func__, proto, netaddr(addr)))
         }
@@ -3834,9 +3887,9 @@ int job_over_limit(
       total = (index == 0) ? gettime(useresc) : getsize(useresc);
 
 #ifndef NUMA_SUPPORT 
-      for (i = 0;i < pjob->ji_numnodes - 1;i++)
+      for (int j = 0; j < pjob->ji_numnodes - 1; j++)
         {
-        noderes *nr = &pjob->ji_resources[i];
+        noderes *nr = &pjob->ji_resources[j];
 
         total += ((index == 0) ? nr->nr_cput : nr->nr_mem);
         }
@@ -4226,7 +4279,7 @@ void parse_command_line(
 
   errflg = 0;
 
-  while ((c = getopt(argc, argv, "a:A:c:C:d:DFhH:l:L:mM:pPqrR:s:S:vwx-:")) != -1)
+  while ((c = getopt(argc, argv, "a:A:c:C:d:DfFhH:l:L:mM:pPqrR:s:S:vwx-:")) != -1)
     {
     switch (c)
       {
@@ -4246,6 +4299,7 @@ void parse_command_line(
           printf("installdir:  %s\n", PBS_INSTALL_DIR);
           printf("serverhome:  %s\n", PBS_SERVER_HOME);
           printf("version:     %s\n", PACKAGE_VERSION);
+          printf("Commit:    %s\n", GIT_HASH);
 
           exit(0);
           }
@@ -4331,6 +4385,12 @@ void parse_command_line(
       case 'D':  /* debug */
 
         daemonize_mom = false;
+
+        break;
+
+      case 'f': // force layout update
+
+        force_layout_update = true;
 
         break;
 
@@ -4700,6 +4760,8 @@ int cg_initialize_hwloc_topology()
   hwloc_free_xmlbuffer(topology, xml_buf);
 #endif
 
+  read_all_devices();
+
   unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
   flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
 
@@ -4836,6 +4898,8 @@ int setup_program_environment(void)
   struct sigaction act;
   char         *ptr;            /* local tmp variable */
   int           network_retries = 0;
+
+  struct sockaddr_in network_addr;
 
   /* must be started with real and effective uid of 0 */
   if (IamRoot() == 0)
@@ -5015,6 +5079,12 @@ int setup_program_environment(void)
       hostc = 1;
     }
 
+  // Get external IP address of local node
+  if (get_local_address(network_addr) == 0)
+    {
+    inet_ntop(AF_INET, &(network_addr.sin_addr), mom_ipaddr, INET_ADDRSTRLEN);
+    }
+
   if (!multi_mom)
     {
     log_init(NULL, mom_host);
@@ -5129,6 +5199,13 @@ int setup_program_environment(void)
     fprintf(stderr, "pbs_mom: cannot load config file '%s'\n", config_file);
 
     exit(1);
+    }
+  if(varattr_tv != -1 && varattr_tv < ServerStatUpdateInterval)
+    {
+    sprintf(log_buffer,
+      "WARNING: varattr time value of %i is less than server update interval of ($status_update_time) %i. Varattr will only be run after the server update interval. Suggest setting varattr time to a multiple of server update interval\n",
+      varattr_tv, ServerStatUpdateInterval);
+    log_record(PBSE_NONE,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buffer);
     }
 
 #ifdef PENABLE_LINUX26_CPUSETS
@@ -6466,7 +6543,7 @@ void prepare_child_tasks_for_delete()
 
 
 
-time_t calculate_select_timeout() {
+time_t calculate_poll_timeout() {
   time_t tmpTime;
   extern time_t wait_time;
 
@@ -6608,11 +6685,11 @@ void main_loop(void)
 
     time_now = time((time_t *)0);
 
-    tmpTime = calculate_select_timeout();
+    tmpTime = calculate_poll_timeout();
 
     resend_things();
 
-    /* wait_request does a select and then calls the connection's cn_func for sockets with data */
+    /* wait_request does a poll and then calls the connection's cn_func for sockets with data */
 
     if (wait_request(tmpTime, NULL) != 0)
       {
@@ -6637,6 +6714,10 @@ void main_loop(void)
       {
       MOMCheckRestart();  /* There are no jobs, see if the server needs to be restarted. */
       }
+
+    if (get_cray_taskstats)
+      read_rur_stats_file(taskstats_basepath);
+
     }      /* END while (mom_run_state == MOM_RUN_STATE_RUNNING) */
 
 #ifdef ENABLE_PMIX
@@ -7120,6 +7201,8 @@ int main(
     {
     use_nvidia_gpu = FALSE;
     }
+  else
+    shut_nvidia_nvml();
 #endif  /* NVML_API */
   if (!check_nvidia_setup())
     {
@@ -7142,10 +7225,6 @@ int main(
     }
 
   /* shutdown mom */
-
-#if defined(NVIDIA_GPUS) && defined(NVML_API)
-  shut_nvidia_nvml();
-#endif  /* NVIDIA_GPUS and NVML_API */
 
   mom_close_poll();
 

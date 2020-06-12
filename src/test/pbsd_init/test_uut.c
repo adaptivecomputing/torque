@@ -21,6 +21,8 @@ extern int evaluated;
 extern int aborted;
 extern int freed_job_allocation;
 extern int job_state;
+extern int unlocked_job;
+extern int locked_job;
 extern bool dont_find_job;
 extern bool dont_find_node;
 extern pbs_queue *allocd_queue;
@@ -62,12 +64,19 @@ START_TEST(test_check_jobs_queue)
   sprintf(pjob.ji_qs.ji_jobid, "1.napali");
   sprintf(pjob.ji_qs.ji_queue, "lost");
 
+  unlocked_job = 0;
+  locked_job = 0;
+
   check_jobs_queue(&pjob);
   fail_unless(allocd_queue != NULL);
   fail_unless(!strcmp(allocd_queue->qu_qs.qu_name, pjob.ji_qs.ji_queue));
   fail_unless(allocd_queue->qu_qs.qu_type == QTYPE_Execution);
   fail_unless(allocd_queue->qu_attr[QA_ATR_GhostQueue].at_val.at_long == 1);
   fail_unless(!strcmp(allocd_queue->qu_attr[QA_ATR_QType].at_val.at_str, "Execution"));
+  
+  // check_jobs_queue should unlock and re-lock the job once each
+  fail_unless(unlocked_job == 1);
+  fail_unless(locked_job == 1);
   }
 END_TEST
 

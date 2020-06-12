@@ -215,7 +215,6 @@ void *check_if_orphaned(
   char           *node_name = (char *)vp;
   char           *rsv_id = NULL;
   std::string     job_id;
-  batch_request  *preq;
   int             handle = -1;
   int             retries = 0;
   struct pbsnode *pnode;
@@ -250,20 +249,13 @@ void *check_if_orphaned(
       pnode->unlock_node(__func__, NULL, LOGLEVEL);
       }
 
-    if ((preq = alloc_br(PBS_BATCH_DeleteReservation)) == NULL)
-      {
-      free(node_name);
-      alps_reservations.remove_from_orphaned_list(rsv_id);
-      return(NULL);
-      }
-
-    preq->rq_extend = strdup(rsv_id);
-
     if ((pnode = get_next_login_node(NULL)) != NULL)
       {
       struct in_addr hostaddr;
       int            local_errno;
       pbs_net_t      momaddr;
+      batch_request  preq(PBS_BATCH_DeleteReservation);
+      preq.rq_extend = strdup(rsv_id);
 
       memcpy(&hostaddr, &pnode->nd_sock_addr.sin_addr, sizeof(hostaddr));
       momaddr = ntohl(hostaddr.s_addr);
@@ -286,9 +278,7 @@ void *check_if_orphaned(
       pnode->unlock_node(__func__, NULL, LOGLEVEL);
       
       if (handle >= 0)
-        issue_Drequest(handle, preq, true);
-        
-      free_br(preq);
+        issue_Drequest(handle, &preq, true);
       }
 
     alps_reservations.remove_from_orphaned_list(rsv_id);
@@ -778,8 +768,8 @@ int process_alps_status(
       set_ncpus(current, parent, ncpus);
 
 #ifdef PENABLE_LINUX_CGROUPS
-      if (numa_nodes == 0)
-        numa_nodes = 1;
+      if (numa_nodes < sockets)
+        numa_nodes = sockets;
 
       if ((current->nd_layout.is_initialized() == false) ||
           (current->nd_layout.getTotalThreads() != current->nd_slots.get_total_execution_slots()))

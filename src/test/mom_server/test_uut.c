@@ -20,6 +20,7 @@ int mom_server_update_stat(mom_server *pms, std::vector<std::string> &strings);
 char PBSNodeMsgBuf[MAXLINE];
 char PBSNodeCheckPath[MAXLINE];
 int  PBSNodeCheckInterval = 2;
+u_long pbsclient;
 
 extern bool no_error;
 extern bool no_event;
@@ -33,7 +34,7 @@ extern int    is_reporter_mom;
 extern mom_server mom_servers[PBS_MAXSERVER];
 
 bool is_for_this_host(std::string gpu_spec, const char *suffix);
-void get_device_indices(const char *gpu_str, std::vector<unsigned int> &gpu_indices, const char *suffix);
+void get_device_indices(const char *gpu_str, std::vector<int> &gpu_indices, const char *suffix);
 
 START_TEST(test_sort_paths)
   {
@@ -208,11 +209,13 @@ START_TEST(test_mom_server_all_update_stat_clear_force)
 
   is_reporter_mom = false;
 
+  mom_servers[0].MOMLastSendToServerTime = 0;
   LastServerUpdateTime = time(NULL) - 100;
   ForceServerUpdate = true;
   mom_server_all_update_stat();
   fail_unless(ForceServerUpdate == false);
 
+  mom_servers[0].MOMLastSendToServerTime = 0;
   LastServerUpdateTime = time(NULL) - 100;
   ForceServerUpdate = true;
   mom_server_all_update_stat();
@@ -248,7 +251,7 @@ END_TEST
 START_TEST(test_get_device_indices)
   {
   std::string spec;
-  std::vector<unsigned int> gpu_indices;
+  std::vector<int> gpu_indices;
   char suffix[10];
   extern char mom_alias[];
 

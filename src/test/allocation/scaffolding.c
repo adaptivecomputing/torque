@@ -14,6 +14,8 @@ const char *place_legacy2 = "legacy2";
 
 const char *use_cores = "usecores";
 
+int         tc = 1;
+
 std::string req::getPlacementType() const
   {
   return("");
@@ -21,7 +23,7 @@ std::string req::getPlacementType() const
 
 req::req() {}
 
-unsigned long req::getMemory() const
+unsigned long long req::get_memory_per_task() const
 
   {
   return(1024);
@@ -31,6 +33,11 @@ int req::getExecutionSlots() const
 
   {
   return(2);
+  }
+
+int req::getTaskCount() const
+  {
+  return(tc);
   }
 
 std::string req::getThreadUsageString() const
@@ -45,7 +52,7 @@ int req::getMics() const
   return(0);
   }
 
-int req::getGpus() const
+int req::get_gpus() const
 
   {
   return(0);

@@ -9,6 +9,7 @@
 #include <string>
 #include <errno.h>
 #include <string.h>
+#include <poll.h>
 
 
 #include "server_limits.h"
@@ -21,8 +22,15 @@ extern bool  socket_write_success;
 extern bool  socket_read_success;
 extern bool  socket_read_code;
 
+extern nfds_t global_poll_nfds;
+extern int global_poll_timeout_sec;
+
 int add_connection(int sock, enum conn_type type, pbs_net_t addr, unsigned int port, unsigned int socktype, void *(*func)(void *), int add_wait_request);
 void *accept_conn(void *new_conn);
+
+int init_network(unsigned int port, void *(*readfunc)(void *));
+void globalset_add_sock(int, u_long, u_long);
+void globalset_del_sock(int);
 
 
 START_TEST(netaddr_pbs_net_t_test_one)
@@ -145,6 +153,22 @@ START_TEST(test_check_trqauthd_unix_domain_port)
   }
 END_TEST
 
+START_TEST(test_init_network)
+  {
+  int rc;
+  int timeout_sec = 10;
+  nfds_t MaxNumDescriptors = get_max_num_descriptors();
+
+  rc = init_network(0, NULL);
+  fail_unless(rc == PBSE_NONE);
+
+  rc = wait_request(timeout_sec, NULL);
+
+  // examine the values passed to poll() to see if they were expected
+  fail_unless(global_poll_nfds == MaxNumDescriptors);
+  fail_unless(global_poll_timeout_sec == timeout_sec);
+  }
+END_TEST
 
 Suite *net_server_suite(void)
   {
@@ -167,6 +191,10 @@ Suite *net_server_suite(void)
 
   tc_core = tcase_create("test_check_trqauthd_unix_domain_port");
   tcase_add_test(tc_core, test_check_trqauthd_unix_domain_port);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_init_network");
+  tcase_add_test(tc_core, test_init_network);
   suite_add_tcase(s, tc_core);
 
   return s;

@@ -131,7 +131,7 @@
 
 enum note_flags {unused, set, list, append};
 
-int quiet = 0;
+bool quiet = false;
 char *progname;
 
 
@@ -228,7 +228,7 @@ static int set_all_nodeattrs(
            NULL,
            &local_errno);
 
-      if (rc && !quiet)
+      if (rc && (!quiet))
         {
         fprintf(stderr, "Error setting note attribute for %s - ",
           nodename);
@@ -252,7 +252,7 @@ static int set_all_nodeattrs(
            NULL,
            &local_errno);
 
-      if (rc && !quiet)
+      if (rc && (!quiet))
         {
         fprintf(stderr, "Error setting node power state for %s - ",
           nodename);
@@ -825,7 +825,7 @@ int main(
 
       case 'q':
 
-        quiet = 1;
+        quiet = true;
 
         break;
 
@@ -911,7 +911,7 @@ int main(
 
         if ((optarg != NULL) && !strcmp(optarg, "version"))
           {
-          fprintf(stderr, "Version: %s\nCommit: %s\n",
+          fprintf(stdout, "Version: %s\nCommit: %s\n",
             PACKAGE_VERSION, GIT_HASH);
 
           exit(0);
@@ -919,6 +919,13 @@ int main(
         else if ((optarg != NULL) && !strcmp(optarg, "about"))
           {
           TShowAbout_exit();
+          }
+        else if ((optarg != NULL) && !strcmp(optarg, "xml"))
+          {
+          flag = ALLI;
+          DisplayXML = TRUE;
+
+          break;
           }
 
         errflg = 1;
@@ -963,7 +970,7 @@ int main(
     exit(1);
     }
 
-  con = cnt2server(specified_server);
+  con = cnt2server(specified_server, quiet);
 
   if (con <= 0)
     {

@@ -87,6 +87,8 @@
 
 extern const int MEM_INDICES;
 extern const int CPU_INDICES;
+extern const int GPU_INDICES;
+extern const int MIC_INDICES;
 
 extern const int exclusive_node;
 extern const int exclusive_socket;
@@ -96,6 +98,20 @@ extern const int exclusive_thread;
 extern const int exclusive_legacy;
 extern const int exclusive_legacy2;
 extern const int exclusive_none;
+
+
+class cgroup_info
+  {
+  public:
+  
+    std::string mem_string;
+    std::string cpu_string;
+    std::string gpu_string;
+    std::string mic_string;
+
+  cgroup_info() : mem_string(), cpu_string(), gpu_string(), mic_string() {}
+  };
+
 
 // forward declare req
 class req;
@@ -133,6 +149,7 @@ class allocation
   void set_cput_used(const unsigned long cput_used);
   void set_memory_used(const unsigned long long mem_used);
   void place_indices_in_string(std::string &output, int which);
+  void place_indices_in_string(cgroup_info &output);
   void set_place_type(const std::string &place);
   void get_place_type(int &place_type);
   void write_task_information(std::string &task_info) const;
@@ -148,6 +165,8 @@ class allocation
   bool fully_placed() const;
   bool partially_placed(const req &r) const;
   void clear();
+  void adjust_for_spread(unsigned int quantity, bool use_modulo);
+  void adjust_for_remainder(allocation &remainder);
   };
 
 #endif 

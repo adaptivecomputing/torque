@@ -159,9 +159,10 @@ START_TEST(test_trq_simple_disconnect)
   }
 END_TEST
 
+
 START_TEST(test_validate_server)
   {
-  char  active_server_name[PBS_MAXHOSTNAME+1];
+  std::string active_server("localhost");
   char *ssh_key = NULL;
   char *sign_key = NULL;
   int   rc;
@@ -180,12 +181,11 @@ START_TEST(test_validate_server)
   socket_connect_success = true;
   DIS_success = true;
 
-  strcpy(active_server_name, "localhost");
-  rc = validate_server(active_server_name, port, ssh_key, &sign_key);
+  rc = validate_server(active_server, port, ssh_key, &sign_key);
   fail_unless(rc == PBSE_NONE, "validate_server success case failed", rc);
-
   }
 END_TEST
+
 
 START_TEST(test_set_active_pbs_server)
   {
@@ -195,9 +195,9 @@ START_TEST(test_set_active_pbs_server)
   strcpy(new_server_name, "localhost");
   rc = set_active_pbs_server(new_server_name, 15001);
   fail_unless(rc == PBSE_NONE, "set_active_pbs_server failed", rc);
-
   }
 END_TEST
+
 
 START_TEST(test_validate_active_pbs_server)
   {

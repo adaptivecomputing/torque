@@ -207,14 +207,15 @@ int decode_DIS_svrattrl(
 
     psvrat->al_op = (enum batch_op)disrui(chan, &rc);
 
-    if (rc) break;
+    if (rc)
+      break;
 
     append_link(phead, &psvrat->al_link, psvrat);
     }
 
   if (rc)
     {
-    (void)free(psvrat);
+    free(psvrat);
     }
 
   return (rc);

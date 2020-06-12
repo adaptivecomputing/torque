@@ -150,7 +150,6 @@ unsigned int count_jobs_submitted(
 
 
 
-
 int  can_queue_new_job(
 
   char *user_name,
@@ -181,7 +180,6 @@ int  can_queue_new_job(
 
 
 
-
 int  increment_queued_jobs(
    
   user_info_holder *uih,
@@ -193,7 +191,6 @@ int  increment_queued_jobs(
   user_info    *ui;
   unsigned      bit = COUNTED_GLOBALLY;
 
-
   /* If pbs_server is restarting we may get jobs in a completed state.
      we do not want to count these jobs as queued */
   if (pjob->ji_qs.ji_state == JOB_STATE_COMPLETE)
@@ -204,35 +201,40 @@ int  increment_queued_jobs(
 
   // Prevent recounting a job  
   if (pjob->ji_queue_counted & bit)
-    return(PBSE_NONE);
-
-  unsigned int  num_submitted = count_jobs_submitted(pjob);
-  std::string   uname(user_name);
-  
-  remove_server_suffix(uname);
-
-  uih->lock();
-
-  /* get the user if there is one */
-  if ((ui = uih->find(uname)) != NULL)
+    return(rc);
+ 
+  // Only increment the count for array templates and normal jobs
+  if ((pjob->ji_is_array_template == TRUE) ||
+      ((pjob->ji_wattr[JOB_ATR_job_array_id].at_flags & ATR_VFLAG_SET) == 0))
     {
-    ui->num_jobs_queued += num_submitted;
-    }
-  else
-    {
-    /* user doesn't exist, create a new one and insert */
-    ui = (user_info *)calloc(1, sizeof(user_info));
-    ui->user_name = strdup(uname.c_str());
-    ui->num_jobs_queued = num_submitted;
+    unsigned int  num_submitted = count_jobs_submitted(pjob);
+    std::string   uname(user_name);
 
-    if (!uih->insert(ui,ui->user_name))
+    remove_server_suffix(uname);
+
+    uih->lock();
+
+    /* get the user if there is one */
+    if ((ui = uih->find(uname)) != NULL)
       {
-      rc = ENOMEM;
-      log_err(rc, __func__, "Can't resize the user info array");
+      ui->num_jobs_queued += num_submitted;
       }
-    }
+    else
+      {
+      /* user doesn't exist, create a new one and insert */
+      ui = (user_info *)calloc(1, sizeof(user_info));
+      ui->user_name = strdup(uname.c_str());
+      ui->num_jobs_queued = num_submitted;
 
-  uih->unlock();
+      if (!uih->insert(ui, ui->user_name))
+        {
+        rc = ENOMEM;
+        log_err(rc, __func__, "Can't resize the user info array");
+        }
+      }
+  
+    uih->unlock();
+    }
 
   // Mark this job as being counted as queued
   pjob->ji_queue_counted |= bit;

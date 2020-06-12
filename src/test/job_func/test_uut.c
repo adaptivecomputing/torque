@@ -307,7 +307,7 @@ START_TEST(cpy_checkpoint_test)
                                          test_job,
                                          JOB_ATR_checkpoint_name,
                                          CKPT_DIR_IN);
-  struct batch_request *initial = alloc_br(/*PBS_BATCH_CheckpointJob*/0);
+  struct batch_request *initial = new batch_request(0);
   fail_unless(result == NULL, "NULL batch_request input fail");
 
   result = cpy_checkpoint(initial,
@@ -366,8 +366,9 @@ START_TEST(svr_job_purge_test)
   test_job = job_alloc();
   test_job->ji_qs.ji_substate = JOB_SUBSTATE_QUEUED;
   test_job->ji_qs.ji_state = JOB_STATE_QUEUED;
+  memset(test_job->ji_arraystructid, 0, sizeof(test_job->ji_arraystructid));
   result = svr_job_purge(test_job);
-  fail_unless(result == 0, "non-queued job fail", result);
+  fail_unless(result == 0, "non-queued job fail: %d", result);
   // called_remove_job once means we didn't call job_free
   fail_unless(called_remove_job == 1);
   

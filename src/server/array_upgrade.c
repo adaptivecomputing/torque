@@ -43,6 +43,7 @@ int array_upgrade(
 
   {
   char log_buf[LOCAL_LOG_BUF_SIZE];
+  std::string array_id(pa->ai_qs.parent_id);
 
   /* reset the file descriptor */
   if (lseek(fds, 0, SEEK_SET) != 0)
@@ -72,9 +73,9 @@ int array_upgrade(
        about the incompatibility and inability to upgrade, print a quick and 
        dirty error message and exit */
        
-    sprintf(log_buf, "WARNING, unable to upgrade job array from version %d\n"
+    sprintf(log_buf, "WARNING, unable to upgrade job array %s from version %d\n"
             "structs from versions prior to 2.5.0.\n"
-            "Please downgrade TORQUE and upgrade once no job arrays are queued\n", version);
+            "Please downgrade TORQUE and upgrade once no job arrays are queued\n",array_id.c_str(), version);
     log_err(-1, "array_upgrade", log_buf);
     exit(1);
     }
@@ -93,8 +94,8 @@ int array_upgrade(
      * know and ignore the array, but don't halt the server.
      */
     sprintf(log_buf,
-      "WARNING, unable to upgrade job array from version %d. Job array files most likely corrupted.\n"
-      "Please examine the files at %s for file integrity\n", version, path_arrays);
+      "WARNING, unable to upgrade job array %s from version %d. Job array files most likely corrupted.\n"
+      "Please examine the files at %s for file integrity\n", array_id.c_str(), version, path_arrays);
     log_err(-1, "array_upgrade", log_buf);
     return 1;
     }

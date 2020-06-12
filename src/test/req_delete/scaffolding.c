@@ -37,48 +37,47 @@ int  nanny = 1;
 bool  br_freed;
 int  alloc_work = 1;
 int  depend_term_called;
+int  updated_array_values = 0;
+bool find_job_fail = false;
 
 batch_request *alloc_br(int type)
   {
   if (alloc_work)
-    return((batch_request *)calloc(1, sizeof(batch_request)));
+    return(new batch_request());
   else
     return(NULL);
   }
 
 job_array *get_jobs_array(job **pjob)
   {
-  return(NULL);
+  if (pjob == NULL)
+    return(NULL);
+
+  return((job_array *)calloc(1, sizeof(job_array)));
   }
 
 void account_record(int acctype, job *pjob, const char *text)
   {
-  fprintf(stderr, "The call to acctype needs to be mocked!!\n");
-  exit(1);
   }
 
 int job_save(job *pjob, int updatetype, int mom_port)
   {
-  fprintf(stderr, "The call to job_save needs to be mocked!!\n");
-  exit(1);
+  return(0);
   }
 
 int svr_job_purge(job *pjob, int leaveSpoolFiles)
   {
   pjob->ji_qs.ji_state = JOB_STATE_COMPLETE;
+  pthread_mutex_unlock(pjob->ji_mutex);
   return(0);
   }
 
 void chk_job_req_permissions(job **pjob_ptr, struct batch_request *preq)
   {
-  fprintf(stderr, "The call to chk_job_req_permissions needs to be mocked!!\n");
-  exit(1);
   }
 
 void svr_mailowner(job *pjob, int mailpoint, int force, const char *text)
   {
-  fprintf(stderr, "The call to svr_mailowner needs to be mocked!!\n");
-  exit(1);
   }
 
 long attr_ifelse_long(pbs_attribute *attr1, pbs_attribute *attr2, long deflong)
@@ -113,7 +112,6 @@ void free_nodes(job *pjob, const char *spec)
 
 void free_br(struct batch_request *preq)
   {
-  br_freed = true;
   }
 
 struct work_task *set_task(enum work_type type, long event_id, void (*func)(struct work_task *), void *parm, int get_lock)
@@ -163,7 +161,7 @@ char *pbse_to_txt(int err)
 
 batch_request *cpy_stage(batch_request *preq, job *pjob, enum job_atr ati, int direction)
   {
-  return((batch_request *)calloc(1, sizeof(batch_request)));
+  return(new batch_request());
   }
 
 int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mute)
@@ -175,7 +173,9 @@ int svr_setjobstate(job *pjob, int newstate, int newsubstate, int  has_queue_mut
 
 job *svr_find_job(const char *jobid, int get_subjob)
   {
-  if (strcmp(jobid, "1.napali") == 0)
+  if ((strcmp(jobid, "1.napali") == 0) ||
+      ((strstr(jobid, "roshar") != NULL) &&
+       (find_job_fail == false)))
     {
     job *pjob = new job();
     strcpy(pjob->ji_qs.ji_jobid, jobid);
@@ -228,7 +228,7 @@ int get_svr_attr_b(int index, bool *b)
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);
@@ -262,7 +262,7 @@ int relay_to_mom(job **pjob_ptr, batch_request   *request, void (*func)(struct w
   return(bad_relay);
   }
 
-void removeBeforeAnyDependencies(const char *) {}
+void removeBeforeAnyDependencies(job **pjob_ptr) {}
 
 
 /*
@@ -359,40 +359,6 @@ int lock_ji_mutex(
 
   {
   int rc = PBSE_NONE;
-  char *err_msg = NULL;
-  char stub_msg[] = "no pos";
-
-  if (logging >= 10)
-    {
-    err_msg = (char *)calloc(1, MSG_LEN_LONG);
-    if (msg == NULL)
-      msg = stub_msg;
-    snprintf(err_msg, MSG_LEN_LONG, "locking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
-    }
-
-  if (pjob->ji_mutex != NULL)
-    {
-    if (pthread_mutex_lock(pjob->ji_mutex) != 0)
-      {
-      if (logging >= 20)
-        {
-        snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot lock job %s mutex in method %s",
-                                     pjob->ji_qs.ji_jobid, id);
-        log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
-        }
-      rc = PBSE_MUTEX;
-      }
-    }
-  else
-    {
-    rc = -1;
-    log_err(rc, __func__, "Uninitialized mutex pass to pthread_mutex_lock!");
-    }
-
-  if (err_msg != NULL)
-  free(err_msg);
-
   return rc;
   }
 
@@ -406,42 +372,8 @@ int unlock_ji_mutex(
 
   {
   int rc = PBSE_NONE;
-  char *err_msg = NULL;
-  char stub_msg[] = "no pos";
-
-  if (logging >= 10)
-    {
-    err_msg = (char *)calloc(1, MSG_LEN_LONG);
-    if (msg == NULL)
-      msg = stub_msg;
-    snprintf(err_msg, MSG_LEN_LONG, "unlocking %s in method %s-%s", pjob->ji_qs.ji_jobid, id, msg);
-    log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
-    }
-
-  if (pjob->ji_mutex != NULL)
-    {
-    if (pthread_mutex_unlock(pjob->ji_mutex) != 0)
-      {
-    if (logging >= 20)
-        {
-        snprintf(err_msg, MSG_LEN_LONG, "ALERT: cannot unlock job %s mutex in method %s",
-                                            pjob->ji_qs.ji_jobid, id);
-        log_record(PBSEVENT_DEBUG, PBS_EVENTCLASS_NODE, id, err_msg);
-        }
-      rc = PBSE_MUTEX;
-      }
-    }
-  else
-    {
-    rc = -1;
-    log_err(rc, __func__, "Uninitialized mutex pass to pthread_mutex_unlock!");
-    }
-
-   if (err_msg != NULL)
-     free(err_msg);
-
-   return rc;
-   }
+  return rc;
+  }
 
 void log_record(
 
@@ -579,6 +511,8 @@ int depend_on_term(
 job::job() : ji_has_delete_nanny(false)
   {
   memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  this->ji_mutex = (pthread_mutex_t *)calloc(1, sizeof(pthread_mutex_t));
+  pthread_mutex_init(this->ji_mutex, NULL);
   }
 
 job::~job() {}
@@ -591,8 +525,49 @@ void job_array::update_array_values(
   int                   job_exit_status)
 
   {
+  updated_array_values++;
   }
 
 void job_array::mark_deleted() {}
 
+batch_request::batch_request(const batch_request &other)
+  {
+  if (other.rq_extend == NULL)
+    this->rq_extend = NULL;
+  else
+    this->rq_extend = strdup(other.rq_extend);
+  }
 
+batch_request::~batch_request()
+
+  {
+  br_freed = true;
+  }
+
+batch_request::batch_request() {}
+batch_request::batch_request(int type) : rq_type(type) {}
+
+int client_to_svr(
+
+  pbs_net_t     hostaddr,	  /* I - internet addr of host */
+  unsigned int  port,		    /* I - port to which to connect */
+  int           local_port,	/* I - BOOLEAN:  not 0 to use local reserved port */
+  char         *EMsg)       /* O (optional,minsize=1024) */
+
+  {
+  return(1);
+  }
+
+pbs_net_t get_hostaddr(
+
+  int        *local_errno, /* O */    
+  const char *hostname)    /* I */
+
+  {
+  return(0);
+  }
+
+int svr_authorize_jobreq(batch_request *brp, job *pjob)
+  {
+  return(-1);
+  }

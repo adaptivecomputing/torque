@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <unistd.h>
+#include <poll.h>
 
 #include "pbs_error.h"
 #include "net_connect.h"
@@ -13,6 +15,9 @@ bool  socket_connect_success = true;
 bool  socket_write_success = true;
 bool  socket_read_success = true;
 bool  socket_read_code = true;
+
+nfds_t global_poll_nfds = 0;
+int global_poll_timeout_sec = 0;
 
 const char *msg_daemonname = "unset";
 
@@ -109,7 +114,6 @@ void log_event(int eventtype, int objclass, const char *objname, const char *tex
 
 void initialize_connections_table()
   {
-  fprintf(stderr, "The call to initialize_connections_table needs to be mocked!!\n");
   return;
   }
 
@@ -119,25 +123,13 @@ char *PAddrToString(pbs_net_t *Addr)
   return(0);
   }
 
-int get_max_num_descriptors(void)
-  {
-  fprintf(stderr, "The call to get_max_num_descriptors needs to be mocked!!\n");
-  return(0);
-  }
-
-int get_fdset_size(void)
-  {
-  fprintf(stderr, "The call to get_fdset_size needs to be mocked!!\n");
-  return(0);
-  }
-
 void log_err(int errnum, const char *routine, const char *text) {}
 
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 
 int pbs_getaddrinfo(const char *pNode,struct addrinfo *pHints,struct addrinfo **ppAddrInfoOut)
   {
-  return(0);
+  return(1);
   }
 
 char *get_cached_nameinfo(const struct sockaddr_in *sai)
@@ -148,4 +140,21 @@ char *get_cached_nameinfo(const struct sockaddr_in *sai)
 bool log_available(int eventtype)
   {
   return true;
+  }
+
+char *netaddr_long(long ap, char *out)
+  {
+  return(NULL);
+  }
+
+int get_max_num_descriptors(void)
+  {
+  return(getdtablesize());
+  }
+
+int ppoll(struct pollfd *fds, nfds_t nfds, const struct timespec *timeout, const sigset_t *sigmask)
+  {
+  global_poll_nfds = nfds;
+  global_poll_timeout_sec = timeout->tv_sec;
+  return(0);
   }

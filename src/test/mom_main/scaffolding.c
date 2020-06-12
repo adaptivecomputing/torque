@@ -89,6 +89,7 @@ struct config   *config_array = NULL;
 char           **maskclient = NULL; /* wildcard connections */
 char             PBSNodeCheckPath[MAXLINE];
 int       CheckPollTime;
+int varattr_tv;
 char             rcp_args[MAXPATHLEN];
 long      log_file_max_size;
 char             mom_host[PBS_MAXHOSTNAME + 1];
@@ -1136,3 +1137,17 @@ void authorized_hosts::add_authorized_address(unsigned long addr, unsigned short
 
 authorized_hosts::authorized_hosts() {}
 authorized_hosts auth_hosts;
+
+int read_all_devices()
+  {
+  return(PBSE_NONE);
+  }
+
+bool get_cray_taskstats;
+
+void read_rur_stats_file(const char *basepath) {}
+
+int get_local_address(struct sockaddr_in &new_sockaddr)
+  {
+  return PBSE_NONE;
+  }

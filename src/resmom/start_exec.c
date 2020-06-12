@@ -88,12 +88,21 @@ extern "C"
 #include <signal.h>
 #include <ctype.h>
 #include <time.h>
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <poll.h>
+
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #if IBM_SP2==2 /* IBM SP with PSSP 3.1 */
   #include <st_client.h>
 #endif /* IBM SP */
@@ -375,6 +384,7 @@ extern int  use_nvidia_gpu;
 #endif  /* NVIDIA_GPUS */
 
 int exec_job_on_ms(job *pjob);
+int remove_leading_hostname(char**);
 
 
 
@@ -435,8 +445,8 @@ void no_hang(
   }   /* END no_hang() */
 
 
-
-bool check_pwd(
+/* TODO: change -1 to actual PBSE error codes */
+int check_pwd(
 
   job  *pjob) /* I (modified) */
 
@@ -458,7 +468,7 @@ bool check_pwd(
     sprintf(log_buffer, "no user specified for job");
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-    return(false);
+    return(-1);
     }
 
   /* we will retry if needed just to cover temporary problems */
@@ -482,14 +492,14 @@ bool check_pwd(
             ptr);
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
-    return(false);
+    return(-1);
     }
 
 #ifdef __CYGWIN__
   if (IamUserByName(ptr) == 0)
     {
       free_pwnam(pwdp, pwd_buf);
-      return(false);
+      return(-1);
 #endif  /* __CYGWIN__ */
 
   if (pjob->ji_grpcache != NULL)
@@ -498,7 +508,7 @@ bool check_pwd(
 
     /* group cache previously loaded and cached */
     free_pwnam(pwdp, pwd_buf);
-    return(true);
+    return(PBSE_NONE);
     }
 
   pjob->ji_qs.ji_un_type = JOB_UNION_TYPE_MOM;
@@ -514,7 +524,7 @@ bool check_pwd(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     free_pwnam(pwdp, pwd_buf);
-    return(false);
+    return(-1);
     }
 
   strcpy(pjob->ji_grpcache->gc_homedir, pwdp->pw_dir);
@@ -564,7 +574,7 @@ bool check_pwd(
         log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
         free_pwnam(pwdp, pwd_buf);
-        return(false);
+        return(PBSE_BAD_GROUP);
         }
       }   /* END if (grpp != NULL) */
     }
@@ -586,7 +596,7 @@ bool check_pwd(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     free_pwnam(pwdp, pwd_buf);
-    return(false);
+    return(-1);
     }
   /* perform site specific check on validatity of account */
 
@@ -598,14 +608,15 @@ bool check_pwd(
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, __func__, log_buffer);
 
     free_pwnam(pwdp, pwd_buf);
-    return(false);
+    return(-1);
     }
 
   /* SUCCESS */
 
   free_pwnam(pwdp, pwd_buf);
-  return(true);
+  return(PBSE_NONE);
   }   /* END check_pwd() */
+
 
 
 /**
@@ -683,12 +694,14 @@ void exec_bail(
  * becomes the user for pjob
  *
  * @param pjob - the job whose user we should become
+ * @param want_effective - whether or not to set euid/eguid rather than uid/gid
  * @return PBSE_BADUSER on failure
  */
 
 int become_the_user(
 
-  job *pjob)
+  job *pjob,
+  bool want_effective)
 
   {
   log_buffer[0] = '\0';
@@ -701,20 +714,41 @@ int become_the_user(
       (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
       strerror(errno));
     }
-  else if (setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != PBSE_NONE)
+  else if (want_effective)
     {
-    snprintf(log_buffer,sizeof(log_buffer),
-      "PBS: setgid to %lu for UID = %lu failed: %s\n",
-      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
-      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-      strerror(errno));
+    if (setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != PBSE_NONE)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "PBS: setegid to %lu for UID = %lu failed: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      }
+    else if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) < 0)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "PBS: seteuid to %lu failed: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      }
     }
-  else if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, FALSE) < 0)
+  else
     {
-    snprintf(log_buffer,sizeof(log_buffer),
-      "PBS: setuid to %lu failed: %s\n",
-      (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-      strerror(errno));
+    if (setgid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != PBSE_NONE)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "PBS: setgid to %lu for UID = %lu failed: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      }
+    else if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, FALSE) < 0)
+      {
+      snprintf(log_buffer,sizeof(log_buffer),
+        "PBS: setuid to %lu failed: %s\n",
+        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
+        strerror(errno));
+      }
     }
 
   if (log_buffer[0] != '\0')
@@ -734,7 +768,7 @@ int become_the_user_sjr(
   struct startjob_rtn *sjr)
 
   {
-  if (become_the_user(pjob) != PBSE_NONE)
+  if (become_the_user(pjob, false) != PBSE_NONE)
     {
     if (write_ac_socket(2, log_buffer, strlen(log_buffer)) == -1)
       {
@@ -773,6 +807,10 @@ int open_demux(
   torque_socklen_t slen;
   unsigned short local_port;
 
+#ifdef BIND_OUTBOUND_SOCKETS
+  struct sockaddr_in    local;
+#endif
+
   memset(&remote, 0, sizeof(remote));
   remote.sin_addr.s_addr = addr;
   remote.sin_port = htons((unsigned short)port);
@@ -788,6 +826,34 @@ int open_demux(
 
     return(-1);
     }
+
+#ifdef BIND_OUTBOUND_SOCKETS
+  /* Bind to the IP address associated with the hostname, in case there are
+   * muliple possible source IPs for this destination.*/
+
+  if (get_local_address(local) != PBSE_NONE)
+    {
+    sprintf(log_buffer, "could not determine local IP address: %s", strerror(errno));
+    log_err(errno, __func__, log_buffer);
+
+    close(sock);
+    return(-1);
+    }
+
+  // do not bind if lochost addr
+  if (!islocalhostaddr(&local))
+    {
+    if (bind(sock, (struct sockaddr *)&local, sizeof(local)))
+      {
+      sprintf(log_buffer, "could not bind local socket: %s", strerror(errno));
+      log_err(errno, __func__, log_buffer);
+
+      close(sock);
+      return(-1);
+      }
+    }
+
+#endif
 
   for (i = 0;i < RETRY;i++)
     {
@@ -2127,7 +2193,71 @@ struct radix_buf **allocate_sister_list(
   } /* END allocate_sister_list() */
 
 
+/*
+ * update the job outpath/errpath attribute with this hostname if needed
+ *
+ * @param pjob - the job to check
+ * @param attr_index - must be JOB_ATR_outpath or JOB_ATR_errpath
+ * @return -1 on failure
+ */
 
+int update_path_attribute(
+
+  job *pjob,
+  job_atr attr_index)
+
+  {
+  char outchar;
+
+  if (pjob == NULL)
+    return(-1);
+
+  if (attr_index == JOB_ATR_outpath)
+    outchar = 'o';
+  else if (attr_index == JOB_ATR_errpath)
+    outchar = 'e';
+  else
+    return(-1);
+
+  // if keeping output on this host, update the hostname
+  if ((pjob->ji_wattr[JOB_ATR_keep].at_flags & ATR_VFLAG_SET) &&
+      (strchr(pjob->ji_wattr[JOB_ATR_keep].at_val.at_str, outchar)) &&
+      (spoolasfinalname == FALSE))
+    {
+    char *p;
+    std::string full_path;
+    pbs_attribute *pattr;
+
+    // get the current path (may include leading hostname)
+    p = pjob->ji_wattr[attr_index].at_val.at_str;
+
+    // get just the file path
+    remove_leading_hostname(&p);
+
+    // build new host:path string
+    full_path = mom_host;
+    full_path += ":";
+    full_path += p;
+
+    // update the attribute
+
+    pattr = &pjob->ji_wattr[attr_index];
+
+    job_attr_def[attr_index].at_free(pattr);
+
+    job_attr_def[attr_index].at_decode(
+        pattr,
+        NULL,
+        NULL,
+        full_path.c_str(),
+        0);
+
+    pjob->ji_wattr[attr_index].at_flags =
+      (ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
+    }
+
+    return(0);
+  }
 
 /*
  * Used by MOM superior to start the shell process.
@@ -2248,7 +2378,7 @@ int TMomFinalizeJob1(
     * we do this now to save a few things in the job structure
    */
 
-  if (check_pwd(pjob) == false)
+  if (check_pwd(pjob) != PBSE_NONE)
     {
     log_event(PBSEVENT_JOB, PBS_EVENTCLASS_JOB, pjob->ji_qs.ji_jobid, log_buffer);
 
@@ -2454,6 +2584,12 @@ int TMomFinalizeJob1(
     pjob->ji_wattr[JOB_ATR_errpath].at_flags =
       (ATR_VFLAG_SET | ATR_VFLAG_MODIFY | ATR_VFLAG_SEND);
     }   /* END if (TJE->is_interactive == TRUE) */
+  else
+    {
+    // update the hostname in the out/err path attributes if needed
+    update_path_attribute(pjob, JOB_ATR_outpath);
+    update_path_attribute(pjob, JOB_ATR_errpath);
+    }
 
 #if SHELL_USE_ARGV == 0
   #if SHELL_INVOKE == 1
@@ -3206,6 +3342,9 @@ void handle_cpuset_creation(
 
 
 
+/*
+ * handle_reservation()
+ */
 
 void handle_reservation(
 
@@ -3326,6 +3465,14 @@ void handle_reservation(
 
 
 
+/*
+ * handle_prologs()
+ *
+ * Run relevant prologue scripts and notify the mom of a job failure if one of the prologues
+ * fail.
+ *
+ */
+
 void handle_prologs(
 
   job                 *pjob,
@@ -3344,7 +3491,7 @@ void handle_prologs(
     if ((TJE->is_interactive == FALSE) &&
         (rc != 1))
       {
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, sjr);
+      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_PROLOGUE, sjr);
       }
     else
       {
@@ -3363,7 +3510,7 @@ void handle_prologs(
     if ((TJE->is_interactive == FALSE) &&
         (rc != 1))
       {
-      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, sjr);
+      starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_PROLOGUE, sjr);
       }
     else
       {
@@ -3395,7 +3542,7 @@ void handle_prologs(
           if ((TJE->is_interactive == FALSE) &&
               (rc != 1))
             {
-            starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY, sjr);
+            starter_return(TJE->upfds, TJE->downfds, JOB_EXEC_RETRY_PROLOGUE, sjr);
             }
           else
             {
@@ -3411,11 +3558,17 @@ void handle_prologs(
       }
     }
 
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_PROLOGUES_RAN;
+
   } /* END handle_prologs() */
 
 
 
-
+/*
+ * start_interactive_session()
+ *
+ * Opens the sockets to talk to the waiting qsub command
+ */
 
 int start_interactive_session(
 
@@ -3553,6 +3706,9 @@ int start_interactive_session(
 
 
 
+/*
+ * start_interactive_reader()
+ */
 
 void start_interactive_reader(
 
@@ -3583,6 +3739,9 @@ void start_interactive_reader(
 
 
 
+/*
+ * setup_interacteractive_job()
+ */
 
 void setup_interactive_job(
 
@@ -4710,15 +4869,16 @@ int TMomFinalizeChild(
 
   // Create the cgroups for this job
   rc = init_torque_cgroups();
-  if (rc == PBSE_NONE) {
-      rc = trq_cg_create_all_cgroups(pjob);
-  } else {
-      /*
-        Send/log an additional error, cleanup and return as before
-       */
+  if (rc == PBSE_NONE)
+    {
+    rc = trq_cg_create_all_cgroups(pjob);
+    }
+  else
+    {
+    // Log an additional error, cleanup and return as before
     sprintf(log_buffer, "Could not init cgroups for job %s.", pjob->ji_qs.ji_jobid);
     log_ext(-1, __func__, log_buffer, LOG_ERR);
-  }
+    }
 
   if (rc != PBSE_NONE)
     {
@@ -5436,10 +5596,10 @@ int setup_process_launch_pipes(
       (kid_write < 0))
     {
     log_err(-1, __func__, "Couldn't set up pipes to monitor launching a process");
- 
+
     return(-1);
     }
- 
+
   return(PBSE_NONE);
   } // END setup_process_launch_pipes()
 
@@ -6122,7 +6282,7 @@ int start_process(
    * to spawn tasks (ji_grpcache).
    */
 
-  if (!check_pwd(pjob))
+  if (check_pwd(pjob) != PBSE_NONE)
     {
     log_err(-1, __func__, log_buffer);
 
@@ -7269,6 +7429,8 @@ int start_exec(
     execute_presetup_prologue(pjob);
     }
 
+  pjob->ji_qs.ji_svrflags |= JOB_SVFLG_PROLOGUES_RAN;
+
   /* start_exec only executed on mother superior */
   pjob->ji_nodeid = 0; /* I'm MS */
   nodenum = pjob->ji_numnodes;
@@ -7276,7 +7438,7 @@ int start_exec(
   /* Step 3.0 Validate/Initialize Environment */
 
   /* check creds early because we need the uid/gid for TMakeTmpDir() */
-  if (check_pwd(pjob) == false)
+  if (check_pwd(pjob) != PBSE_NONE)
     {
     sprintf(log_buffer, "bad credentials: job id %s", pjob->ji_qs.ji_jobid);
     log_err(-1, __func__, log_buffer);
@@ -7784,6 +7946,90 @@ int remove_leading_hostname(
   } /* END remove_leading_hostname() */
 
 
+#if NO_SPOOL_OUTPUT == 1
+/*
+ * save_supplementary_group_list
+ *
+ * saves the supplementary group list for calling process
+ * into a buffer
+ * 
+ * see restore_supplementary_group_list
+ *
+ * Note: it is up to the caller to free the allocated space
+ * malloc'ed in this function. This is normally done in
+ * restore_supplementary_group_list.
+ *
+ * @param *grp_list_size - pointer to size of group list
+ * @param **grp_list - pointer to address of group list
+ * @return 0 if group list saved to buffer, -1 otherwise
+ */
+
+int save_supplementary_group_list(
+
+  int *grp_list_size, /* O */
+  gid_t **grp_list)   /* O */
+
+  {
+  int ngroups_expected;
+
+  // get expected number of groups
+  ngroups_expected = getgroups(0, NULL);
+  if (ngroups_expected < 0)
+    return(-1);
+
+  // allocate space for group list
+  *grp_list = (gid_t *)malloc(ngroups_expected * sizeof(gid_t));
+  if (*grp_list == NULL)
+    return(-1);
+
+  // get the group list
+  *grp_list_size = getgroups(ngroups_expected, *grp_list);
+  if (*grp_list_size != ngroups_expected)
+    {
+    free(*grp_list);
+    *grp_list = NULL;
+    return(-1);
+    }
+
+  // success
+  return(0);
+  }
+
+
+/*
+ * restore_supplementary_group_list
+ *
+ * restores the supplementary group list for calling process
+ * from a buffer and frees the buffer space
+ * 
+ * see save_supplementary_group_list
+ *
+ * @param grp_list_size - size of group list
+ * @param *grp_list - pointer to saved group list
+ * @return 0 if group list restored from buffer, -1 otherwise
+ */
+
+int restore_supplementary_group_list(
+
+  int grp_list_size, /* I */
+  gid_t *grp_list)   /* I */
+
+  {
+  int rc = -1;
+
+  if (grp_list == NULL)
+    return(rc);
+
+  // restore the supplementary group list
+  if (setgroups((size_t)grp_list_size, grp_list) == 0)
+    rc = 0;
+
+  // free the buffer space
+  free(grp_list);
+
+  return(rc);
+  }
+#endif // NO_SPOOL_OUTPUT
 
 
 /*
@@ -8020,6 +8266,9 @@ char *std_file_name(
 
     if (spoolasfinalname == FALSE)
       {
+      gid_t *grp_list_saved;
+      int grp_list_saved_size;
+
       /* force all output to user's HOME */
       snprintf(path, sizeof(path), "%s", pjob->ji_grpcache->gc_homedir);
 
@@ -8027,14 +8276,67 @@ char *std_file_name(
       /* if it's not a directory, just use $HOME us usual */
       snprintf(path_alt, sizeof(path_alt), "%s/.pbs_spool/", path);
 
-      if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) == -1)
+      // For network file systems like NFS and GPFS and regardless of the root
+      // squashing mode (enabled or disabled) the user's supplementary group
+      // list must be set for the caller before doing the stat() call below.
+
+      // save supplementary groups
+      if (save_supplementary_group_list(&grp_list_saved_size, &grp_list_saved) < 0)
         {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "failed to save supplementary groups");
+        log_err(errno, __func__, log_buffer);
+
         return(NULL);
         }
 
+      // set effective uid, gid
+      if (become_the_user(pjob, true) != PBSE_NONE)
+        {
+        restore_supplementary_group_list(grp_list_saved_size, grp_list_saved);
+        setegid(pbsgroup);
+
+        log_err(errno, __func__, log_buffer);
+        return(NULL);
+        }
+
+      // now do the stat()
       rcstat = stat(path_alt, &myspooldir);
 
-      setuid_ext(pbsuser, TRUE);
+      // restore the euid
+      if (setuid_ext(pbsuser, TRUE) == -1)
+        {
+        restore_supplementary_group_list(grp_list_saved_size, grp_list_saved);
+        setegid(pbsgroup);
+
+        snprintf(log_buffer,sizeof(log_buffer),
+          "failed to restore the euid");
+        log_err(errno, __func__, log_buffer);
+
+        return(NULL);
+        }
+
+      // restore supplementary groups
+      if (restore_supplementary_group_list(grp_list_saved_size, grp_list_saved) < 0)
+        {
+        setegid(pbsgroup);
+
+        snprintf(log_buffer,sizeof(log_buffer),
+          "failed to restore supplementary groups");
+        log_err(errno, __func__, log_buffer);
+
+        return(NULL);
+        }
+
+      // restore the egid
+      if (setegid(pbsgroup) != 0)
+        {
+        snprintf(log_buffer,sizeof(log_buffer),
+          "failed to restore the egid");
+        log_err(errno, __func__, log_buffer);
+
+        return(NULL);
+        }
 
       if ((rcstat == 0) && (S_ISDIR(myspooldir.st_mode)))
         snprintf(path, sizeof(path), "%s", path_alt);
@@ -8204,36 +8506,8 @@ int open_std_file(
       (geteuid() != pjob->ji_qs.ji_un.ji_momt.ji_exuid))
 #endif
     {
-    if (setgroups(pjob->ji_grpcache->gc_ngroup,(gid_t *)pjob->ji_grpcache->gc_groups) != PBSE_NONE)
+    if (become_the_user(pjob, true) != PBSE_NONE)
       {
-      snprintf(log_buffer,sizeof(log_buffer),
-        "setgroups failed for UID = %lu, error: %s\n",
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-        strerror(errno));
-
-      log_err(errno, __func__, log_buffer);
-      }
-
-    if (setegid(pjob->ji_qs.ji_un.ji_momt.ji_exgid) != PBSE_NONE)
-      {
-      snprintf(log_buffer, sizeof(log_buffer),
-        "setegid(%lu) failed for UID = %lu, error: %s\n",
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exgid,
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-        strerror(errno));
-
-      log_err(errno, __func__, log_buffer);
-
-      return(-1);
-      }
-
-    if (setuid_ext(pjob->ji_qs.ji_un.ji_momt.ji_exuid, TRUE) != PBSE_NONE)
-      {
-      snprintf(log_buffer, sizeof(log_buffer),
-        "seteuid(%lu) failed, error: %s\n",
-        (unsigned long)pjob->ji_qs.ji_un.ji_momt.ji_exuid,
-        strerror(errno));
-
       log_err(errno, __func__, log_buffer);
 
       setegid(pbsgroup);
@@ -9076,11 +9350,11 @@ int TMomCheckJobChild(
   int        *RC)       /* O (return code/errno) */
 
   {
-  int i;
-  fd_set fdset;
-  int rc;
-  int read_size = sizeof(struct startjob_rtn);
-  struct timeval timeout;
+  int             i;
+  struct pollfd   PollArray;
+  struct timespec ts;
+  int             rc;
+  int             read_size = sizeof(struct startjob_rtn);
 
   /* NOTE:  assume if anything is on pipe, everything is on pipe
             (may reasult in hang) */
@@ -9090,24 +9364,20 @@ int TMomCheckJobChild(
 
   /* read returns the session id or error */
 
-  timeout.tv_sec  = Timeout;
-  timeout.tv_usec = 0;
   errno = 0;
 
-  FD_ZERO(&fdset);
+  PollArray.fd = TJE->jsmpipe[0];
+  PollArray.events = POLLIN;
+  PollArray.revents = 0;
 
-  FD_SET(TJE->jsmpipe[0], &fdset);
+  ts.tv_sec = Timeout;
+  ts.tv_nsec = 0;
 
-  rc = select(
-             TJE->jsmpipe[0] + 1,
-             &fdset,
-             (fd_set *)NULL,
-             (fd_set *)NULL,
-             &timeout);
+  rc = ppoll(&PollArray, 1, &ts, NULL);
 
-  if (rc <= 0)
+  if ((rc <= 0) || ((PollArray.revents & POLLIN) == 0))
     {
-    /* TIMEOUT - data not yet available */
+    /* error, timeout or no data not yet available */
 
     return(FAILURE);
     }
@@ -9637,10 +9907,31 @@ void add_wkm_end(
 
   return;
   }   /* END add_wkm_end() */
-
-
-
 #endif /* ENABLE_CSA */
+
+
+
+void escape_spaces(
+
+  const char  *str,
+  std::string &escaped)
+
+  {
+  if (str != NULL)
+    {
+    const char *ptr = str;
+
+    while (*ptr != '\0')
+      {
+      if (*ptr == ' ')
+        escaped += '\\';
+
+      escaped += *ptr++;
+      }
+    }
+  } // escape_spaces()
+
+
 
 /*
  * @param pjob - used to set up the user's environment if desired
@@ -9693,9 +9984,11 @@ int expand_path(
     environ = vtable.v_envp;
     }
 
+  std::string escaped;
+  escape_spaces(path_in, escaped);
 
   /* expand the path */
-  switch (wordexp(path_in, &exp, WRDE_NOCMD | WRDE_UNDEF))
+  switch (wordexp(escaped.c_str(), &exp, WRDE_NOCMD | WRDE_UNDEF))
     {
     case 0:
 

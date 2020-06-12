@@ -248,6 +248,8 @@ int default_router(
         /* set time to retry job */
 
         jobp->ji_qs.ji_un.ji_routet.ji_rteretry = retry_time;
+        if (jobp->ji_is_array_template)
+          jobp->ji_routed = false;
 
         return(0);
         }
@@ -272,6 +274,8 @@ int default_router(
       case ROUTE_SUCCESS:  /* worked */
 
       case ROUTE_DEFERRED:  /* deferred */
+
+        jobp->ji_routed = true;
 
         return(0);
 
@@ -493,6 +497,50 @@ int reroute_job(
 
 
 
+/*
+ * handle_rerouting()
+ *
+ * precond: pjob is locked
+ * postcond: pjob is unlocked
+ *
+ */
+
+int handle_rerouting(
+    
+  job       *pjob,
+  pbs_queue *pque,
+  char      *queue_name)
+
+  {
+  int rc = PBSE_NONE;
+
+  /* We only want to try if routing has been tried at least once - this is to let
+   * req_commit have the first crack at routing always. */
+  if (pjob->ji_commit_done == 0) /* when req_commit is done it will set ji_commit_done to 1 */
+    {
+    unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
+    return(rc);
+    }
+
+  /* queue must be unlocked when calling reroute_job */
+  unlock_queue(pque, __func__, NULL, 10);
+  reroute_job(pjob);
+  unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+
+  /* need to relock queue when we go to call next_job */
+  pque = find_queuebyname(queue_name);
+  if (pque == NULL)
+    {
+    char log_buf[LOCAL_LOG_BUF_SIZE];
+    sprintf(log_buf, "Could not find queue %s", queue_name);
+    log_err(-1, __func__, log_buf);
+    rc = -1;
+    }
+
+  return(rc);
+  } // END handle_rerouting()
+
+
 
 /*
  * queue_route - route any "ready" jobs in a specific queue
@@ -557,33 +605,37 @@ void *queue_route(
 
     while ((pjob = next_job(pque->qu_jobs,iter)) != NULL)
       {
-      /* We only want to try if routing has been tried at least once - this is to let
-       * req_commit have the first crack at routing always. */
-
-      if (pjob->ji_commit_done == 0) /* when req_commit is done it will set ji_commit_done to 1 */
+      if (handle_rerouting(pjob, pque, queue_name) != PBSE_NONE)
         {
-        unlock_ji_mutex(pjob, __func__, "1", LOGLEVEL);
-        continue;
-        }
-
-      /* queue must be unlocked when calling reroute_job */
-      que_mutex.unlock();
-      reroute_job(pjob);
-      unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
-
-      /* need to relock queue when we go to call next_job */
-      pque = find_queuebyname(queue_name);
-      if (pque == NULL)
-        {
-        sprintf(log_buf, "Could not find queue %s", queue_name);
-        log_err(-1, __func__, log_buf);
         free(queue_name);
         delete iter;
         pthread_mutex_unlock(reroute_job_mutex);
         return(NULL);
         }
+      }
+    
+    delete iter;
 
-      que_mutex.mark_as_locked();
+    // Now try an array summary jobs that haven't been routed
+    pque->qu_jobs_array_sum->lock();
+    iter = pque->qu_jobs_array_sum->get_iterator();
+    pque->qu_jobs_array_sum->unlock();
+
+    while ((pjob = next_job(pque->qu_jobs_array_sum, iter)) != NULL)
+      {
+      if (pjob->ji_is_array_template == false)
+        {
+        unlock_ji_mutex(pjob, __func__, "2", LOGLEVEL);
+        continue;
+        }
+
+      if (handle_rerouting(pjob, pque, queue_name) != PBSE_NONE)
+        {
+        free(queue_name);
+        delete iter;
+        pthread_mutex_unlock(reroute_job_mutex);
+        return(NULL);
+        }
       }
 
     /* we come out of the while loop with the queue locked.

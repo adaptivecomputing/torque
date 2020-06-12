@@ -1477,19 +1477,25 @@ void mgr_queue_set(
     log_event(PBSEVENT_SYSTEM, PBS_EVENTCLASS_QUEUE, __func__, log_buf);
     }
 
-  svr_queues.lock();
-  iter = svr_queues.get_iterator();
-  svr_queues.unlock();
-
+  // see if all queues or just a single queue should be set
   if ((*preq->rq_ind.rq_manager.rq_objname == '\0') ||
       (*preq->rq_ind.rq_manager.rq_objname == '@'))
     {
+    // all queues
+
     qname   = all_quename;
     allques = TRUE;
+
+    svr_queues.lock();
+    iter = svr_queues.get_iterator();
+    svr_queues.unlock();
+
     pque = next_queue(&svr_queues,iter);
     }
   else
     {
+    // single queue
+
     qname   = preq->rq_ind.rq_manager.rq_objname;
     allques = FALSE;
 
@@ -1500,7 +1506,8 @@ void mgr_queue_set(
     {
     req_reject(PBSE_UNKQUE, 0, preq, NULL, NULL);
 
-    delete iter;
+    if (iter != NULL)
+      delete iter;
 
     return;
     }
@@ -1531,7 +1538,8 @@ void mgr_queue_set(
         que_mutex.unlock();
         reply_badattr(rc, bad, plist, preq);
 
-        delete iter;
+        if (iter != NULL)
+          delete iter;
 
         return;
         }
@@ -1551,16 +1559,20 @@ void mgr_queue_set(
     pque = next_queue(&svr_queues,iter);
     }  /* END while (pque != NULL) */
 
-  /* check the appropriateness of the attributes based on queue type */
-  svr_queues.lock();
-
-  delete iter;
-
-  iter = svr_queues.get_iterator();
-  svr_queues.unlock();
-
+  // if operating on all queues, get new iterator
   if (allques == TRUE)
+    {
+    svr_queues.lock();
+
+    delete iter;
+
+    iter = svr_queues.get_iterator();
+    svr_queues.unlock();
+
     pque = next_queue(&svr_queues,iter);
+    }
+
+  /* check the appropriateness of the attributes based on queue type */
 
   while (pque != NULL)
     {
@@ -2027,29 +2039,25 @@ static bool requeue_or_delete_jobs(
     if(pjob != NULL)
       {
       char *dup_jobid = strdup(pjob->ji_qs.ji_jobid);
-      batch_request *brRerun = alloc_br(PBS_BATCH_Rerun);
-      batch_request *brDelete = alloc_br(PBS_BATCH_DeleteJob);
-      if((brRerun == NULL)||(brDelete == NULL))
-        {
-        free_br(brRerun);
-        free_br(brDelete);
-        free(dup_jobid);
-        return true; //Ignoring this error.
-        }
-      strcpy(brRerun->rq_ind.rq_rerun,pjob->ji_qs.ji_jobid);
-      strcpy(brDelete->rq_ind.rq_delete.rq_objname,pjob->ji_qs.ji_jobid);
-      brRerun->rq_conn = PBS_LOCAL_CONNECTION;
-      brDelete->rq_conn = PBS_LOCAL_CONNECTION;
-      brRerun->rq_perm = preq->rq_perm;
-      brDelete->rq_perm = preq->rq_perm;
-      brDelete->rq_ind.rq_delete.rq_objtype = MGR_OBJ_JOB;
-      brDelete->rq_ind.rq_delete.rq_cmd = MGR_CMD_DELETE;
+      batch_request brRerun(PBS_BATCH_Rerun);
+      batch_request brDelete(PBS_BATCH_DeleteJob);
+      
+      strcpy(brRerun.rq_ind.rq_rerun,pjob->ji_qs.ji_jobid);
+      strcpy(brDelete.rq_ind.rq_delete.rq_objname,pjob->ji_qs.ji_jobid);
+
+      brRerun.rq_conn = PBS_LOCAL_CONNECTION;
+      brDelete.rq_conn = PBS_LOCAL_CONNECTION;
+      brRerun.rq_perm = preq->rq_perm;
+      brDelete.rq_perm = preq->rq_perm;
+      brDelete.rq_ind.rq_delete.rq_objtype = MGR_OBJ_JOB;
+      brDelete.rq_ind.rq_delete.rq_cmd = MGR_CMD_DELETE;
+
       unlock_ji_mutex(pjob,__func__,NULL,LOGLEVEL);
       pnode->tmp_unlock_node(__func__, NULL, LOGLEVEL);
-      int rc = req_rerunjob(brRerun);
+      int rc = req_rerunjob(&brRerun);
       if(rc != PBSE_NONE)
         {
-        rc = req_deletejob(brDelete);
+        rc = req_deletejob(&brDelete);
         if(rc == PBSE_NONE)
           {
           get_svr_attr_l(SRV_ATR_TimeoutForJobDelete, &delete_timeout);
@@ -2064,7 +2072,6 @@ static bool requeue_or_delete_jobs(
         }
       else
         {
-        free_br(brDelete);
         get_svr_attr_l(SRV_ATR_TimeoutForJobRequeue, &requeue_timeout);
 
         if(!wait_for_job_state(*jid,JOB_STATE_QUEUED,requeue_timeout))
@@ -2695,6 +2702,38 @@ int extra_resc_chk(
 
 
 
+int set_default_gpu_mode_int(
+
+  const char *gpu_mode_str)
+
+  {
+  int rc = PBSE_NONE;
+
+  // Make sure it's one of the acceptable gpu modes
+  if (!strcmp(gpu_mode_str, "exclusive_thread"))
+    {
+    default_gpu_mode = gpu_exclusive_thread;
+    }
+  else if (!strcmp(gpu_mode_str, "exclusive_process"))
+    {
+    default_gpu_mode = gpu_exclusive_process;
+    }
+  else if (!strcmp(gpu_mode_str, "default"))
+    {
+    default_gpu_mode = gpu_normal;
+    }
+  else if (!strcmp(gpu_mode_str, "shared"))
+    {
+    default_gpu_mode = gpu_normal;
+    }
+  else
+    rc = PBSE_ATTRTYPE;
+
+  return(rc);
+  } // END set_default_gpu_mode_int()
+
+
+
 /*
  * check_default_gpu_mode_str()
  *
@@ -2718,33 +2757,9 @@ int check_default_gpu_mode_str(
 
       // this shouldn't happen
       if (gpu_mode == NULL)
-        {
-        return(PBSE_ATTRTYPE);
-        }
-
-      // Make sure it's one of the acceptable gpu modes
-      if (!strcmp(gpu_mode, "exclusive_thread"))
-        {
-        default_gpu_mode = gpu_exclusive_thread;
-        }
-      else if (!strcmp(gpu_mode, "exclusive"))
-        {
-        default_gpu_mode = gpu_exclusive;
-        }
-      else if (!strcmp(gpu_mode, "exclusive_process"))
-        {
-        default_gpu_mode = gpu_exclusive_process;
-        }
-      else if (!strcmp(gpu_mode, "default"))
-        {
-        default_gpu_mode = gpu_normal;
-        }
-      else if (!strcmp(gpu_mode, "shared"))
-        {
-        default_gpu_mode = gpu_normal;
-        }
-      else
         rc = PBSE_ATTRTYPE;
+      else
+        rc = set_default_gpu_mode_int(gpu_mode);
 
       break;
     }

@@ -135,7 +135,7 @@ START_TEST(test_constructor)
 
   fail_unless(list1.req_count() == 2);
   const req &rm1 = list1.get_req(0);
-  fail_unless(rm1.getMemory() == 13653, "mem is %lu", rm1.getMemory());
+  fail_unless(rm1.get_total_memory() == 13653, "mem is %lu", rm1.get_total_memory());
 
   resources.clear();
   add_resource(resources, "size", NULL, 20, -1);
@@ -145,7 +145,7 @@ START_TEST(test_constructor)
   const req &r = list2.get_req(0);
   fail_unless(r.getTaskCount() == 20);
   fail_unless(r.getExecutionSlots() == 1);
-  fail_unless(r.getMemory() == 40, "mem is %lu", r.getMemory());
+  fail_unless(r.get_total_memory() == 40, "mem is %lu", r.get_total_memory());
  
   resources.clear();
   add_resource(resources, "ncpus", NULL, 16, -1);
@@ -155,7 +155,7 @@ START_TEST(test_constructor)
   const req &rl = list3.get_req(0);
   fail_unless(rl.getTaskCount() == 1);
   fail_unless(rl.getExecutionSlots() == 16);
-  fail_unless(rl.getMemory() == 40, "mem is %lu", rl.getMemory());
+  fail_unless(rl.get_total_memory() == 40, "mem is %lu", rl.get_total_memory());
 
   resources.clear();
   add_resource(resources, "nodes", "1:ppn=2", 16, -1);
@@ -164,7 +164,8 @@ START_TEST(test_constructor)
   fail_unless(list4.req_count() == 1);
   const req &rl2 = list4.get_req(0);
   fail_unless(rl2.getTaskCount() == 1);
-  fail_unless(rl2.getMemory() == 160, "pmem is %lu", rl2.getMemory());
+  // pmem should get multiplied because nodes=1:ppn=2 
+  fail_unless(rl2.get_total_memory() == 160, "pmem is %lu", rl2.get_total_memory());
 
   resources.clear();
   add_resource(resources, "nodes", "1:ppn=2", 16, -1);
@@ -173,8 +174,9 @@ START_TEST(test_constructor)
   fail_unless(list5.req_count() == 1);
   const req &rl3 = list5.get_req(0);
   fail_unless(rl3.getTaskCount() == 1);
-  fail_unless(rl3.getMemory() == 0, "pvmem is %lu", rl3.getMemory());
-  fail_unless(rl3.getSwap() == 160, "pvmem is %lu", rl3.getSwap());
+  fail_unless(rl3.get_total_memory() == 0, "pvmem is %lu", rl3.get_total_memory());
+  // pvmem should get multiplied because nodes=1:ppn=2 is one task
+  fail_unless(rl3.get_total_swap() == 160, "pvmem is %lu", rl3.get_total_swap());
 
   resources.clear();
   add_resource(resources, "nodes", "1:ppn=2", 16, -1);
@@ -183,8 +185,8 @@ START_TEST(test_constructor)
   fail_unless(list6.req_count() == 1);
   const req &rl4 = list6.get_req(0);
   fail_unless(rl4.getTaskCount() == 1);
-  fail_unless(rl4.getMemory() == 0, "pvmem is %lu", rl4.getMemory());
-  fail_unless(rl4.getSwap() == 80, "pvmem is %lu", rl4.getSwap());
+  fail_unless(rl4.get_total_memory() == 0, "vmem is %lu", rl4.get_total_memory());
+  fail_unless(rl4.get_total_swap() == 80, "vmem is %lu", rl4.get_total_swap());
 
   resources.clear();
   add_resource(resources, "procs", NULL, 2, -1);
@@ -193,7 +195,8 @@ START_TEST(test_constructor)
   fail_unless(list7.req_count() == 1);
   const req &rl7 = list7.get_req(0);
   fail_unless(rl7.getTaskCount() == 2, "task count is %d", rl7.getTaskCount());
-  fail_unless(rl7.getMemory() == 1024, "mem = %lu", rl7.getMemory());
+  // 1024 * 2 = 2048, multiply by 2 because procs=2
+  fail_unless(rl7.get_total_memory() == 2048, "mem = %lu", rl7.get_total_memory());
 
   // Make sure that we'll set memory to the higher of pmem and mem, and set swap
   // as well for the same job
@@ -206,8 +209,8 @@ START_TEST(test_constructor)
   fail_unless(list8.req_count() == 1);
   const req &rl8 = list8.get_req(0);
   fail_unless(rl8.getTaskCount() == 1);
-  fail_unless(rl8.getMemory() == 4096);
-  fail_unless(rl8.getSwap() == 8192);
+  fail_unless(rl8.get_total_memory() == 4096);
+  fail_unless(rl8.get_total_swap() == 8192);
 
   resources.clear();
   add_resource(resources, "procs", NULL, 1, -1);
@@ -216,7 +219,7 @@ START_TEST(test_constructor)
   complete_req list9(&resources, 1, false);
   fail_unless(list9.req_count() == 1);
   const req &rl9 = list9.get_req(0);
-  fail_unless(rl9.getMemory() == 5000);
+  fail_unless(rl9.get_total_memory() == 5000);
 
   }
 END_TEST
@@ -230,7 +233,7 @@ START_TEST(test_constructor_oldstyle_req)
 
   fail_unless(list1.req_count() == 1);
   const req &rm1 = list1.get_req(0);
-  fail_unless(rm1.getMemory() == 0, "mem is %lu", rm1.getMemory());
+  fail_unless(rm1.get_total_memory() == 0, "mem is %lu", rm1.get_total_memory());
   }
 END_TEST
 

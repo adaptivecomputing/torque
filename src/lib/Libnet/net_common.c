@@ -20,7 +20,12 @@
 #include <errno.h> /* errno */
 #include <fcntl.h> /* fcntl, F_GETFL */
 #include <sys/time.h> /* gettimeofday */
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <poll.h> /* poll functionality */
+
 #include <iostream>
 #include <pthread.h>
 #include "../lib/Liblog/pbs_log.h" /* log_err */
@@ -200,12 +205,21 @@ int socket_get_tcp_priv()
   int                priv_port = 0;
   int                flags;
 #endif
-  
-  memset(&local, 0, sizeof(struct sockaddr_in));
-  local.sin_family = AF_INET;
-  
+
   if ((local_socket = socket_get_tcp()) < 0)
     return(-1);
+
+#ifdef BIND_OUTBOUND_SOCKETS
+  if (get_local_address(local) != PBSE_NONE)
+    {
+    close(local_socket);
+    return(-1);
+    }
+#else
+  memset(&local, 0, sizeof(struct sockaddr_in));
+  local.sin_family = AF_INET;
+#endif
+
 
 #ifndef NOPRIVPORTS
   /* According to the notes in the previous code:
@@ -500,7 +514,7 @@ int process_and_save_socket_error(
  * socket_wait_for_write()
  *
  * connect failed, this function determines why. For non-blocking sockets,
- * EINPROGRESS is almost always set, and you need to select the socket and then
+ * EINPROGRESS is almost always set, and you need to poll the socket and then
  * read error using getsockopt(), as is done below.
  *
  * if the failure is a permanent failure, pass that back to the caller
@@ -516,29 +530,31 @@ int socket_wait_for_write(
   int socket)
 
   {
-  int            rc = PBSE_NONE;
-  int            write_soc = 0;
-  int            sock_errno = 0;
-  socklen_t      len = sizeof(int);
-  fd_set         wfd;
-  struct timeval timeout;
+  int             rc = PBSE_NONE;
+  int             write_soc = 0;
+  int             sock_errno = 0;
+  socklen_t       len = sizeof(int);
+  struct pollfd   PollArray;
+  struct timespec ts;
 
-  timeout.tv_sec = pbs_tcp_timeout;
-  timeout.tv_usec = 0;
+  PollArray.fd = socket;
+  PollArray.events = POLLOUT;
+  PollArray.revents = 0;
 
-  FD_ZERO(&wfd);
-  FD_SET(socket, &wfd);
+  ts.tv_sec = pbs_tcp_timeout;
+  ts.tv_nsec = 0;
 
-  if ((write_soc = select(socket+1, 0, &wfd, 0, &timeout)) != 1)
+  if ((write_soc = ppoll(&PollArray, 1, &ts, NULL)) != 1)
     {
     /* timeout is now seen as a permanent failure */
     rc = PERMANENT_SOCKET_FAIL;
     }
-  else if (((rc = getsockopt(socket, SOL_SOCKET, SO_ERROR, &sock_errno, &len)) == 0) && 
+  else if ((PollArray.revents & POLLOUT) &&
+    ((rc = getsockopt(socket, SOL_SOCKET, SO_ERROR, &sock_errno, &len)) == 0) && 
            (sock_errno == 0))
-    {
-    rc = PBSE_NONE;
-    }
+      {
+      rc = PBSE_NONE;
+      }
   else
     {
     rc = process_and_save_socket_error(sock_errno);
@@ -579,18 +595,22 @@ int socket_wait_for_xbytes(
 int socket_wait_for_read(
     
   int          socket,
-  unsigned int timeout)
+  unsigned int timeout) // seconds
 
   {
-  int           rc = PBSE_NONE;
-  int           ret;
-  struct pollfd pfd;
+  int             rc = PBSE_NONE;
+  int             ret;
+  struct pollfd   pfd;
+  struct timespec ts;
 
   pfd.fd = socket;
   pfd.events = POLLIN | POLLHUP; /* | POLLRDNORM; */
   pfd.revents = 0;
 
-  ret = poll(&pfd, 1, timeout * 1000); /* poll's timeout is in milliseconds */
+  ts.tv_sec = timeout;
+  ts.tv_nsec = 0;
+
+  ret = ppoll(&pfd, 1, &ts, NULL);
   if (ret > 0)
     {
     char buf[8];
@@ -941,7 +961,7 @@ int pbs_getaddrinfo(
 
   if ((*ppAddrInfoOut = get_cached_addrinfo_full(pNode)) != NULL)
     {
-    return 0;
+    return(PBSE_NONE);
     }
 
   if (pHints == NULL)
@@ -955,20 +975,20 @@ int pbs_getaddrinfo(
     {
     if (addrFound)
       {
-      rc = 0;
+      rc = PBSE_NONE;
       }
     else
       {
       rc = getaddrinfo(pNode,NULL,pHints,ppAddrInfoOut);
       }
 
-    if (rc == 0)
+    if (rc == PBSE_NONE)
       {
       addrFound = TRUE;
       *ppAddrInfoOut = insert_addr_name_info(*ppAddrInfoOut,pNode);
       if (*ppAddrInfoOut != NULL)
         {
-        return 0;
+        return(PBSE_NONE);
         }
       rc = EAI_AGAIN;
       }
@@ -982,6 +1002,7 @@ int pbs_getaddrinfo(
 
   return EAI_FAIL;
   } /* END pbs_getaddrinfo() */
+
 
 
 int connect_to_trqauthd(
@@ -1018,4 +1039,61 @@ int connect_to_trqauthd(
   return(rc);
   }
 
-  
+/*
+ * islocalhostaddr() - check if sockaddr_in holds the locahost address
+ *
+ */
+bool islocalhostaddr(struct sockaddr_in *saip)
+  {
+  if (saip == NULL)
+    return(false);
+
+  // is 127.0.0.1?
+  return((saip->sin_addr.s_addr == (uint32_t)((127 << 24) + 1)));
+  }
+
+/*
+ * get_local_address() - lookup the local IP address associated with the local,
+ * public hostname.
+ *
+ * This function will cache the IP address in each process to speed up
+ * frequent lookups.
+ */
+int get_local_address(
+
+  struct sockaddr_in &new_sockaddr)
+
+  {
+  static struct addrinfo   *local_addr_info = NULL;
+  struct addrinfo           hints;
+  int                       rc;
+  char                      hostname[PBS_MAXHOSTNAME];
+  hostname[PBS_MAXHOSTNAME - 1] = '\0';
+
+  // If we already have the local address cached, return (copy) that value.
+  if (local_addr_info != NULL)
+    {
+    new_sockaddr = *((sockaddr_in*)local_addr_info->ai_addr);
+
+    return PBSE_NONE;
+    }
+
+  /* Bind to the IP address associated with the hostname, in case there are
+   * muliple possible source IPs for this destination.*/
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+
+  gethostname(hostname, sizeof(hostname));
+
+  rc = getaddrinfo(hostname, NULL, &hints, &local_addr_info);
+  if (rc != 0)
+    {
+    return(rc);
+    }
+
+  new_sockaddr = *((sockaddr_in*)local_addr_info->ai_addr);
+
+  return PBSE_NONE;
+  }
+

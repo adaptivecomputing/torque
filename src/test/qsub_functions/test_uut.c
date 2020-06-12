@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string>
 #include <vector>
+#include <poll.h>
 
 #include "qsub_functions.h"
 #include "test_qsub_functions.h"
@@ -20,16 +21,29 @@ int  process_opt_k(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_K(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_m(job_info *ji, const char *cmd_arg, int data_type);
 int  process_opt_p(job_info *ji, const char *cmd_arg, int data_type);
+int  wait_for_read_ready(int, int);
+bool is_memory_request_valid(job_info *ji, std::string &err_msg);
+int  validate_pbs_o_workdir(const job_info *);
+unsigned int get_port_in_range();
 
 extern complete_req cr;
+extern bool         mem_fail;
 extern bool         submission_string_fail;
 extern bool         added_req;
 extern bool         find_nodes;
 extern bool         find_mpp;
 extern bool         find_size;
 extern bool         validate_path;
+extern bool         init_work_dir;
 extern std::string  added_value;
 extern std::string  added_name;
+
+extern int global_poll_rc;
+extern short global_poll_revents;
+extern int global_poll_errno;
+
+extern int interactive_port_min;
+extern int interactive_port_max;
 
 bool are_we_forking()
 
@@ -42,6 +56,37 @@ bool are_we_forking()
   
   return(true);
   }
+
+
+START_TEST(test_get_port_in_range)
+  {
+  interactive_port_min = 30000;
+  interactive_port_max = 30100;
+
+  for (int i = 0; i <= 100; i++)
+    {
+    unsigned int port = get_port_in_range();
+    fail_unless(port >= interactive_port_min);
+    fail_unless(port <= interactive_port_max);
+    }
+  }
+END_TEST
+
+
+START_TEST(test_is_memory_request_valid)
+  {
+#ifdef PENABLE_LINUX_CGROUPS
+  job_info    ji;
+  std::string err;
+
+  mem_fail = false;
+  fail_unless(is_memory_request_valid(&ji, err) == true);
+  mem_fail = true;
+  fail_unless(is_memory_request_valid(&ji, err) == false);
+#endif
+
+  }
+END_TEST
 
 
 START_TEST(test_process_opt_K)
@@ -378,6 +423,58 @@ START_TEST(test_make_argv)
   }
 END_TEST
 
+START_TEST(test_wait_for_read_ready)
+  {
+  int rc;
+  int some_fd = 0; // arbitrary value
+  int some_timeout_sec = 1; // arbitrary value > 0
+
+  // emulate timeout
+  global_poll_rc = 0;
+  global_poll_revents = 0;
+  rc = wait_for_read_ready(some_fd, some_timeout_sec);
+  fail_unless(rc == 0);
+
+  // emulate ready to read
+  global_poll_rc = 1;
+  global_poll_revents = POLLIN;
+  rc = wait_for_read_ready(some_fd, some_timeout_sec);
+  fail_unless(rc == 1);
+
+  // emulate not ready to read
+  global_poll_rc = 1;
+  global_poll_revents = 0;
+  rc = wait_for_read_ready(some_fd, some_timeout_sec);
+  fail_unless(rc == 0);
+
+  // emulate failure
+  global_poll_rc = -1;
+  global_poll_errno = EFAULT;
+  rc = wait_for_read_ready(some_fd, some_timeout_sec);
+  fail_unless(rc == -1);
+
+  // emulate recoverable failure
+  global_poll_rc = -1;
+  global_poll_errno = EINTR;
+  rc = wait_for_read_ready(some_fd, some_timeout_sec);
+  fail_unless(rc == 0);
+  }
+END_TEST
+
+
+START_TEST(test_validate_pbs_o_workdir)
+  {
+  job_info    ji;
+
+  validate_path = true;
+
+  init_work_dir = true;
+  validate_pbs_o_workdir(&ji);
+  fail_unless(strcmp(added_name.c_str(), "..") != 0);
+  }
+END_TEST
+
+
 Suite *qsub_functions_suite(void)
   {
   Suite *s = suite_create("qsub_functions methods");
@@ -390,6 +487,7 @@ Suite *qsub_functions_suite(void)
   tcase_add_test(tc_core, test_process_opt_m);
   tcase_add_test(tc_core, test_process_opt_p);
   tcase_add_test(tc_core, test_retry_submit_error);
+  tcase_add_test(tc_core, test_validate_pbs_o_workdir);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test isWindowsFormat");
@@ -410,6 +508,12 @@ Suite *qsub_functions_suite(void)
   tc_core = tcase_create("test_make_argv");
   tcase_add_test(tc_core, test_make_argv);
   tcase_add_test(tc_core, test_is_resource_request_valid);
+  tcase_add_test(tc_core, test_get_port_in_range);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_wait_for_read_ready");
+  tcase_add_test(tc_core, test_wait_for_read_ready);
+  tcase_add_test(tc_core, test_is_memory_request_valid);
   suite_add_tcase(s, tc_core);
 
   return s;

@@ -109,6 +109,10 @@ Chip::Chip(const Json::Value &json_layout, std::vector<std::string> &valid_ids)
   json_chip++;
   }
 
+Chip::Chip(const std::string &json_layout, std::vector<std::string> &valid_ids)
+  {
+  }
+
 Chip::Chip(const Chip &other)
   {
   }
@@ -128,6 +132,8 @@ Chip::~Chip()
 
 void Chip::aggregate_allocations(std::vector<allocation> &master_list) {}
 
+void Chip::save_allocations(const Chip &other) {}
+
 void Chip::displayAsJson(
 
   Json::Value  &out,
@@ -136,13 +142,18 @@ void Chip::displayAsJson(
   {
   }
 
+int Chip::get_total_gpus() const
+  {
+  return(0);
+  }
+
 
 bool Chip::spread_place(
 
   req        &r,
   allocation &master,
-  int         execution_slots_per,
-  int        &remaining)
+  allocation &remaining,
+  allocation &remainder)
 
   {
   called_spread_place++;
@@ -251,7 +262,7 @@ int get_machine_total_memory(hwloc_topology_t topology, unsigned long *memory)
   return(PBSE_NONE);
   }
 
-float Chip::how_many_tasks_fit(req const &r, int place_type) const
+double Chip::how_many_tasks_fit(req const &r, int place_type) const
   {
   return(tasks);
   }
@@ -355,6 +366,12 @@ void allocation::set_place_type(
   else
     this->place_type = exclusive_none;
   } // END set_place_type()
+
+void allocation::adjust_for_spread(unsigned int quantity, bool find_remainder) {}
+
+void allocation::adjust_for_remainder(allocation &remainder) {}
+
+void allocation::clear() {}
   
 bool Chip::spread_place_threads(
 

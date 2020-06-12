@@ -25,6 +25,7 @@
 int server_down;
 int called_open_socket = 0;
 int called_fork_me = 0;
+bool called_epilogue = false;
 bool check_rur = true;
 
 char         mom_alias[PBS_MAXHOSTNAME + 1];
@@ -1162,6 +1163,8 @@ char *get_local_script_path(job *pjob, char *base)
 
 int run_pelog(int which, char *specpelog, job *pjog, int pe_io_type, int deletejob)
   {
+  called_epilogue = true;
+
   return 1;
   }
 
@@ -1310,9 +1313,9 @@ void mom_job_purge(job *pjob)
   return;
   }
 
-bool check_pwd(job *pjob)
+int check_pwd(job *pjob)
   {
-  return false;
+  return(-1);
   }
 
 unsigned long gettime(resource *pres)
@@ -1418,3 +1421,11 @@ int send_back_std_and_staged_files(job *pjob, int exit_value)
 
 
 task::~task() {}
+
+batch_request::batch_request(int type) : rq_type(type)
+  {
+  }
+
+bool get_cray_taskstats;
+
+void update_jobs_usage(job *pjob) {}

@@ -6,6 +6,33 @@
 #include "allocation.hpp"
 #include "req.hpp"
 
+extern int tc;
+
+
+START_TEST(test_remainder_things)
+  {
+  allocation a;
+
+  a.cpus = 9;
+  a.gpus = 3;
+  allocation b(a);
+
+  a.adjust_for_spread(2, false);
+  b.adjust_for_spread(2, true);
+
+  fail_unless(a.cpus == 4);
+  fail_unless(a.gpus == 1);
+  fail_unless(b.cpus == 1);
+  fail_unless(b.gpus == 1);
+
+  a.adjust_for_remainder(b);
+  fail_unless(b.cpus == 0);
+  fail_unless(b.gpus == 0);
+  fail_unless(a.cpus == 5);
+  fail_unless(a.gpus == 2);
+  }
+END_TEST
+
 
 START_TEST(test_write_task_information)
   {
@@ -67,6 +94,7 @@ START_TEST(test_allocation_constructors)
   allocation a3("1.napali");
   fail_unless(a3.jobid == "1.napali");
 
+  tc = 1;
   req r;
   allocation a4(r);
   fail_unless(a4.memory == 1024, "mem = %d", a.memory);
@@ -251,6 +279,7 @@ Suite *allocation_suite(void)
   tcase_add_test(tc_core, test_allocation_constructors);
   tcase_add_test(tc_core, test_set_place_type);
   tcase_add_test(tc_core, test_fully_placed);
+  tcase_add_test(tc_core, test_remainder_things);
   suite_add_tcase(s, tc_core); 
   
   tc_core = tcase_create("test_add_allocation");

@@ -657,3 +657,20 @@ struct passwd *get_password_entry_by_uid(char **user_buf, uid_t uid)
 void free_pwnam(struct passwd *pwdp, char *buf)
   {
   }
+
+int get_local_address(struct sockaddr_in &new_sockaddr)
+  {
+  // return 127.0.0.1
+  new_sockaddr.sin_addr.s_addr = (uint32_t) ((127 << 24) + 1);
+  return(0);
+  }
+
+bool islocalhostaddr(struct sockaddr_in *saip)
+  {
+  if (saip == NULL)
+    return(false);
+
+  // is 127.0.0.1?
+  return((saip->sin_addr.s_addr == (uint32_t)((127 << 24) + 1)));
+}
+

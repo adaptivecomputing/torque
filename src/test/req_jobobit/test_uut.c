@@ -61,6 +61,7 @@ extern long disable_requeue;
 extern int  attr_count;
 extern int  next_count;
 extern int  called_account_jobend;
+extern std::string log_err_buf;
 
 
 void init_server()
@@ -206,7 +207,6 @@ START_TEST(return_stdfile_test)
   batch_request *p1 = &preq;
   batch_request *p2;
 
-  memset(&preq, 0, sizeof(preq));
   pjob.ji_wattr[JOB_ATR_checkpoint_name].at_flags = ATR_VFLAG_SET;
 
   fail_unless(return_stdfile(&preq, &pjob, JOB_ATR_outpath) != NULL);
@@ -278,8 +278,6 @@ START_TEST(setup_cpyfiles_test)
   {
   job           *pjob = new job();
   batch_request *preq;
-  alloc_br_null = 1;
-  fail_unless(setup_cpyfiles(NULL, pjob, strdup("from"), strdup("to"), 1, 1) == NULL);
   alloc_br_null = 0;
 
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
@@ -303,7 +301,7 @@ START_TEST(handle_returnstd_test)
   job           *pjob;
 
   pjob = new job();
-  preq = (batch_request *)calloc(1, sizeof(batch_request));
+  preq = new batch_request();
 
   strcpy(pjob->ji_qs.ji_jobid, "1.napali");
   strcpy(pjob->ji_qs.ji_fileprefix, "1.napali");
@@ -673,7 +671,13 @@ START_TEST(update_substate_from_exit_status_test)
   fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
   fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RUNNING,
               "Shouldn't update substate when job is being deleted");
-
+  
+  pjob->ji_being_deleted = false;
+  pjob->ji_qs.ji_substate = JOB_SUBSTATE_RUNNING;
+  pjob->ji_qs.ji_un.ji_exect.ji_exitstat = JOB_EXEC_RETRY_PROLOGUE;
+  fail_unless(update_substate_from_exit_status(pjob, &alreadymailed,"Some random message") == PBSE_NONE);
+  fail_unless(pjob->ji_qs.ji_substate == JOB_SUBSTATE_RERUN);
+  fail_unless(log_err_buf.find("prologue") != std::string::npos);
   }
 END_TEST
 

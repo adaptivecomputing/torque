@@ -283,12 +283,15 @@ int set_tokens(pbs_attribute *attr, pbs_attribute *newAttr, enum batch_op op){re
 int comp_ll(struct pbs_attribute *attr, struct pbs_attribute *with) {return 0;}
 int  decode_b(pbs_attribute *patr, const char *name, const char *rn, const char *val, int) {return 0;}
 int nextjobnum_chk(pbs_attribute *pattr, void *pobject, int actmode) {return 0;}
-struct batch_request *alloc_br(int type) {return NULL;}
 int svr_chk_owner(struct batch_request *preq, job *pjob) {return 0;}
 int comp_checkpoint(pbs_attribute *attr, pbs_attribute *with) {return 0;}
-batch_request *get_remove_batch_request(char *br_id) {return NULL;}
 long calc_job_cost(job *pjob) {return(0);}
-int issue_to_svr(const char *servern, struct batch_request **preq, void (*replyfunc)(struct work_task *)) {return 0;}
+
+int issue_to_svr(const char *servern, batch_request *preq, void (*replyfunc)(struct work_task *))
+  {
+  return 0;
+  }
+
 int que_to_local_svr(struct batch_request *preq) {return 0;}
 int job_set_wait(pbs_attribute *pattr, void *pjob, int mode) {return 0;}
 int get_batch_request_id(batch_request *preq) {return 0;}
@@ -320,9 +323,10 @@ const char *id_map::get_name(int internal_job_id)
 
 id_map job_mapper;
 
-char *get_correct_jobname(const char *id)
+const char *get_correct_jobname(const char *id, std::string &correct)
   {
-  return(strdup(id));
+  correct = id;
+  return(correct.c_str());
   }
 
 int encode_complete_req(
@@ -530,7 +534,31 @@ bool job_array::is_deleted() const
   return(this->being_deleted);
   }
 
+bool job_array::mark_end_of_subjob(job *pjob)
+  {
+  return(false);
+  }
+
 int check_default_gpu_mode_str(pbs_attribute *pattr, void *pobj, int mode)
   {
   return(PBSE_NONE);
+  }
+
+batch_request::~batch_request() {}
+
+batch_request::batch_request(int type) : rq_type(type)
+  {
+  }
+
+batch_request *get_remove_batch_request(
+
+  const char *br_id)
+
+  {
+  return(NULL);
+  }
+
+long time_str_to_seconds(const char *str)
+  {
+  return(0);
   }

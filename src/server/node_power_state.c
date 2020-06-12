@@ -243,7 +243,7 @@ int set_node_power_state(
     //Can't change the power state on a node with running jobs.
     return PBSE_CANT_CHANGE_POWER_STATE_WITH_JOBS_RUNNING;
     }
-  struct batch_request *request = alloc_br(PBS_BATCH_ChangePowerState);
+  batch_request *request = new batch_request(PBS_BATCH_ChangePowerState);
   if (request == NULL)
     {
     return PBSE_SYSTEM;

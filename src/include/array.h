@@ -160,7 +160,7 @@ class job_array
   ~job_array();
 
   int  parse_array_request(const char *request);
-  int  set_slot_limit(char *request);
+  int  set_slot_limit(const char *request);
   int  set_idle_slot_limit(long requested_limit);
   void set_submit_host(const char *submit_host);
   void set_owner(const char *owner);
@@ -175,6 +175,7 @@ class job_array
   bool need_to_update_slot_limits() const;
   void mark_deleted();
   bool is_deleted() const;
+  bool mark_end_of_subjob(job *pjob);
   };
 
 

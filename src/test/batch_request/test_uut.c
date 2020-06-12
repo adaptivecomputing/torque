@@ -7,10 +7,10 @@
 START_TEST(test_one)
   {
 
-  batch_request *pBr1 = (batch_request *)calloc(1,sizeof(batch_request));
-  batch_request *pBr2 = (batch_request *)calloc(1,sizeof(batch_request));
-  batch_request *pBr3 = (batch_request *)calloc(1,sizeof(batch_request));
-  batch_request *pBr4 = (batch_request *)calloc(1,sizeof(batch_request));
+  batch_request *pBr1 = new (batch_request);
+  batch_request *pBr2 = new (batch_request);
+  batch_request *pBr3 = new (batch_request);
+  batch_request *pBr4 = new (batch_request);
 
   int rc = get_batch_request_id(pBr1);
   fail_unless(rc == PBSE_NONE);
@@ -41,13 +41,49 @@ START_TEST(test_one)
 END_TEST
 
 
-
-
-
-START_TEST(test_two)
+START_TEST(test_constructor)
   {
+  batch_request *preq = new batch_request(PBS_BATCH_QueueJob);
+
+  fail_unless(preq->rq_type == PBS_BATCH_QueueJob);
+  fail_unless(preq->rq_conn == -1);
+  fail_unless(preq->rq_orgconn == -1);
+  fail_unless(preq->rq_reply.brp_choice == BATCH_REPLY_CHOICE_NULL);
+  fail_unless(preq->rq_noreply == FALSE);
+  fail_unless(preq->rq_time > 0);
+
+  delete preq;
   }
 END_TEST
+
+
+START_TEST(test_br_copy_constructor)
+  {
+  batch_request preq;
+  batch_request *dup;
+
+  preq.rq_perm = 1;
+  strcpy(preq.rq_user, "dbeer");
+  strcpy(preq.rq_host, "napali");
+  preq.rq_extend = strdup("tom");
+  preq.rq_type = PBS_BATCH_RunJob;
+  preq.rq_ind.rq_run.rq_destin = strdup("napali");
+
+  dup = new batch_request(preq);
+  fail_unless(dup != NULL);
+  fail_unless(!strcmp(dup->rq_extend, "tom"));
+  fail_unless(!strcmp(dup->rq_user, "dbeer"));
+  fail_unless(!strcmp(dup->rq_host, "napali"));
+  fail_unless(!strcmp(dup->rq_extend, "tom"));
+  fail_unless(!strcmp(dup->rq_ind.rq_run.rq_destin, "napali"));
+
+  preq.rq_type = PBS_BATCH_Rerun;
+  const char *rerun_jobid = "4.roshar";
+  strcpy(preq.rq_ind.rq_rerun, rerun_jobid);
+  batch_request *rerun_dep = new batch_request(preq);
+  fail_unless(!strcmp(rerun_dep->rq_ind.rq_rerun, rerun_jobid));
+  }
+END_TEST 
 
 
 
@@ -58,10 +94,11 @@ Suite *batch_request_suite(void)
 
   TCase *tc_core = tcase_create("test_one");
   tcase_add_test(tc_core, test_one);
+  tcase_add_test(tc_core, test_br_copy_constructor);
   suite_add_tcase(s, tc_core);
 
-  tc_core = tcase_create("test_two");
-  tcase_add_test(tc_core, test_two);
+  tc_core = tcase_create("test_constructor");
+  tcase_add_test(tc_core, test_constructor);
   suite_add_tcase(s, tc_core);
 
   return(s);

@@ -26,6 +26,7 @@ pthread_mutex_t *listener_command_mutex;
 int listening_socket;
 threadpool_t *task_pool;
 int called;
+bool get_svr_attr_str_return_svr_sm_attr = false;
 
 int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
@@ -128,7 +129,12 @@ void log_err(int errnum, const char *routine, const char *text) {}
 void log_record(int eventtype, int objclass, const char *objname, const char *text) {}
 void log_event(int eventtype, int objclass, const char *objname, const char *text) {}
 
-job::job() {}
+job::job() 
+  {
+  memset(&this->ji_qs, 0, sizeof(this->ji_qs));
+  memset(this->ji_wattr, 0, sizeof(this->ji_wattr));
+  }
+
 job::~job() {}
 
 bool empty_body = false;
@@ -141,12 +147,28 @@ int get_svr_attr_str(
   {
   static char *bodyfmt = strdup("Zaphod");
 
+  if (get_svr_attr_str_return_svr_sm_attr)
+    {
+    *str = server.sv_attr[SRV_ATR_SendmailPath].at_val.at_str;
+    return(0);
+    }
+
   if ((index == SRV_ATR_MailBodyFmt) &&
       (empty_body == true))
     {
     *str = bodyfmt;
     }
 
+  return(0);
+  }
+
+int resource_index_to_string(
+
+  std::string           &output,
+  std::vector<resource> &resources,
+  size_t                 index)
+
+  {
   return(0);
   }
 

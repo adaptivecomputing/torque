@@ -217,6 +217,11 @@ int acct_job(
   sprintf(local_buf, "etime=%ld ",
     pjob->ji_wattr[JOB_ATR_etime].at_val.at_long);
   ds += local_buf;
+  
+  /* how many times the job has started */
+  sprintf(local_buf, "start_count=%ld ",
+    pjob->ji_wattr[JOB_ATR_start_count].at_val.at_long);
+  ds += local_buf;
 
   /* execution start time */
   sprintf(local_buf, "start=%ld ",
@@ -273,6 +278,14 @@ int acct_job(
     delete_link(&pal->al_link);
     free(pal);
     }  /* END while (pal != NULL) */
+
+  if ((pjob->ji_wattr[JOB_ATR_LRequest].at_val.at_str != NULL) &&
+      ((pjob->ji_wattr[JOB_ATR_LRequest].at_flags & ATR_VFLAG_SET) != 0))
+    {
+    ds += "Resource_Request_2.0=";
+    ds += pjob->ji_wattr[JOB_ATR_LRequest].at_val.at_str;
+    ds += " ";
+    }
 
 #ifdef ATTR_X_ACCT
 

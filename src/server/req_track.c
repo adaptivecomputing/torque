@@ -332,10 +332,9 @@ void issue_track(
   job *pjob)
 
   {
-  struct batch_request *preq;
-  char                 *pc;
-  char                 *sname;
-  char                  log_buf[LOCAL_LOG_BUF_SIZE];
+  char          *pc;
+  char          *sname;
+  char           log_buf[LOCAL_LOG_BUF_SIZE];
 
   if ((pc = strchr(pjob->ji_qs.ji_jobid, '.')) == NULL)
     {
@@ -359,17 +358,14 @@ void issue_track(
     return;
     }
 
-  preq = alloc_br(PBS_BATCH_TrackJob);
+  batch_request preq(PBS_BATCH_TrackJob);
 
-  if (preq == NULL)
-    return;
+  preq.rq_ind.rq_track.rq_hopcount = pjob->ji_wattr[JOB_ATR_hopcount].at_val.at_long;
 
-  preq->rq_ind.rq_track.rq_hopcount = pjob->ji_wattr[JOB_ATR_hopcount].at_val.at_long;
+  strcpy(preq.rq_ind.rq_track.rq_jid, pjob->ji_qs.ji_jobid);
+  strcpy(preq.rq_ind.rq_track.rq_location, server_name);
 
-  strcpy(preq->rq_ind.rq_track.rq_jid, pjob->ji_qs.ji_jobid);
-  strcpy(preq->rq_ind.rq_track.rq_location, server_name);
-
-  preq->rq_ind.rq_track.rq_state[0] = pjob->ji_wattr[JOB_ATR_state].at_val.at_char;
+  preq.rq_ind.rq_track.rq_state[0] = pjob->ji_wattr[JOB_ATR_state].at_val.at_char;
 
   pc = pjob->ji_qs.ji_jobid;
 
@@ -377,6 +373,4 @@ void issue_track(
     pc++;
 
   issue_to_svr(++pc, &preq, NULL);
-  if (preq != NULL)
-    free_br(preq);
   } // END issue_track()

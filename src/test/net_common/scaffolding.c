@@ -1,10 +1,18 @@
 #include "license_pbs.h" /* See here for the software license */
 #include <stdlib.h>
 #include <netinet/in.h>
+#include <poll.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
 bool socket_success = true;
 bool close_success = true;
 bool connect_success = true;
+
+int   global_poll_rc = 0;
+short global_poll_revents = 0;
+int   global_getsockopt_rc = 0;
+int   global_sock_errno = 0;
 
 struct addrinfo * insert_addr_name_info(struct addrinfo *pAddrInfo,const char *host)
 
@@ -76,4 +84,19 @@ int connect(
     return(-1);
   }
 
+int ppoll(struct pollfd *fds, nfds_t nfds, const struct timespec *timeout, const sigset_t *sigmask)
+  {
+  fds->revents = global_poll_revents;
 
+  return(global_poll_rc);
+  }
+
+int getsockopt(int sockfd, int level, int optname, void *optval, socklen_t *optlen) throw()
+  {
+  int *iptr;
+
+  iptr = (int *)optval;
+  *iptr = global_sock_errno;
+
+  return(global_getsockopt_rc);
+  }

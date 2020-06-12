@@ -14,7 +14,7 @@ job::job() : ji_plugin_usage_info(), ji_momstat(0), ji_modified(0), ji_momhandle
              ji_have_nodes_request(false), ji_external_clone(NULL),
              ji_cray_clone(NULL), ji_parent_job(NULL), ji_internal_id(-1),
              ji_being_recycled(false), ji_last_reported_time(0), ji_mod_time(0),
-             ji_queue_counted(0), ji_being_deleted(false), ji_commit_done(false)
+             ji_queue_counted(0), ji_being_deleted(false), ji_commit_done(false), ji_routed(true)
 
   {
   memset(this->ji_arraystructid, 0, sizeof(ji_arraystructid));
@@ -170,7 +170,13 @@ void job::set_plugin_resource_usage_from_json(
   std::vector<std::string>keys = resources.getMemberNames();
 
   for (size_t i = 0; i < keys.size(); i++)
-    this->ji_plugin_usage_info[keys[i]] = resources[keys[i]].asString();
+    {
+    if (keys[i] != "")
+      {
+      if (resources[keys[i]].empty() == false)
+        this->ji_plugin_usage_info[keys[i]] = resources[keys[i]].asString();
+      }
+    }
   }
 
 
@@ -185,4 +191,10 @@ void job::set_plugin_resource_usage_from_json(
 
   if (reader.parse(json_str, resources) == true)
     this->set_plugin_resource_usage_from_json(resources);
+  }
+
+
+size_t job::number_of_plugin_resources() const
+  {
+  return(this->ji_plugin_usage_info.size());
   }

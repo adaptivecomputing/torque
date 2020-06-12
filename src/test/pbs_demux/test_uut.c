@@ -6,10 +6,14 @@
 
 #include "pbs_error.h"
 
-START_TEST(test_one)
+void readit(int, struct routem*);
+
+START_TEST(test_readit)
   {
-
-
+  // this is a void function but expect
+  //  immediate return with no segfault
+  //  since readset not initialized
+  readit(0, NULL);
   }
 END_TEST
 
@@ -23,8 +27,8 @@ END_TEST
 Suite *pbs_demux_suite(void)
   {
   Suite *s = suite_create("pbs_demux_suite methods");
-  TCase *tc_core = tcase_create("test_one");
-  tcase_add_test(tc_core, test_one);
+  TCase *tc_core = tcase_create("test_readit");
+  tcase_add_test(tc_core, test_readit);
   suite_add_tcase(s, tc_core);
 
   tc_core = tcase_create("test_two");

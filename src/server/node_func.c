@@ -114,6 +114,7 @@ job *get_job_from_job_usage_info(job_usage_info *jui, struct pbsnode *pnode);
 
 
 
+pbsnode *get_compute_node(const char *node_name);
 struct pbsnode *alps_reporter;
 
 
@@ -2001,7 +2002,7 @@ void load_node_notes()
           (cray_enabled == true) &&
           (isdigit(node_name.at(0))))
         {
-        pnode = create_alps_subnode(alps_reporter, node_name.c_str());
+        pnode = get_compute_node(node_name.c_str());
         }
 
       if (pnode != NULL)

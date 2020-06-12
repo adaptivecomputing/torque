@@ -257,7 +257,7 @@ extern proc_stat_t *get_proc_stat(int pid);
 extern void  term_job(job *);
 int          TTmpDirName(job *, char *, int);
 
-extern bool  check_pwd(job *);
+extern int   check_pwd(job *);
 extern int   task_save(task *) ;
 extern void  DIS_rpp_reset(void);
 extern void  checkret(char **, long);
@@ -268,7 +268,7 @@ void         clear_servers();
 
 void         set_jobs_substate(job *pjob, int new_substate);
 
-int          become_the_user(job *pjob);
+int          become_the_user(job *pjob, bool want_effective);
 
 bool         am_i_mother_superior(const job &pjob);
 

@@ -116,6 +116,36 @@ int hash_add_item(
 
 
 
+void hash_priority_add_or_exit(
+
+  job_data_container *head,
+  const char         *name,
+  const char         *value,
+  int                 var_type) // lower values have higher priority (see "_DATA" suffixed macros in pbs_contants.h)
+
+  {
+  bool      should_add = true;
+  job_data *old_item = head->find(name);
+
+  if (old_item != NULL)
+    {
+    // Only call insert if we have priority over the old item
+    // Note that items with the same priority will be added
+    if (var_type > old_item->var_type)
+      should_add = false;
+    }
+
+  if (should_add)
+    {
+    if (hash_add_item(head, name, value, var_type, SET) == FALSE)
+      {
+      fprintf(stderr, "Error allocating memory for hash (%s)-(%s)\n", name, value);
+      exit(1);
+      }
+    }
+  } // END hash_priority_add_or_exit()
+
+
 
 /* A wrapper for hash to accomodate for memory allocation errors
  */

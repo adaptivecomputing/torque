@@ -310,7 +310,7 @@ int qdel_main(
     
 cnt:
     
-    connect = cnt2server(server_name.c_str());
+    connect = cnt2server(server_name.c_str(), false);
     
     if (connect <= 0)
       {

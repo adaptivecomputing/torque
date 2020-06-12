@@ -68,6 +68,11 @@ hwloc_uint64_t Socket::getMemory() const
   return(sock_mem);
   }
 
+hwloc_uint64_t Socket::getAvailableMemory() const
+  {
+  return(sock_mem);
+  }
+
 hwloc_uint64_t Socket::get_memory_for_completely_free_chips(
 
   unsigned long diff,
@@ -84,6 +89,11 @@ bool Socket::is_completely_free() const
   }
 
 Socket::Socket(const Json::Value &json_layout, std::vector<std::string> &valid_ids)
+  {
+  json_socket++;
+  }
+
+Socket::Socket(const std::string &json_layout, std::vector<std::string> &valid_ids)
   {
   json_socket++;
   }
@@ -141,8 +151,8 @@ bool Socket::spread_place(
     
   req        &r,
   allocation &master,
-  int         execution_slots_per,
-  int        &execution_slots_remainder,
+  allocation &remaining,
+  allocation &remainder,
   bool        chips)
 
   {
@@ -207,7 +217,7 @@ int Socket::getAvailableChips() const
   return(1);
   }
 
-float Socket::how_many_tasks_fit(const req &r, int place_type) const
+double Socket::how_many_tasks_fit(const req &r, int place_type) const
 
   {
   return(num_tasks_fit);
@@ -242,9 +252,21 @@ bool Socket::is_available() const
 
 void Socket::displayAsJson(Json::Value &out, bool jobs) const {}
 
-unsigned long req::getMemory() const
+void Socket::save_allocations(const Socket &other) {}
+
+int Socket::get_total_gpus() const 
+  {
+  return(0);
+  }
+
+unsigned long long req::get_memory_per_task() const
   {
   return(req_mem);
+  }
+
+int req::getTaskCount() const
+  {
+  return(1);
   }
 
 int req::getPlaceCores() const
@@ -346,7 +368,7 @@ void allocation::set_place_type(const std::string &place)
   this->place_type = my_placement_type;
   }
 
-void allocation::place_indices_in_string(std::string &out, int which) {}
+void allocation::place_indices_in_string(cgroup_info &cgi) {}
 
 int allocation::add_allocation(allocation const &a) 
   {
@@ -363,6 +385,8 @@ allocation &allocation::operator =(const allocation &other)
   return(*this);
   }
 
+void allocation::adjust_for_spread(unsigned int quantity, bool find_remainder) {}
+
 PCI_Device::~PCI_Device() {}
 PCI_Device::PCI_Device() {}
 PCI_Device::PCI_Device(const PCI_Device &other) {}
@@ -378,7 +402,7 @@ int req::getMics() const
   return(0);
   }
 
-int req::getGpus() const
+int req::get_gpus() const
   {
   return(0);
   }

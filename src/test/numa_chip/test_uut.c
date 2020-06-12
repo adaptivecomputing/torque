@@ -16,6 +16,65 @@ extern std::string thread_type;
 extern Json::Value alloc_json;
 extern void setAllocJson(int);
 
+
+START_TEST(test_get_contiguous_thread_vector)
+  {
+  Chip             c;
+  std::vector<int> list;
+
+  // Make sure a memory only node doesn't crash
+  fail_unless(c.getContiguousThreadVector(list, 34) == false);
+
+  c.setId(0);
+  c.setThreads(32);
+  c.setCores(16);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c.make_core(i);
+
+  fail_unless(c.getContiguousThreadVector(list, 34) == true);
+  fail_unless(list.size() == 32);
+  }
+END_TEST
+
+
+START_TEST(test_get_contiguous_core_vector)
+  {
+  Chip             c;
+  std::vector<int> list;
+  
+  // Make sure a memory only node doesn't crash
+  fail_unless(c.getContiguousCoreVector(list, 18) == false);
+
+  c.setId(0);
+  c.setThreads(32);
+  c.setCores(16);
+  c.setMemory(6);
+  c.setChipAvailable(true);
+  for (int i = 0; i < 16; i++)
+    c.make_core(i);
+
+  fail_unless(c.getContiguousCoreVector(list, 18) == true);
+  fail_unless(list.size() == 16);
+  }
+END_TEST
+
+
+START_TEST(test_initialize_cores_from_strings)
+  {
+  Chip        c;
+  std::string cores;
+  std::string threads;
+
+  // Make sure this doesn't segfault for a memory only node
+  c.initialize_cores_from_strings(cores, threads);
+  fail_unless(c.getTotalCores() == 0);
+  fail_unless(c.getTotalThreads() == 0);
+  }
+END_TEST
+
+
 START_TEST(test_place_tasks_execution_slots)
   {
   const char        *jobid = "1.napali";
@@ -420,22 +479,23 @@ START_TEST(test_spread_place)
   Json::Value        out;
 
   allocation         a(jobid);
+  allocation         remaining;
+  allocation         remainder;
   Chip               c;
   c.setId(0);
   c.setThreads(32);
   c.setCores(16);
   c.setMemory(6);
   c.setChipAvailable(true);
+  c.set_gpus(2);
   for (int i = 0; i < 16; i++)
     c.make_core(i);
 
-  int                remaining = 0;
   a.place_type = exclusive_chip;
 
   // Make sure we get 4 evenly spread cores
-  fail_unless(c.spread_place(r, a, 4, remaining) == true);
-  
-
+  remaining.cpus = 4;
+  fail_unless(c.spread_place(r, a, remaining, remainder) == true);
 
   setAllocJson(4);//initialize alloc_json to this tests configuration
   c.displayAsJson(out, true);
@@ -446,14 +506,19 @@ START_TEST(test_spread_place)
 
   // Make sure we do not place another task on this chip before freeing the old one
   fail_unless(c.reserve_core(0, a) == false);
-  remaining = 1;
-  fail_unless(c.spread_place(r, a, 4, remaining) == false);
+  remaining.cpus = 4;
+  remainder.cpus = 1;
+  remaining.gpus = 1;
+  remainder.gpus = 1;
+  fail_unless(c.spread_place(r, a, remaining, remainder) == false);
   fail_unless(c.has_socket_exclusive_allocation() == false);
   c.free_task(jobid);
   
   // Check that we place 5 cores correctly
-  fail_unless(c.spread_place(r, a, 4, remaining) == true);
-  fail_unless(remaining == 0, "remaining = %d", remaining);
+  fail_unless(c.spread_place(r, a, remaining, remainder) == true);
+  fail_unless(remainder.cpus == 0, "remainder = %d", remainder.cpus);
+  fail_unless(remainder.gpus == 0, "remainder = %d", remainder.gpus);
+  fail_unless(remaining.gpus == 0, "remainder = %d", remaining.gpus);
   fail_unless(c.reserve_core(0, a) == false);
   fail_unless(c.reserve_core(3, a) == false);
   fail_unless(c.reserve_core(6, a) == false);
@@ -462,15 +527,17 @@ START_TEST(test_spread_place)
 
   c.free_task(jobid);
   // Make sure we get core 0 if we request 0 + 1 in the remainder
-  remaining = 1;
-  fail_unless(c.spread_place(r, a, 0, remaining) == true);
+  remaining.cpus = 0;
+  remainder.cpus = 1;
+  fail_unless(c.spread_place(r, a, remaining, remainder) == true);
   fail_unless(c.reserve_core(0, a) == false);
-  fail_unless(remaining == 0);
+  fail_unless(remainder.cpus == 0);
  
   // Check what happens we we place an empty set on the chip
   c.free_task(jobid);
   a.place_type = exclusive_socket;
-  fail_unless(c.spread_place(r, a, 0, remaining) == true);
+  remaining.cpus = 0;
+  fail_unless(c.spread_place(r, a, remaining, remainder) == true);
   fail_unless(c.getAvailableCores() == 0);
   fail_unless(c.getAvailableThreads() == 0);
   fail_unless(c.has_socket_exclusive_allocation() == true);
@@ -478,9 +545,10 @@ START_TEST(test_spread_place)
   c.free_task(jobid);
   allocation a2(jobid2);
   a2.place_type = exclusive_chip;
-  remaining = 0;
-  fail_unless(c.spread_place(r, a2, 40, remaining) == false);
-  fail_unless(c.spread_place(r, a2, 18, remaining) == true);
+  remaining.cpus = 40;
+  fail_unless(c.spread_place(r, a2, remaining, remainder) == false);
+  remaining.cpus = 18;
+  fail_unless(c.spread_place(r, a2, remaining, remainder) == true);
   fail_unless(c.getAvailableCores() == 0);
   fail_unless(c.getAvailableThreads() == 0);
   c.free_task(jobid2);
@@ -493,7 +561,8 @@ START_TEST(test_spread_place)
   int tasks = c.place_task(r2, a3, 1, host);
   fail_unless(tasks == 1);
   // We shouldn't place anything in spread place unless we're completely free
-  fail_unless(c.spread_place(r, a2, 18, remaining) == false);
+  remaining.cpus = 18;
+  fail_unless(c.spread_place(r, a2, remaining, remainder) == false);
   }
 END_TEST
 
@@ -741,6 +810,18 @@ START_TEST(test_how_many_tasks_fit)
   c.setMemory(5);
   tasks = c.how_many_tasks_fit(r, 0);
   fail_unless(tasks == 5, "%d tasks fit, expected 5", tasks);
+  
+  // Make sure we handle memory per task
+  req rpt;
+  rpt.set_value("lprocs", "1", false);
+  rpt.set_value("total_memory", "5kb", false);
+  tasks = c.how_many_tasks_fit(rpt, 0);
+  fail_unless(tasks == 1, "%d tasks fit, expected 1", tasks);
+
+  rpt.set_value("task_count", "5", false);
+  rpt.set_value("total_memory", "5kb", false);
+  tasks = c.how_many_tasks_fit(rpt, 0);
+  fail_unless(tasks == 5, "%d tasks fit, expected 5", tasks);
 
   thread_type = use_cores;
   // Cores are currently 0
@@ -774,6 +855,19 @@ START_TEST(test_how_many_tasks_fit)
   fail_unless(c.how_many_tasks_fit(r2, 0) == 5);
   r2.set_value("mics", "1", false);
   fail_unless(c.how_many_tasks_fit(r2, 0) == 0);
+
+  Chip large_mem;
+  large_mem.setThreads(8);
+  large_mem.setMemory(128849018880); // 256 GB
+  large_mem.setCores(8);
+  large_mem.setChipAvailable(true);
+  for (int i = 0; i < 8; i++)
+    large_mem.make_core(i);
+  req r3;
+  r3.set_value("lprocs", "8", false);
+  r3.set_value("memory", "128849018880kb", false); // 256 gb
+  float fitting_tasks = large_mem.how_many_tasks_fit(r3, exclusive_none);
+  fail_unless(fitting_tasks == 1.0);
   }
 END_TEST
 
@@ -1198,6 +1292,7 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_spread_place_threads);
   tcase_add_test(tc_core, test_spread_place_cores);
   tcase_add_test(tc_core, test_spread_place);
+  tcase_add_test(tc_core, test_initialize_cores_from_strings);
   suite_add_tcase(s, tc_core);
   
   tc_core = tcase_create("test_displayAsString");
@@ -1209,6 +1304,11 @@ Suite *numa_socket_suite(void)
   tcase_add_test(tc_core, test_place_all_execution_slots);
   tcase_add_test(tc_core, test_initialize_allocation);
   tcase_add_test(tc_core, test_place_tasks_execution_slots);
+  suite_add_tcase(s, tc_core);
+
+  tc_core = tcase_create("test_get_contiguous_core_vector");
+  tcase_add_test(tc_core, test_get_contiguous_core_vector);
+  tcase_add_test(tc_core, test_get_contiguous_thread_vector);
   suite_add_tcase(s, tc_core);
   
   return(s);

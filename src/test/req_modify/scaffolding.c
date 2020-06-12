@@ -27,7 +27,7 @@ int LOGLEVEL = 7; /* force logging code to be exercised as tests run */
 
 static int acl_check_n = 0;
 
-char *get_correct_jobname_return;
+std::string get_correct_jobname_return;
 
 struct batch_request *alloc_br(int type)
   {
@@ -218,7 +218,7 @@ int get_svr_attr_b(int index, bool *b)
 
 batch_request *get_remove_batch_request(
 
-  char *br_id)
+  const char *br_id)
 
   {
   return(NULL);
@@ -270,12 +270,16 @@ batch_request *duplicate_request(batch_request *preq, int type)
   return(NULL);
   }
 
-char *get_correct_jobname(char const *p)
+const char *get_correct_jobname(const char *jobid, std::string &correct)
   {
-  if (get_correct_jobname_return == NULL)
-    return(strdup(p));
+  if (get_correct_jobname_return.size() == 0)
+    {
+    correct = jobid;
+    }
+  else
+    correct = get_correct_jobname_return;
 
-  return(get_correct_jobname_return);
+  return(correct.c_str());
   }
 
 job *chk_job_request(char *p, batch_request *b)
@@ -330,3 +334,22 @@ void job::set_plugin_resource_usage(
   }
 
 void update_slot_held_jobs(job_array *pa, int num_to_release) {}
+
+batch_request::batch_request(const batch_request &other)
+  {
+  }
+
+batch_request::batch_request(int type)
+  {
+  }
+
+void batch_request::update_object_id(int index) {}
+
+batch_request::batch_request()
+  {
+  }
+
+batch_request::~batch_request()
+
+  {
+  }

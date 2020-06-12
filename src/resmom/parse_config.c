@@ -100,6 +100,7 @@
 #include "authorized_hosts.hpp"
 #include "csv.h"
 #include "json/json.h"
+#include "req.hpp"
 
 void encode_used(job *pjob, int perm, Json::Value *, tlist_head *phead);
 void encode_flagged_attrs(job *pjob, int perm, Json::Value *job_info, tlist_head *phead);
@@ -127,6 +128,7 @@ double           cputfactor = 1.00;
 float            ideal_load_val = -1.0;
 int              exec_with_exec = 0;
 int              ServerStatUpdateInterval = DEFAULT_SERVER_STAT_UPDATES;
+int              varattr_tv = -1;
 float            max_load_val = -1.0;
 char            *auto_ideal_load = NULL;
 char            *auto_max_load   = NULL;
@@ -165,7 +167,13 @@ char           **maskclient = NULL; /* wildcard connections */
 char             MOMConfigVersion[64];
 int              MOMConfigDownOnError      = 0;
 int              MOMConfigRestart          = 0;
+// Setting this variable is redundant for cgroups, so we'll default to false
+// It can only cause us pain.
+#ifdef PENABLE_LINUX_CGROUPS
+int              MOMCudaVisibleDevices     = 0;
+#else
 int              MOMCudaVisibleDevices     = 1;
+#endif
 double           wallfactor = 1.00;
 std::vector<cphosts> pcphosts;
 long             pe_alarm_time = PBS_PROLOG_TIME;
@@ -189,6 +197,10 @@ int              max_join_job_wait_time = MAX_JOIN_WAIT_TIME;
 int              resend_join_job_wait_time = RESEND_WAIT_TIME;
 int              mom_hierarchy_retry_time = NODE_COMM_RETRY_TIME;
 std::string      presetup_prologue;
+unsigned long    max_memory = 0;
+unsigned long    max_swap = 0;
+bool             get_cray_taskstats = false;
+u_long           pbsclient;
 
 
 
@@ -299,6 +311,11 @@ unsigned long setmomhierarchyretrytime(const char *);
 unsigned long setjobdirectorysticky(const char *);
 unsigned long setcudavisibledevices(const char *);
 unsigned long set_presetup_prologue(const char *);
+unsigned long set_max_physical_memory(const char *);
+unsigned long set_max_swap_memory(const char *);
+unsigned long set_get_cray_taskstats(const char *);
+unsigned long set_node_check_on_job_start(const char *);
+unsigned long set_node_check_on_job_end(const char *);
 
 struct specials special[] = {
   { "force_overwrite",     setforceoverwrite}, 
@@ -384,6 +401,11 @@ struct specials special[] = {
   { "cuda_visible_devices", setcudavisibledevices},
   { "cray_check_rur",       setrur },
   { "presetup_prologue",    set_presetup_prologue},
+  { "max_physical_memory",  set_max_physical_memory},
+  { "max_swap_memory",      set_max_swap_memory},
+  { "get_cray_taskstats",   set_get_cray_taskstats},
+  { "node_check_on_job_start", set_node_check_on_job_start },
+  { "node_check_on_job_end", set_node_check_on_job_end },
   { NULL,                  NULL }
   };
 
@@ -501,6 +523,7 @@ unsigned long setforceoverwrite(
 
   return(0); /* error */
   }
+
 unsigned long setrur(
 
   const char *value)
@@ -516,6 +539,64 @@ unsigned long setrur(
     
   return(0); /* error */
   }/* end setrur() */
+
+
+
+/*
+ * set_max_physical_memory()
+ *
+ * @param value - the maximum memory value in the format <number><memory units>
+ */
+
+unsigned long set_max_physical_memory(
+
+  const char *value)
+
+  {
+  if (read_mem_value(value, max_memory) != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Couldn't parse a memory value from '%s'", value);
+    log_err(-1, __func__, log_buffer);
+    return(0);
+    }
+
+  return(1);
+  }
+
+
+
+unsigned long set_max_swap_memory(
+
+  const char *value)
+
+  {
+  if (read_mem_value(value, max_swap) != PBSE_NONE)
+    {
+    sprintf(log_buffer, "Couldn't parse a memory value from '%s'", value);
+    log_err(-1, __func__, log_buffer);
+    return(0);
+    }
+
+  return(1);
+  }
+
+
+
+unsigned long set_get_cray_taskstats(
+
+  const char *value)
+
+  {
+  int enable;
+
+  if ((enable = setbool(value)) != -1)
+    {
+    get_cray_taskstats = (bool)enable;
+    return(1);
+    }
+    
+  return(0); /* error */
+  }
 
 
 unsigned long setidealload(
@@ -625,8 +706,6 @@ unsigned long setautoidealload(
 
 
 
-
-
 unsigned long setallocparcmd(
 
   const char *value)  /* I */
@@ -638,8 +717,6 @@ unsigned long setallocparcmd(
 
   return(1);
   }  /* END setallocparcmd() */
-
-
 
 
 
@@ -747,6 +824,46 @@ unsigned long setnodecheckinterval(
 
 
 
+unsigned long set_node_check_on_job_start(
+
+  const char *value)
+
+  {
+  int enable;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if ((enable = setbool(value)) != -1)
+    {
+    PBSNodeCheckProlog = enable;
+    return(1);
+    }
+
+  return(0);
+  }  /* END set_node_check_on_job_start() */
+
+
+
+unsigned long set_node_check_on_job_end(
+
+  const char *value)
+
+  {
+  int enable;
+
+  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, value);
+
+  if ((enable = setbool(value)) != -1)
+    {
+    PBSNodeCheckEpilog = enable;
+    return(1);
+    }
+
+  return(0);
+  }  /* END set_node_check_on_job_end() */
+
+
+
 unsigned long settimeout(
 
   const char *value)
@@ -789,8 +906,6 @@ unsigned long setmaxload(
 
 
 
-
-
 unsigned long setlogfilemaxsize(
 
   const char *value)  /* I */
@@ -807,7 +922,6 @@ unsigned long setlogfilemaxsize(
 
   return(1);
   }
-
 
 
 
@@ -839,7 +953,6 @@ unsigned long setlogdirectory(
 
   return(1);
   }
-
 
 
 
@@ -923,7 +1036,7 @@ u_long setvarattr(
   ptr = value;
 
   pva->va_ttl = strtol(ptr, NULL, 10);
-
+  varattr_tv = pva->va_ttl;
   /* step forward to end of TTL */
 
   while ((!isspace(*ptr)) &&
@@ -1446,19 +1559,22 @@ u_long setpbsclient(
     {
     /* FAILURE */
 
-    return(1);
+    return(0);
     }
 
   rc = addclient(value);
 
-  if (rc != 0)
+  // addclient() returns the address on success, 0 on failure
+  if (rc == 0)
     {
     /* FAILURE */
 
-    return(1);
+    return(0);
     }
 
-  return(0);
+  pbsclient = rc;
+
+  return(1);
   }  /* END setpbsclient() */
 
 
@@ -2287,7 +2403,11 @@ void reset_config_vars()
   memset(MOMConfigVersion, 0, sizeof(MOMConfigVersion));
   MOMConfigDownOnError = 0;
   MOMConfigRestart = 0;
+#ifdef PENABLE_LINUX_CGROUPS
+  MOMCudaVisibleDevices = 0;
+#else
   MOMCudaVisibleDevices = 1;
+#endif
   wallfactor = 1.00;
   pcphosts.clear();
   pe_alarm_time = PBS_PROLOG_TIME;
@@ -3225,7 +3345,6 @@ const char *reqgres(
 
     strncat(GResBuf, tmpLine, (sizeof(GResBuf) - strlen(GResBuf) - 1));
     }  /* END for (cp) */
-
   return(GResBuf);
   }  /* END reqgres() */
 
