@@ -1507,7 +1507,7 @@ int depend_on_que(
 	return(PBSE_BAD_PARAMETER);
 	}
 
-  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, true, rc);
+  boost::shared_ptr<mutex_mgr> job_mutex = create_managed_mutex(pjob->ji_mutex, false, rc);
   if (rc != PBSE_NONE)
 	{
 	char log_buf[LOG_BUF_SIZE];
