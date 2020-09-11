@@ -344,6 +344,7 @@ int process_node(
   int                 avail_procs       = 0;
   int                 num_compute_units = 0;
   int                 socket_count      = 0;
+  int                 numa_count        = 0;
   unsigned long       memory            = 0;
   unsigned long long  mem_kb;
   char               *rsv_id        = NULL;
@@ -399,6 +400,7 @@ int process_node(
               {
               for (segments = socket_child->children; segments != NULL; segments = segments->next)
                 {
+                numa_count++;
                 for (segment_child = segments->children; segment_child != NULL; segment_child = segment_child->next)
                   {
                   if (!strcmp((const char *)segment_child->name, compute_unit_array))
@@ -433,6 +435,7 @@ int process_node(
       {
       for (segments = child->children; segments != NULL; segments = segments->next)
         {
+        numa_count++;
         for (segment_child = segments->children; segment_child != NULL; segment_child = segment_child->next)
           {
           if (!strcmp((const char *)segment_child->name, processor_array))
@@ -469,6 +472,9 @@ int process_node(
   if (socket_count == 0)
     socket_count = 1;
 
+  if (numa_count == 0)
+    numa_count = socket_count;
+
   /* once done, add the procs, available procs, compute unit count, memory info, reservation, and features */
 
   /* note that CCU should come before CPROC */
@@ -486,6 +492,9 @@ int process_node(
 
   snprintf(buf, sizeof(buf), "socket=%d", socket_count);
   ani.socket = buf;
+
+  snprintf(buf, sizeof(buf), "numa_nodes=%d", numa_count);
+  ani.numa_nodes = buf;
 
   mem_kb = memory * 1024;
 
