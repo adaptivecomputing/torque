@@ -419,6 +419,13 @@ int x11_connect_display(
 
   for (ai = aitop; ai; ai = ai->ai_next)
     {
+#ifdef BIND_OUTBOUND_SOCKETS    
+    /* get_local_address currently only supports returning a single AF_ type */
+    if (ai->ai_family != local.sin_family) 
+      {
+      continue;
+      }
+#endif    
     /* Create a socket. */
     sock = socket(ai->ai_family, SOCK_STREAM, 0);
 
