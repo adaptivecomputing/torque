@@ -4728,8 +4728,8 @@ void recover_internal_layout()
   }
 #endif
 
-#ifdef PENABLE_LINUX_CGROUPS
-int cg_initialize_hwloc_topology()
+#if defined(PENABLE_LINUX26_CPUSETS) || defined(PENABLE_LINUX_CGROUPS)
+int initialize_hwloc_topology()
   {
   /* load system topology */
   if ((hwloc_topology_init(&topology) == -1))
@@ -4753,56 +4753,13 @@ int cg_initialize_hwloc_topology()
   hwloc_free_xmlbuffer(topology, xml_buf);
 #endif
 
+#ifdef PENABLE_LINUX_CGROUPS
   read_all_devices();
-
-  unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
-  flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
-
-  #ifdef NVIDIA_GPUS
-  /* Include IO devices (i.e. PCI devices) when loading topology information.
-   * Currently, HWLOC_TOPOLOGY_FLAG_IO_DEVICES is only required for NVIDIA GPU detection.
-   * HWLOC_TOPOLOGY_FLAG_IO_DEVICES was introduced in hwloc 1.3. If NVIDIA_GPUS is defined
-   * --enable-nvidia-gpus was used, which requires hwloc 1.9 or later.
-   */
-  flags |= HWLOC_TOPOLOGY_FLAG_IO_DEVICES;
-  #endif
-
-  if ((hwloc_topology_set_flags(topology, flags) != 0))
-    {
-    log_err(-1, msg_daemonname, "Unable to configure machine topology");
-    return(-1);
-    }
-
-  if ((hwloc_topology_load(topology) == -1))
-    {
-    log_err(-1, msg_daemonname, "Unable to load machine topology");
-    return(-1);
-    }
-
-  sprintf(log_buffer, "machine topology contains %d sockets %d memory nodes, %d cores %d cpus",
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_SOCKET),
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE),
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_CORE),
-    hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_PU));
-  log_record(PBSEVENT_SYSTEM, PBS_EVENTCLASS_SERVER, __func__, log_buffer);
-
-  return(PBSE_NONE);
-  }
 #endif
 
-#ifdef PENABLE_LINUX26_CPUSETS
-int initialize_hwloc_topology()
-  {
-  /* load system topology */
-  if ((hwloc_topology_init(&topology) == -1))
-    {
-    log_err(-1, msg_daemonname, "Unable to init machine topology");
-    return(-1);
-    }
-
   unsigned long flags = HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
 
-  #ifdef NVIDIA_GPUS
+  #if defined(NVIDIA_GPUS) || defined(PENABLE_LINUX_CGROUPS)
   /* Include IO devices (i.e. PCI devices) when loading topology information.
    * Currently, HWLOC_TOPOLOGY_FLAG_IO_DEVICES is only required for NVIDIA GPU detection.
    * HWLOC_TOPOLOGY_FLAG_IO_DEVICES was introduced in hwloc 1.3. If NVIDIA_GPUS is defined
@@ -5201,23 +5158,18 @@ int setup_program_environment(void)
     log_record(PBSE_NONE,PBS_EVENTCLASS_SERVER,msg_daemonname,log_buffer);
     }
 
-#ifdef PENABLE_LINUX26_CPUSETS
+
+#if defined(PENABLE_LINUX26_CPUSETS) || defined(PENABLE_LINUX_CGROUPS)
   rc = initialize_hwloc_topology();
   if (rc != PBSE_NONE)
     exit(rc);
+#endif
 
+#ifdef PENABLE_LINUX26_CPUSETS
   internal_layout = node_internals();
-
 #endif
 
 #ifdef PENABLE_LINUX_CGROUPS
-#ifndef PENABLE_LINUX26_CPUSETS
-  /* If cpusets are enabled initialization has already been done */
-  ret = cg_initialize_hwloc_topology();
-  if (ret != PBSE_NONE)
-    exit(ret);
-#endif
-
   this_node.initializeMachine(topology);
   ret = trq_cg_initialize_hierarchy();
   if (ret != PBSE_NONE)
