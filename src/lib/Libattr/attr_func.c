@@ -324,7 +324,7 @@ svrattrl *attrlist_alloc(
   int szval)   /* I */
 
   {
-  register size_t  tsize;
+  size_t  tsize;
   svrattrl        *pal;
 
   /* alloc memory block <SVRATTRL><NAME><RESC><VAL> */

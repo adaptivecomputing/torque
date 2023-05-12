@@ -86,7 +86,7 @@ int send_update();
 
 void mom_server_all_update_stat(void);
 
-long power(register int x, register int n);
+long power(int x, int n);
 
 int calculate_retry_seconds(int count);
 

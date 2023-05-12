@@ -5310,10 +5310,10 @@ int node_avail(
   char           *pc;
 
   std::vector<prop>  plist;
-  register int    xavail;
-  register int    xalloc;
-  register int    xresvd;
-  register int    xdown;
+  int    xavail;
+  int    xalloc;
+  int    xresvd;
+  int    xdown;
   int             node_req = 1;
   int             gpu_req = 0;
   int             mic_req = 0;
