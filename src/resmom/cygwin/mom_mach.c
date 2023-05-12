@@ -2773,7 +2773,7 @@ char *sessions(
   int            njids = 0;
   pid_t         *jids, *hold;
   static int     maxjid = 200;
-  register pid_t jobid;
+  pid_t jobid;
 
   if (attrib != NULL)
     {
@@ -3024,7 +3024,7 @@ char *nusers(
   int  nuids = 0;
   uid_t  *uids, *hold;
   static int maxuid = 200;
-  register uid_t uid;
+  uid_t uid;
 
   if (attrib != NULL)
     {

@@ -4245,7 +4245,7 @@ const char *nusers(
   int                nuids = 0;
   uid_t             *uids, *hold;
   static int         maxuid = 200;
-  register uid_t     uid;
+  uid_t     uid;
 #ifdef NUMA_SUPPORT
   char               mom_check_name[PBS_MAXSERVERNAME], *s;
   job               *pjob;

@@ -38,6 +38,6 @@ int tcp_wcommit(struct tcp_chan *chan, int);
 int tcp_rskip(struct tcp_chan *chan,size_t);
 int tcp_chan_has_data(struct tcp_chan *chan);
 
-extern time_t pbs_tcp_timeout;
+extern "C" time_t pbs_tcp_timeout;
 
 #endif /* TCP_PBS_H */

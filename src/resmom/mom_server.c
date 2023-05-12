@@ -1913,8 +1913,8 @@ void mom_server_all_update_stat(void)
 
 long power(
 
-  register int x,
-  register int n)
+  int x,
+  int n)
 
   {
   register long p;
